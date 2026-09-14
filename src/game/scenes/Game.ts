@@ -1,10 +1,12 @@
 import * as Phaser from "phaser";
 import { Grid } from "../core/Grid";
 import { GridRenderer } from "../core/GridRenderer";
+import { Economy } from "../core/Economy";
 
 export class Game extends Phaser.Scene {
   private grid!: Grid;
   private gridRenderer!: GridRenderer;
+  private economy!: Economy;
 
   private currentLevel: number = 1;
 
@@ -12,7 +14,6 @@ export class Game extends Phaser.Scene {
   private spawnButtonText!: Phaser.GameObjects.Text;
   private levelDisplayText!: Phaser.GameObjects.Text;
 
-  private coins: number = 0; // 💰 Добавляем валюту
   private coinsText!: Phaser.GameObjects.Text;
 
   private spawnClickCount: number = 0;
@@ -27,6 +28,9 @@ export class Game extends Phaser.Scene {
 
     // 2. Создаём рендерер
     this.gridRenderer = new GridRenderer(this, this.grid);
+
+    this.economy = new Economy(this.registry);
+    this.registry.set("economy", this.economy);
 
     // 3. Создаём UI
     this.createUI();
@@ -75,7 +79,7 @@ export class Game extends Phaser.Scene {
 
     // 💰 НОВОЕ: Отображение монет
     this.coinsText = this.add
-      .text(20, 20, `💰 ${this.coins}`, {
+      .text(20, 20, `💰 ${this.economy.currentCoins}`, {
         fontSize: "24px",
         color: "#ffd700",
         fontFamily: "Arial",
@@ -86,6 +90,48 @@ export class Game extends Phaser.Scene {
       .setOrigin(0, 0);
 
     this.updateEmptyCellsCounter();
+
+    // ==========================================
+    // 🛠️ ТЕСТОВАЯ КНОПКА: +500 монет
+    // ==========================================
+    const testBtnX = this.scale.width - 100; // Правый верхний угол
+    const testBtnY = 100;
+
+    const testButtonBg = this.add.rectangle(
+      testBtnX,
+      testBtnY,
+      140,
+      50,
+      0x2ecc71, // Зелёный цвет, чтобы отличалась
+    );
+    testButtonBg.setStrokeStyle(2, 0xffffff);
+    testButtonBg.setInteractive({ useHandCursor: true });
+
+    const testButtonText = this.add
+      .text(testBtnX, testBtnY, "+500 💰 (Тест)", {
+        fontSize: "16px",
+        color: "#ffffff",
+        fontFamily: "Arial",
+        fontStyle: "bold",
+      })
+      .setOrigin(0.5);
+
+    // Логика кнопки
+    testButtonBg.on("pointerdown", () => {
+      this.economy.addCoins(500);
+      console.log("🛠️ [DEV] Добавлено 500 тестовых монет. Баланс:", this.economy.currentCoins);
+
+      // Небольшая анимация нажатия для фидбека
+      this.tweens.add({
+        targets: testButtonBg,
+        scale: { from: 1.1, to: 1 },
+        duration: 150,
+        ease: "Power2",
+      });
+    });
+
+    testButtonBg.on("pointerover", () => testButtonBg.setFillStyle(0x27ae60));
+    testButtonBg.on("pointerout", () => testButtonBg.setFillStyle(0x2ecc71));
   }
 
   private setupEventListeners(): void {
@@ -96,6 +142,31 @@ export class Game extends Phaser.Scene {
     this.grid.on("newLevelUnlocked", (data: { level: number }) => {
       this.onNewLevelUnlocked(data.level);
     });
+
+    // 🎯 Награда за слияние (теперь в монетах)
+    this.grid.on("itemMerged", (data: { newLevel: number }) => {
+      const reward = this.economy.getMergeReward(data.newLevel);
+      this.economy.addCoins(reward);
+      console.log(`💰 Слияние в ур.${data.newLevel} → +${reward} монет`);
+    });
+
+    // 🎯 Слушаем встроенные события registry
+    this.registry.events.on(
+      "changedata-coins",
+      (parent: any, value: number, previousValue: number) => {
+        this.coinsText.setText(`💰 ${value}`);
+
+        const delta = value - previousValue;
+        if (delta !== 0) {
+          this.tweens.add({
+            targets: this.coinsText,
+            scale: { from: 1.3, to: 1 },
+            duration: 300,
+            ease: "Back.easeOut",
+          });
+        }
+      },
+    );
   }
 
   // 🎯 НОВАЯ МЕТОДИКА: Вычисление уровня для кнопки спауна
@@ -117,32 +188,19 @@ export class Game extends Phaser.Scene {
     // 💰 Компенсация: даём монеты за каждый удалённый предмет
     if (removedItems.length > 0) {
       const compensation = removedItems.reduce((sum, item) => sum + item.level * 5, 0);
-      this.addCoins(compensation);
+      this.economy.addCoins(compensation);
       this.showCleanupMessage(removedItems.length, compensation);
     }
 
     // Обновляем UI
     this.levelDisplayText.setText(`🏆 Макс. уровень: ${this.currentLevel}`);
-    this.spawnButtonText.setText(`СПАУН (Ур. ${spawnLevel})`);
+    const newCost = this.economy.getSpawnCost(spawnLevel);
+    this.spawnButtonText.setText(`СПАУН Ур.${spawnLevel} (${newCost}💰)`);
 
     // Показываем уведомление об уровне
     this.showLevelUpMessage(level);
 
     console.log(`🎉 НОВЫЙ УРОВЕНЬ: ${level}! Удалено предметов: ${removedItems.length}`);
-  }
-
-  // 💰 НОВЫЙ МЕТОД: Добавление монет с анимацией
-  private addCoins(amount: number): void {
-    this.coins += amount;
-    this.coinsText.setText(`💰 ${this.coins}`);
-
-    // Анимация "пульсации" текста монет
-    this.tweens.add({
-      targets: this.coinsText,
-      scale: { from: 1.3, to: 1 },
-      duration: 300,
-      ease: "Back.easeOut",
-    });
   }
 
   // 💬 НОВЫЙ МЕТОД: Уведомление об очистке поля
@@ -253,6 +311,19 @@ export class Game extends Phaser.Scene {
   // 🎯 ГЛАВНЫЙ МЕТОД: Спаун случайного предмета с учётом задержки
   private spawnRandomItem(): void {
     const levelToSpawn = this.getSpawnLevel();
+    const cost = this.economy.getSpawnCost(levelToSpawn);
+
+    // 🎯 ПРОВЕРКА 1: Есть ли свободные клетки?
+    if (!this.grid.hasEmptyCell()) {
+      return;
+    }
+
+    if (!this.economy.canAfford(cost)) {
+      console.log("no money!");
+      return;
+    }
+
+    this.economy.spendCoins(cost);
     const item = this.grid.spawnRandomItem(levelToSpawn);
 
     if (item) {

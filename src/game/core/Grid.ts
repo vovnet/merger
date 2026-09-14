@@ -142,6 +142,8 @@ export class Grid extends Phaser.Events.EventEmitter {
       const newItem = this.createItem(newLevel);
       this.setItem(to, newItem);
 
+      this.emit("itemMerged", { newLevel, item: newItem });
+
       if (newLevel > this.maxUnlockedLevel) {
         this.maxUnlockedLevel = newLevel;
         this.emit("newLevelUnlocked", { level: newLevel, item: newItem });
