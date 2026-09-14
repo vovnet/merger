@@ -12,6 +12,8 @@ export class Grid extends Phaser.Events.EventEmitter {
   private readonly config: GridConfig;
   private nextId = 0;
 
+  private maxUnlockedLevel: number = 1;
+
   constructor(config: GridConfig) {
     super();
     this.config = config;
@@ -35,6 +37,9 @@ export class Grid extends Phaser.Events.EventEmitter {
   }
   get totalCells(): number {
     return this.config.cols * this.config.rows;
+  }
+  get currentMaxLevel(): number {
+    return this.maxUnlockedLevel;
   }
 
   getCell(pos: GridPosition): Cell {
@@ -127,6 +132,11 @@ export class Grid extends Phaser.Events.EventEmitter {
       // Создаём новый предмет следующего уровня
       const newItem = this.createItem(itemFrom.level + 1);
       this.setItem(to, newItem);
+
+      if (newItem.level > this.maxUnlockedLevel) {
+        this.maxUnlockedLevel = newItem.level;
+        this.emit("newLevelUnlocked", { level: newItem.level, item: newItem });
+      }
 
       return { result: MergeResult.MERGED, newItem };
     }

@@ -6,13 +6,19 @@ export class Game extends Phaser.Scene {
   private grid!: Grid;
   private gridRenderer!: GridRenderer;
 
+  private currentLevel: number = 1;
+
+  // 🎯 Добавляем ссылки на текстовые элементы, чтобы обновлять их динамически
+  private spawnButtonText!: Phaser.GameObjects.Text;
+  private levelDisplayText!: Phaser.GameObjects.Text;
+
   constructor() {
     super({ key: "GameScene" });
   }
 
   create(): void {
-    // 1. Создаём логику поля 4×5
-    this.grid = new Grid({ cols: 4, rows: 5 });
+    // 1. Создаём логику поля 6×5
+    this.grid = new Grid({ cols: 6, rows: 5 });
 
     // 2. Создаём рендерер
     this.gridRenderer = new GridRenderer(this, this.grid);
@@ -22,9 +28,6 @@ export class Game extends Phaser.Scene {
 
     // 4. Слушаем события
     this.setupEventListeners();
-
-    // 5. Добавляем начальные предметы для теста
-    // this.spawnInitialItems();
   }
 
   private createUI(): void {
@@ -39,8 +42,9 @@ export class Game extends Phaser.Scene {
     buttonBg.setStrokeStyle(2, 0xffffff);
     buttonBg.setInteractive({ useHandCursor: true });
 
-    const buttonText = this.add
-      .text(this.scale.width / 2, this.scale.height - 80, "СПАУН (10💰)", {
+    // 🎯 Сохраняем ссылку на текст кнопки и сразу ставим актуальный уровень спауна
+    this.spawnButtonText = this.add
+      .text(this.scale.width / 2, this.scale.height - 80, `СПАУН (Ур. ${this.getSpawnLevel()})`, {
         fontSize: "20px",
         color: "#ffffff",
         fontFamily: "Arial",
@@ -52,6 +56,18 @@ export class Game extends Phaser.Scene {
     buttonBg.on("pointerover", () => buttonBg.setFillStyle(0x5aa0f2));
     buttonBg.on("pointerout", () => buttonBg.setFillStyle(0x4a90e2));
 
+    // Текст максимального уровня сверху
+    this.levelDisplayText = this.add
+      .text(this.scale.width / 2, 60, `🏆 Макс. уровень: ${this.currentLevel}`, {
+        fontSize: "24px",
+        color: "#ffd700",
+        fontFamily: "Arial",
+        fontStyle: "bold",
+        stroke: "#000000",
+        strokeThickness: 3,
+      })
+      .setOrigin(0.5);
+
     this.updateEmptyCellsCounter();
   }
 
@@ -59,22 +75,117 @@ export class Game extends Phaser.Scene {
     this.grid.on("itemAdded", () => this.updateEmptyCellsCounter());
     this.grid.on("itemRemoved", () => this.updateEmptyCellsCounter());
     this.grid.on("gridFull", () => this.showGridFullMessage());
+
+    this.grid.on("newLevelUnlocked", (data: { level: number }) => {
+      this.onNewLevelUnlocked(data.level);
+    });
   }
 
-  private spawnInitialItems(): void {
-    // Для теста: добавляем 3 предмета разных уровней
-    this.grid.spawnRandomItem(1);
-    this.grid.spawnRandomItem(2);
-    this.grid.spawnRandomItem(1);
+  // 🎯 НОВАЯ МЕТОДИКА: Вычисление уровня для кнопки спауна
+  private getSpawnLevel(): number {
+    // Если currentLevel <= 4, вернёт 1. Если 5, вернёт 2. Если 6, вернёт 3 и т.д.
+    return Math.max(1, this.currentLevel - 6);
   }
 
-  // 🎯 ГЛАВНЫЙ МЕТОД: Спаун случайного предмета
+  private onNewLevelUnlocked(level: number): void {
+    this.currentLevel = level;
+
+    // Обновляем верхний текст
+    this.levelDisplayText.setText(`🏆 Макс. уровень: ${this.currentLevel}`);
+
+    // 🎯 Обновляем текст на кнопке, если уровень спауна изменился
+    this.spawnButtonText.setText(`СПАУН (Ур. ${this.getSpawnLevel()})`);
+
+    // Показываем красивое уведомление
+    this.showLevelUpMessage(level);
+
+    console.log(
+      `🎉 НОВЫЙ УРОВЕНЬ ОТКРЫТ: ${level}! (Спаун теперь даёт ур. ${this.getSpawnLevel()})`,
+    );
+  }
+
+  private showLevelUpMessage(level: number): void {
+    // Затемняющий фон
+    const overlay = this.add
+      .rectangle(
+        this.scale.width / 2,
+        this.scale.height / 2,
+        this.scale.width,
+        this.scale.height,
+        0x000000,
+        0.5,
+      )
+      .setDepth(200);
+
+    // Основной текст
+    const title = this.add
+      .text(this.scale.width / 2, this.scale.height / 2 - 40, "🎉 НОВЫЙ УРОВЕНЬ!", {
+        fontSize: "42px",
+        color: "#ffd700",
+        fontFamily: "Arial",
+        fontStyle: "bold",
+        stroke: "#000000",
+        strokeThickness: 4,
+      })
+      .setOrigin(0.5)
+      .setDepth(201)
+      .setScale(0);
+
+    const levelText = this.add
+      .text(this.scale.width / 2, this.scale.height / 2 + 20, `Уровень ${level} открыт!`, {
+        fontSize: "28px",
+        color: "#ffffff",
+        fontFamily: "Arial",
+        fontStyle: "bold",
+        stroke: "#000000",
+        strokeThickness: 3,
+      })
+      .setOrigin(0.5)
+      .setDepth(201)
+      .setAlpha(0);
+
+    // Анимация появления
+    this.tweens.add({
+      targets: title,
+      scale: { from: 0, to: 1.2 },
+      duration: 300,
+      ease: "Back.easeOut",
+      yoyo: true,
+      hold: 50,
+      onComplete: () => title.setScale(1),
+    });
+
+    this.tweens.add({
+      targets: levelText,
+      alpha: 1,
+      y: this.scale.height / 2 + 30,
+      duration: 400,
+      delay: 200,
+      ease: "Power2",
+    });
+
+    // Исчезновение через 2 секунды
+    this.time.delayedCall(2000, () => {
+      this.tweens.add({
+        targets: [overlay, title, levelText],
+        alpha: 0,
+        duration: 500,
+        onComplete: () => {
+          overlay.destroy();
+          title.destroy();
+          levelText.destroy();
+        },
+      });
+    });
+  }
+
+  // 🎯 ГЛАВНЫЙ МЕТОД: Спаун случайного предмета с учётом задержки
   private spawnRandomItem(): void {
-    // Пока спауним только ур.1 (потом можно добавить магазин с разными уровнями)
-    const item = this.grid.spawnRandomItem(1);
+    const levelToSpawn = this.getSpawnLevel();
+    const item = this.grid.spawnRandomItem(levelToSpawn);
 
     if (item) {
-      console.log(`✨ Создан предмет ур.${item.level}`);
+      console.log(`✨ Создан предмет ур.${item.level} (кнопка даёт ур. ${levelToSpawn})`);
       console.log(`📊 Пустых клеток: ${this.grid.getEmptyCells().length}`);
     }
   }
