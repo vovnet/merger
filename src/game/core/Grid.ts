@@ -112,36 +112,44 @@ export class Grid extends Phaser.Events.EventEmitter {
     const itemFrom = this.getCell(from);
     const itemTo = this.getCell(to);
 
-    // 1. Проверка на валидность
     if (!itemFrom || !this.isValidPosition(to)) {
       return { result: MergeResult.INVALID };
     }
 
-    // 2. Если целевая клетка пустая — просто двигаем
+    // 🎯 НОВОЕ ПРАВИЛО: Проверка соседства по 8 направлениям (Чебышёвское расстояние)
+    const dx = Math.abs(from.x - to.x);
+    const dy = Math.abs(from.y - to.y);
+    const isAdjacent = Math.max(dx, dy) === 1;
+
+    if (!isAdjacent) {
+      // Нельзя слить предметы, которые не соседи (даже по диагонали)
+      if (itemTo && itemFrom.level === itemTo.level) {
+        return { result: MergeResult.INVALID };
+      }
+    }
+
+    // Дальше стандартная логика
     if (!itemTo) {
       this.moveItem(from, to);
       return { result: MergeResult.MOVED };
     }
 
-    // 3. Если уровни совпадают и это не максимальный уровень (например, 777) — сливаем!
-    if (itemFrom.level === itemTo.level && itemFrom.level < 777) {
-      // Удаляем оба старых предмета
+    if (itemFrom.level === itemTo.level && itemFrom.level < 50) {
       this.removeItem(from);
       this.removeItem(to);
 
-      // Создаём новый предмет следующего уровня
-      const newItem = this.createItem(itemFrom.level + 1);
+      const newLevel = itemFrom.level + 1;
+      const newItem = this.createItem(newLevel);
       this.setItem(to, newItem);
 
-      if (newItem.level > this.maxUnlockedLevel) {
-        this.maxUnlockedLevel = newItem.level;
-        this.emit("newLevelUnlocked", { level: newItem.level, item: newItem });
+      if (newLevel > this.maxUnlockedLevel) {
+        this.maxUnlockedLevel = newLevel;
+        this.emit("newLevelUnlocked", { level: newLevel, item: newItem });
       }
 
       return { result: MergeResult.MERGED, newItem };
     }
 
-    // 4. Уровни разные — слияние невозможно
     return { result: MergeResult.INVALID };
   }
 
@@ -179,6 +187,27 @@ export class Grid extends Phaser.Events.EventEmitter {
       }
     }
     return items;
+  }
+
+  removeItemsBelowLevel(minLevel: number): ItemData[] {
+    const removedItems: ItemData[] = [];
+
+    for (let y = 0; y < this.config.rows; y++) {
+      for (let x = 0; x < this.config.cols; x++) {
+        const item = this.cells[y][x];
+        if (item && item.level < minLevel) {
+          removedItems.push(item);
+          this.cells[y][x] = null;
+          this.emit("itemRemoved", { position: { x, y }, item });
+        }
+      }
+    }
+
+    if (removedItems.length > 0) {
+      this.emit("itemsCleaned", { count: removedItems.length, items: removedItems });
+    }
+
+    return removedItems;
   }
 
   clear(): void {

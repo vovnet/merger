@@ -12,6 +12,9 @@ export class Game extends Phaser.Scene {
   private spawnButtonText!: Phaser.GameObjects.Text;
   private levelDisplayText!: Phaser.GameObjects.Text;
 
+  private coins: number = 0; // 💰 Добавляем валюту
+  private coinsText!: Phaser.GameObjects.Text;
+
   constructor() {
     super({ key: "GameScene" });
   }
@@ -68,6 +71,18 @@ export class Game extends Phaser.Scene {
       })
       .setOrigin(0.5);
 
+    // 💰 НОВОЕ: Отображение монет
+    this.coinsText = this.add
+      .text(20, 20, `💰 ${this.coins}`, {
+        fontSize: "24px",
+        color: "#ffd700",
+        fontFamily: "Arial",
+        fontStyle: "bold",
+        stroke: "#000000",
+        strokeThickness: 3,
+      })
+      .setOrigin(0, 0);
+
     this.updateEmptyCellsCounter();
   }
 
@@ -90,18 +105,69 @@ export class Game extends Phaser.Scene {
   private onNewLevelUnlocked(level: number): void {
     this.currentLevel = level;
 
-    // Обновляем верхний текст
+    // 🎯 НОВОЕ: Очищаем поле от мёртвых предметов
+    const spawnLevel = this.getSpawnLevel();
+    const removedItems = this.grid.removeItemsBelowLevel(spawnLevel);
+
+    // 💰 Компенсация: даём монеты за каждый удалённый предмет
+    if (removedItems.length > 0) {
+      const compensation = removedItems.reduce((sum, item) => sum + item.level * 5, 0);
+      this.addCoins(compensation);
+      this.showCleanupMessage(removedItems.length, compensation);
+    }
+
+    // Обновляем UI
     this.levelDisplayText.setText(`🏆 Макс. уровень: ${this.currentLevel}`);
+    this.spawnButtonText.setText(`СПАУН (Ур. ${spawnLevel})`);
 
-    // 🎯 Обновляем текст на кнопке, если уровень спауна изменился
-    this.spawnButtonText.setText(`СПАУН (Ур. ${this.getSpawnLevel()})`);
-
-    // Показываем красивое уведомление
+    // Показываем уведомление об уровне
     this.showLevelUpMessage(level);
 
-    console.log(
-      `🎉 НОВЫЙ УРОВЕНЬ ОТКРЫТ: ${level}! (Спаун теперь даёт ур. ${this.getSpawnLevel()})`,
-    );
+    console.log(`🎉 НОВЫЙ УРОВЕНЬ: ${level}! Удалено предметов: ${removedItems.length}`);
+  }
+
+  // 💰 НОВЫЙ МЕТОД: Добавление монет с анимацией
+  private addCoins(amount: number): void {
+    this.coins += amount;
+    this.coinsText.setText(`💰 ${this.coins}`);
+
+    // Анимация "пульсации" текста монет
+    this.tweens.add({
+      targets: this.coinsText,
+      scale: { from: 1.3, to: 1 },
+      duration: 300,
+      ease: "Back.easeOut",
+    });
+  }
+
+  // 💬 НОВЫЙ МЕТОД: Уведомление об очистке поля
+  private showCleanupMessage(count: number, compensation: number): void {
+    const message = this.add
+      .text(
+        this.scale.width / 2,
+        this.scale.height / 2 + 100,
+        `🧹 Удалено предметов: ${count}\n💰 Компенсация: +${compensation}`,
+        {
+          fontSize: "20px",
+          color: "#ffffff",
+          fontFamily: "Arial",
+          fontStyle: "bold",
+          backgroundColor: "#000000aa",
+          padding: { x: 15, y: 10 },
+          align: "center",
+        },
+      )
+      .setOrigin(0.5)
+      .setDepth(300);
+
+    this.tweens.add({
+      targets: message,
+      alpha: 0,
+      y: message.y - 50,
+      duration: 2000,
+      delay: 500,
+      onComplete: () => message.destroy(),
+    });
   }
 
   private showLevelUpMessage(level: number): void {
