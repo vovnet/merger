@@ -1,6 +1,12 @@
 import * as Phaser from "phaser";
 import { Cell, GridConfig, GridPosition, ItemData } from "../types/Item";
 
+export enum MergeResult {
+  INVALID = "invalid", // Нельзя слить (разные уровни или недопустимая клетка)
+  MOVED = "moved", // Просто переместили на пустую клетку
+  MERGED = "merged", // Успешное слияние!
+}
+
 export class Grid extends Phaser.Events.EventEmitter {
   private cells: Cell[][];
   private readonly config: GridConfig;
@@ -97,9 +103,41 @@ export class Grid extends Phaser.Events.EventEmitter {
     return item;
   }
 
+  tryMerge(from: GridPosition, to: GridPosition): { result: MergeResult; newItem?: ItemData } {
+    const itemFrom = this.getCell(from);
+    const itemTo = this.getCell(to);
+
+    // 1. Проверка на валидность
+    if (!itemFrom || !this.isValidPosition(to)) {
+      return { result: MergeResult.INVALID };
+    }
+
+    // 2. Если целевая клетка пустая — просто двигаем
+    if (!itemTo) {
+      this.moveItem(from, to);
+      return { result: MergeResult.MOVED };
+    }
+
+    // 3. Если уровни совпадают и это не максимальный уровень (например, 777) — сливаем!
+    if (itemFrom.level === itemTo.level && itemFrom.level < 777) {
+      // Удаляем оба старых предмета
+      this.removeItem(from);
+      this.removeItem(to);
+
+      // Создаём новый предмет следующего уровня
+      const newItem = this.createItem(itemFrom.level + 1);
+      this.setItem(to, newItem);
+
+      return { result: MergeResult.MERGED, newItem };
+    }
+
+    // 4. Уровни разные — слияние невозможно
+    return { result: MergeResult.INVALID };
+  }
+
   moveItem(from: GridPosition, to: GridPosition): boolean {
     const item = this.getCell(from);
-    if (!item || !this.isEmpty(to)) return false;
+    if (!item || this.isEmpty(to)) return false;
 
     this.cells[from.y][from.x] = null;
     this.cells[to.y][to.x] = item;

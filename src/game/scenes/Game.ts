@@ -24,7 +24,7 @@ export class Game extends Phaser.Scene {
     this.setupEventListeners();
 
     // 5. Добавляем начальные предметы для теста
-    this.spawnInitialItems();
+    // this.spawnInitialItems();
   }
 
   private createUI(): void {

@@ -1,5 +1,5 @@
-import Phaser from "phaser";
-import { Grid } from "./Grid";
+import * as Phaser from "phaser";
+import { Grid, MergeResult } from "./Grid";
 import { GridPosition, ItemData } from "../types/Item";
 
 export class GridRenderer {
@@ -29,14 +29,13 @@ export class GridRenderer {
     for (let y = 0; y < this.grid.rows; y++) {
       for (let x = 0; x < this.grid.cols; x++) {
         const { px, py } = this.gridToPixel({ x, y });
-
         const cell = this.scene.add.rectangle(
           px,
           py,
           this.cellSize - this.padding,
           this.cellSize - this.padding,
           0x2a2a3e,
-          0.5,
+          0.8,
         );
         cell.setStrokeStyle(2, 0x4a4a6e);
       }
@@ -75,97 +74,103 @@ export class GridRenderer {
     return this.grid.isValidPosition(pos) ? pos : null;
   }
 
-  // 🎯 Создание спрайта предмета с поддержкой текстур
+  private setupDraggable(container: Phaser.GameObjects.Container): void {
+    const hitArea = new Phaser.Geom.Circle(0, 0, 40);
+
+    container.setInteractive({
+      draggable: true,
+      hitArea: hitArea,
+      hitAreaCallback: Phaser.Geom.Circle.Contains,
+    });
+
+    container.on("dragstart", () => {
+      container.setDepth(100);
+    });
+
+    container.on("drag", (pointer: Phaser.Input.Pointer, dragX: number, dragY: number) => {
+      container.x = dragX;
+      container.y = dragY;
+    });
+
+    container.on("dragend", () => {
+      container.setDepth(0);
+
+      const startPos = container.getData("gridPos");
+      const targetPos = this.pixelToGrid(container.x, container.y);
+
+      if (!targetPos || (targetPos.x === startPos.x && targetPos.y === startPos.y)) {
+        this.snapBack(container, startPos);
+        return;
+      }
+
+      const mergeResult = this.grid.tryMerge(startPos, targetPos);
+
+      if (mergeResult.result === MergeResult.INVALID) {
+        this.snapBack(container, startPos);
+      } else if (mergeResult.result === MergeResult.MOVED) {
+        // Анимацию сделает moveItemSprite через событие itemMoved
+        this.snapBack(container, startPos);
+      } else if (mergeResult.result === MergeResult.MERGED && mergeResult.newItem) {
+        // Слияние произошло — спрайты уже обновлены через события
+      }
+    });
+  }
+
   private createItemSprite(pos: GridPosition, item: ItemData): void {
     const { px, py } = this.gridToPixel(pos);
-
     const container = this.scene.add.container(px, py);
 
-    // Проверяем, есть ли текстура для этого уровня
-    const textureKey = `item_level_${item.level}`;
-    let visual: Phaser.GameObjects.GameObject;
+    container.setData("gridPos", { ...pos });
+    container.setData("itemId", item.id);
 
-    if (this.scene.textures.exists(textureKey)) {
-      // Используем текстуру
-      visual = this.scene.add.image(0, 0, textureKey);
-    } else {
-      // Fallback: программная отрисовка (разные цвета по уровню)
-      visual = this.createFallbackVisual(item.level);
-    }
+    const colors = [0x95a5a6, 0x3498db, 0x9b59b6, 0xe74c3c, 0xf39c12, 0x2ecc71, 0xf1c40f];
+    const color = colors[item.level - 1] || 0xffffff;
 
-    // Текст уровня
+    const circle = this.scene.add.circle(0, 0, 40, color);
+    circle.setStrokeStyle(3, 0xffffff);
+
     const levelText = this.scene.add
       .text(0, 0, `${item.level}`, {
-        fontSize: "24px",
+        fontSize: "28px",
         color: "#ffffff",
         fontFamily: "Arial",
         fontStyle: "bold",
       })
       .setOrigin(0.5);
 
-    container.add([visual, levelText]);
-
-    // Анимация появления
-    container.setY(py - 200);
-    container.setAlpha(0);
-    this.scene.tweens.add({
-      targets: container,
-      y: py,
-      alpha: 1,
-      duration: 300,
-      ease: "Bounce.easeOut",
-    });
+    container.add([circle, levelText]);
+    this.setupDraggable(container);
 
     this.sprites.set(item.id, container);
   }
 
-  // Fallback визуал (если нет текстуры)
-  private createFallbackVisual(level: number): Phaser.GameObjects.Shape {
-    const colors = [
-      0x95a5a6, // ур.1 - серый
-      0x3498db, // ур.2 - синий
-      0x9b59b6, // ур.3 - фиолетовый
-      0xe74c3c, // ур.4 - красный
-      0xf39c12, // ур.5 - оранжевый
-      0x2ecc71, // ур.6 - зелёный
-      0xf1c40f, // ур.7 - золотой
-    ];
-
-    const color = colors[level - 1] || 0x95a5a6;
-    const circle = this.scene.add.circle(0, 0, 40, color);
-    circle.setStrokeStyle(3, 0xffffff);
-    return circle;
+  private snapBack(container: Phaser.GameObjects.Container, pos: GridPosition): void {
+    console.log("back item");
+    const { px, py } = this.gridToPixel(pos);
+    container.x = px;
+    container.y = py;
   }
 
-  private removeItemSprite(pos: GridPosition): void {
-    for (const [id, sprite] of this.sprites.entries()) {
-      const { px, py } = this.gridToPixel(pos);
-      if (Math.abs(sprite.x - px) < 5 && Math.abs(sprite.y - py) < 5) {
-        this.scene.tweens.add({
-          targets: sprite,
-          alpha: 0,
-          scale: 0,
-          duration: 200,
-          onComplete: () => sprite.destroy(),
-        });
-        this.sprites.delete(id);
+  private moveItemSprite(from: GridPosition, to: GridPosition): void {
+    const { px, py } = this.gridToPixel(to);
+
+    for (const sprite of this.sprites.values()) {
+      const spritePos = sprite.getData("gridPos");
+      if (spritePos && spritePos.x === from.x && spritePos.y === from.y) {
+        sprite.setData("gridPos", { ...to });
+        sprite.x = px;
+        sprite.y = py;
         break;
       }
     }
   }
 
-  private moveItemSprite(from: GridPosition, to: GridPosition): void {
-    const { px, py } = this.gridToPixel(to);
-    for (const sprite of this.sprites.values()) {
-      const fromPos = this.gridToPixel(from);
-      if (Math.abs(sprite.x - fromPos.px) < 5 && Math.abs(sprite.y - fromPos.py) < 5) {
-        this.scene.tweens.add({
-          targets: sprite,
-          x: px,
-          y: py,
-          duration: 200,
-          ease: "Power2",
-        });
+  private removeItemSprite(pos: GridPosition): void {
+    for (const [id, sprite] of this.sprites.entries()) {
+      const spritePos = sprite.getData("gridPos");
+      if (spritePos && spritePos.x === pos.x && spritePos.y === pos.y) {
+        sprite.destroy();
+        this.sprites.delete(id);
         break;
       }
     }
