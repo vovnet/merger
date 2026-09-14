@@ -15,6 +15,8 @@ export class Game extends Phaser.Scene {
   private coins: number = 0; // 💰 Добавляем валюту
   private coinsText!: Phaser.GameObjects.Text;
 
+  private spawnClickCount: number = 0;
+
   constructor() {
     super({ key: "GameScene" });
   }
@@ -104,6 +106,9 @@ export class Game extends Phaser.Scene {
 
   private onNewLevelUnlocked(level: number): void {
     this.currentLevel = level;
+
+    console.log(`🖱️ Нажатий кнопки спауна: ${this.spawnClickCount}`);
+    this.spawnClickCount = 0;
 
     // 🎯 НОВОЕ: Очищаем поле от мёртвых предметов
     const spawnLevel = this.getSpawnLevel();
@@ -251,6 +256,8 @@ export class Game extends Phaser.Scene {
     const item = this.grid.spawnRandomItem(levelToSpawn);
 
     if (item) {
+      // 🎯 Увеличиваем счётчик при успешном спауне
+      this.spawnClickCount++;
       console.log(`✨ Создан предмет ур.${item.level} (кнопка даёт ур. ${levelToSpawn})`);
       console.log(`📊 Пустых клеток: ${this.grid.getEmptyCells().length}`);
     }
