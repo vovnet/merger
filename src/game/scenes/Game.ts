@@ -89,6 +89,35 @@ export class Game extends Phaser.Scene {
       })
       .setOrigin(0, 0);
 
+    // ==========================================
+    // 🎯 КНОПКА: Заполнить всё поле
+    // ==========================================
+    const fillButtonX = this.scale.width - 100;
+    const fillButtonY = this.scale.height - 160; // Чуть выше кнопки спауна
+
+    const fillButtonBg = this.add.rectangle(
+      fillButtonX,
+      fillButtonY,
+      140,
+      50,
+      0x9b59b6, // Фиолетовый цвет, чтобы отличалась
+    );
+    fillButtonBg.setStrokeStyle(2, 0xffffff);
+    fillButtonBg.setInteractive({ useHandCursor: true });
+
+    const fillButtonText = this.add
+      .text(fillButtonX, fillButtonY, "ЗАПОЛНИТЬ", {
+        fontSize: "18px",
+        color: "#ffffff",
+        fontFamily: "Arial",
+        fontStyle: "bold",
+      })
+      .setOrigin(0.5);
+
+    fillButtonBg.on("pointerdown", () => this.fillAllEmptyCells());
+    fillButtonBg.on("pointerover", () => fillButtonBg.setFillStyle(0xa96ac6));
+    fillButtonBg.on("pointerout", () => fillButtonBg.setFillStyle(0x9b59b6));
+
     this.updateEmptyCellsCounter();
 
     // ==========================================
@@ -132,6 +161,25 @@ export class Game extends Phaser.Scene {
 
     testButtonBg.on("pointerover", () => testButtonBg.setFillStyle(0x27ae60));
     testButtonBg.on("pointerout", () => testButtonBg.setFillStyle(0x2ecc71));
+  }
+
+  private fillAllEmptyCells(): void {
+    const levelToSpawn = this.getSpawnLevel();
+    const emptyCount = this.grid.getEmptyCells().length;
+
+    // 1. Проверка: есть ли пустые клетки
+    if (emptyCount === 0) {
+      this.showGridFullMessage();
+      return;
+    }
+
+    // 5. Заполняем сетку
+    const filledCount = this.grid.fillEmptyCells(levelToSpawn);
+
+    if (filledCount > 0) {
+      this.spawnClickCount += filledCount;
+      console.log(`✨ Заполнено ${filledCount} ячеек предметами ур.${levelToSpawn}`);
+    }
   }
 
   private setupEventListeners(): void {

@@ -191,6 +191,23 @@ export class Grid extends Phaser.Events.EventEmitter {
     return items;
   }
 
+  fillEmptyCells(level: number): number {
+    const emptyCells = this.getEmptyCells();
+    let filledCount = 0;
+
+    for (const cell of emptyCells) {
+      const item = this.createItem(level);
+      this.setItem(cell, item); // setItem сам эмитит "itemAdded"
+      filledCount++;
+    }
+
+    if (filledCount > 0) {
+      this.emit("gridFilled", { count: filledCount });
+    }
+
+    return filledCount;
+  }
+
   removeItemsBelowLevel(minLevel: number): ItemData[] {
     const removedItems: ItemData[] = [];
 
