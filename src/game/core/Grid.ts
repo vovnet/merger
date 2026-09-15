@@ -7,6 +7,8 @@ export enum MergeResult {
   MERGED = "merged", // Успешное слияние!
 }
 
+const MAX_LEVEL = 72;
+
 export class Grid extends Phaser.Events.EventEmitter {
   private cells: Cell[][];
   private readonly config: GridConfig;
@@ -134,7 +136,7 @@ export class Grid extends Phaser.Events.EventEmitter {
       return { result: MergeResult.MOVED };
     }
 
-    if (itemFrom.level === itemTo.level && itemFrom.level < 50) {
+    if (itemFrom.level === itemTo.level && itemFrom.level < MAX_LEVEL) {
       this.removeItem(from);
       this.removeItem(to);
 
