@@ -135,8 +135,10 @@ export class GridRenderer {
     // 🎯 Скейлим по наибольшей стороне, чтобы вписался в клетку
     const targetSize = this.cellSize - this.padding - 10; // 80px (немного меньше клетки для отступа)
     const maxDimension = Math.max(squish.width, squish.height);
-    const scale = targetSize / maxDimension;
-    squish.setScale(scale);
+    const targetScale = targetSize / maxDimension;
+    // squish.setScale(targetScale);
+
+    squish.setScale(0);
 
     container.add([squish]);
 
@@ -150,6 +152,23 @@ export class GridRenderer {
 
     this.setupDraggable(container);
     this.sprites.set(item.id, container);
+
+    //  АНИМАЦИЯ ПОЯВЛЕНИЯ: эффект капли/пружинки
+    this.scene.tweens.add({
+      targets: squish,
+      scale: { from: 0, to: targetScale * 1.15 },
+      duration: 200, // Быстрее
+      ease: "Back.easeOut",
+      delay: 0,
+      onComplete: () => {
+        this.scene.tweens.add({
+          targets: squish,
+          scale: targetScale,
+          duration: 100,
+          ease: "Power2.out",
+        });
+      },
+    });
   }
 
   private snapBack(container: Phaser.GameObjects.Container, pos: GridPosition): void {
