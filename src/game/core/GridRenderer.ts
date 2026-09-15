@@ -123,34 +123,32 @@ export class GridRenderer {
     container.setData("gridPos", { ...pos });
     container.setData("itemId", item.id);
 
-    // 🎯 Расширенная палитра для 37 уровней (от тусклых к легендарным)
-    const colors = [
-      0xe74c3c, // 🔴 Красный
-      0xf39c12, // 🟠 Оранжевый
-      0xf1c40f, // 🟡 Жёлтый
-      0x2ecc71, // 🟢 Зелёный
-      0x1abc9c, // 🟦 Бирюзовый
-      0x3498db, // 🔵 Синий
-      0x9b59b6, // 🟣 Фиолетовый
-      0xe91e63, // 🌸 Маджента
-    ];
-    const color = colors[(item.level - 1) % colors.length];
+    // 🎯 Определяем имя кадра из атласа (циклически по количеству кадров)
+    const totalFrames = 72; // Количество сквишей в атласе
+    const frameIndex = ((item.level - 1) % totalFrames) + 1;
+    const frameName = String(frameIndex); // Имена кадров: "1", "2", ... "72"
 
-    const circle = this.scene.add.circle(0, 0, 40, color);
-    circle.setStrokeStyle(3, 0xffffff);
+    // 🎯 Загружаем спрайт из атласа
+    const squish = this.scene.add.image(0, 0, "squishes", frameName);
+    squish.setOrigin(0.5); // Центрируем относительно контейнера
 
-    const levelText = this.scene.add
-      .text(0, 0, `${item.level}`, {
-        fontSize: "28px",
-        color: "#ffffff",
-        fontFamily: "Arial",
-        fontStyle: "bold",
-      })
-      .setOrigin(0.5);
+    // 🎯 Скейлим по наибольшей стороне, чтобы вписался в клетку
+    const targetSize = this.cellSize - this.padding - 10; // 80px (немного меньше клетки для отступа)
+    const maxDimension = Math.max(squish.width, squish.height);
+    const scale = targetSize / maxDimension;
+    squish.setScale(scale);
 
-    container.add([circle, levelText]);
+    container.add([squish]);
+
+    // 🎯 Увеличиваем хитбокс для удобства (радиус 45px = диаметр 90px)
+    const hitArea = new Phaser.Geom.Circle(0, 0, 45);
+    container.setInteractive({
+      draggable: true,
+      hitArea: hitArea,
+      hitAreaCallback: Phaser.Geom.Circle.Contains,
+    });
+
     this.setupDraggable(container);
-
     this.sprites.set(item.id, container);
   }
 

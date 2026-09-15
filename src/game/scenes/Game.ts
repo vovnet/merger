@@ -22,6 +22,10 @@ export class Game extends Phaser.Scene {
     super({ key: "GameScene" });
   }
 
+  preload() {
+    this.load.atlas("squishes", "assets/spritesheet.png", "assets/spritesheet.json");
+  }
+
   create(): void {
     // 1. Создаём логику поля 6×5
     this.grid = new Grid({ cols: 6, rows: 5 });
