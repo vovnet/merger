@@ -7,6 +7,12 @@ export enum MergeResult {
   MERGED = "merged", // Успешное слияние!
 }
 
+export interface GridSnapshot {
+  cells: (ItemData | null)[][];
+  nextId: number;
+  maxUnlockedLevel: number;
+}
+
 const MAX_LEVEL = 72;
 
 export class Grid extends Phaser.Events.EventEmitter {
@@ -15,6 +21,8 @@ export class Grid extends Phaser.Events.EventEmitter {
   private nextId = 0;
 
   private maxUnlockedLevel: number = 1;
+
+  private history: GridSnapshot[] = [];
 
   constructor(config: GridConfig) {
     super();
@@ -93,7 +101,6 @@ export class Grid extends Phaser.Events.EventEmitter {
     if (!this.isValidPosition(pos) || !this.isEmpty(pos)) {
       return false;
     }
-
     this.cells[pos.y][pos.x] = item;
     this.emit("itemAdded", { position: pos, item });
     return true;
@@ -137,6 +144,9 @@ export class Grid extends Phaser.Events.EventEmitter {
     }
 
     if (itemFrom.level === itemTo.level && itemFrom.level < MAX_LEVEL) {
+      // 🎯 Сохраняем состояние ДО слияния
+      this.history.push(this.getSnapshot());
+
       this.removeItem(from);
       this.removeItem(to);
 
@@ -144,10 +154,16 @@ export class Grid extends Phaser.Events.EventEmitter {
       const newItem = this.createItem(newLevel);
       this.setItem(to, newItem);
 
-      this.emit("itemMerged", { newLevel, item: newItem });
+      this.emit("itemMerged", {
+        newLevel,
+        item: { ...newItem, pos: to },
+        itemFrom: { ...itemFrom, pos: from },
+        itemTo: { ...itemTo, pos: to },
+      });
 
       if (newLevel > this.maxUnlockedLevel) {
         this.maxUnlockedLevel = newLevel;
+        this.history = [];
         this.emit("newLevelUnlocked", { level: newLevel, item: newItem });
       }
 
@@ -175,6 +191,7 @@ export class Grid extends Phaser.Events.EventEmitter {
       return null;
     }
 
+    this.history.push(this.getSnapshot());
     const item = this.createItem(level);
     this.setItem(emptyCell, item);
     return item;
@@ -195,23 +212,35 @@ export class Grid extends Phaser.Events.EventEmitter {
 
   fillEmptyCells(level: number): number {
     const emptyCells = this.getEmptyCells();
-    let filledCount = 0;
+    if (emptyCells.length === 0) return 0;
 
+    this.history.push(this.getSnapshot());
+
+    let filledCount = 0;
     for (const cell of emptyCells) {
       const item = this.createItem(level);
-      this.setItem(cell, item); // setItem сам эмитит "itemAdded"
+      this.setItem(cell, item);
       filledCount++;
     }
 
-    if (filledCount > 0) {
-      this.emit("gridFilled", { count: filledCount });
-    }
-
+    this.emit("gridFilled", { count: filledCount });
     return filledCount;
   }
 
   removeItemsBelowLevel(minLevel: number): ItemData[] {
     const removedItems: ItemData[] = [];
+    let hasChanges = false;
+
+    // Сначала проверяем, есть ли что удалять, чтобы не сохранять лишние снимки
+    for (let y = 0; y < this.config.rows; y++) {
+      for (let x = 0; x < this.config.cols; x++) {
+        if (this.cells[y][x] && this.cells[y][x]!.level < minLevel) {
+          hasChanges = true;
+          break;
+        }
+      }
+      if (hasChanges) break;
+    }
 
     for (let y = 0; y < this.config.rows; y++) {
       for (let x = 0; x < this.config.cols; x++) {
@@ -237,7 +266,46 @@ export class Grid extends Phaser.Events.EventEmitter {
         this.cells[y][x] = null;
       }
     }
+    this.clearHistory();
     this.emit("gridCleared");
+  }
+
+  clearHistory(): void {
+    this.history = [];
+  }
+
+  undo(): boolean {
+    if (this.history.length === 0) return false;
+    const snapshot = this.history.pop()!;
+    this.restoreSnapshot(snapshot);
+    return true;
+  }
+
+  canUndo(): boolean {
+    return this.history.length > 0;
+  }
+
+  // 🎯 1. Создание глубокой копии текущего состояния
+  getSnapshot(): GridSnapshot {
+    return {
+      // Глубокое копирование 2D-массива, чтобы изменения в игре не меняли снимок
+      cells: this.cells.map((row) => row.map((cell) => (cell ? { ...cell } : null))),
+      nextId: this.nextId,
+      maxUnlockedLevel: this.maxUnlockedLevel,
+    };
+  }
+
+  // 🎯 2. Восстановление состояния из снимка
+  restoreSnapshot(snapshot: GridSnapshot): void {
+    // Восстанавливаем клетки (опять глубокое копирование для безопасности)
+    this.cells = snapshot.cells.map((row) => row.map((cell) => (cell ? { ...cell } : null)));
+    console.log("restore to: ", this.cells);
+    // Восстанавливаем служебные переменные
+    this.nextId = snapshot.nextId;
+    this.maxUnlockedLevel = snapshot.maxUnlockedLevel;
+
+    // 🎯 3. Сообщаем рендереру, что нужно перерисовать поле
+    this.emit("gridRestored", snapshot);
   }
 
   serialize(): string {

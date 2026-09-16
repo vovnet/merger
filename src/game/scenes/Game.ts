@@ -165,6 +165,8 @@ export class Game extends Phaser.Scene {
 
     testButtonBg.on("pointerover", () => testButtonBg.setFillStyle(0x27ae60));
     testButtonBg.on("pointerout", () => testButtonBg.setFillStyle(0x2ecc71));
+
+    this.undoButton();
   }
 
   private fillAllEmptyCells(): void {
@@ -196,7 +198,7 @@ export class Game extends Phaser.Scene {
     });
 
     // 🎯 Награда за слияние (теперь в монетах)
-    this.grid.on("itemMerged", (data: { newLevel: number }) => {
+    this.grid.on("itemMerged", (data: { newLevel: number; from: any; to: any }) => {
       const reward = this.economy.getMergeReward(data.newLevel);
       this.economy.addCoins(reward);
       console.log(`💰 Слияние в ур.${data.newLevel} → +${reward} монет`);
@@ -219,6 +221,37 @@ export class Game extends Phaser.Scene {
         }
       },
     );
+  }
+
+  private undoButton() {
+    const undoButtonX = 100; // Слева
+    const undoButtonY = this.scale.height - 160;
+
+    const undoButtonBg = this.add.rectangle(
+      undoButtonX,
+      undoButtonY,
+      140,
+      50,
+      0xe67e22, // Оранжевый цвет
+    );
+    undoButtonBg.setStrokeStyle(2, 0xffffff);
+    undoButtonBg.setInteractive({ useHandCursor: true });
+
+    const undoButtonText = this.add
+      .text(undoButtonX, undoButtonY, "ОТМЕНА", {
+        fontSize: "18px",
+        color: "#ffffff",
+        fontFamily: "Arial",
+        fontStyle: "bold",
+      })
+      .setOrigin(0.5);
+
+    // Логика кнопки
+    undoButtonBg.on("pointerdown", () => {
+      this.grid.undo();
+    });
+    undoButtonBg.on("pointerover", () => undoButtonBg.setFillStyle(0xd35400));
+    undoButtonBg.on("pointerout", () => undoButtonBg.setFillStyle(0xe67e22));
   }
 
   // 🎯 НОВАЯ МЕТОДИКА: Вычисление уровня для кнопки спауна
@@ -251,6 +284,7 @@ export class Game extends Phaser.Scene {
 
     // Показываем уведомление об уровне
     this.showLevelUpMessage(level);
+    this.grid.clearHistory();
 
     console.log(`🎉 НОВЫЙ УРОВЕНЬ: ${level}! Удалено предметов: ${removedItems.length}`);
   }

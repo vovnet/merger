@@ -1,5 +1,5 @@
 import * as Phaser from "phaser";
-import { Grid, MergeResult } from "./Grid";
+import { Grid, GridSnapshot, MergeResult } from "./Grid";
 import { GridPosition, ItemData } from "../types/Item";
 
 export class GridRenderer {
@@ -53,6 +53,59 @@ export class GridRenderer {
 
     this.grid.on("itemMoved", ({ from, to }: { from: GridPosition; to: GridPosition }) => {
       this.moveItemSprite(from, to);
+    });
+
+    // 🎯 НОВОЕ: Умная точечная перерисовка при отмене хода (Diffing)
+    this.grid.on("gridRestored", (snapshot: GridSnapshot) => {
+      console.log("↩️ Отмена хода: точечное обновление");
+
+      // 1. Собираем все ID предметов, которые ДОЛЖНЫ быть на поле согласно снимку
+      const targetItemIds = new Set<string>();
+
+      for (let y = 0; y < snapshot.cells.length; y++) {
+        for (let x = 0; x < snapshot.cells[y].length; x++) {
+          const item = snapshot.cells[y][x];
+          if (item) {
+            targetItemIds.add(item.id);
+
+            const container = this.sprites.get(item.id);
+            const targetPos = { x, y };
+
+            if (container) {
+              // Предмет есть и на экране, и в снимке. Проверяем, не сдвинулся ли он.
+              const currentPos = container.getData("gridPos");
+              if (currentPos.x !== x || currentPos.y !== y) {
+                // 🎯 Предмет переместился! Обновляем данные и плавно двигаем визуал
+                container.setData("gridPos", targetPos);
+                const { px, py } = this.gridToPixel(targetPos);
+
+                // Быстрая и плавная анимация возврата на место (150мс)
+                this.scene.tweens.add({
+                  targets: container,
+                  x: px,
+                  y: py,
+                  duration: 150,
+                  ease: "Power2.out",
+                });
+              }
+            } else {
+              // 🎯 Предмет есть в снимке, но нет на экране. Значит, его удалили, и теперь он восстановлен.
+              // Создаем его заново (да, он проиграет анимацию появления, но это ТОЛЬКО он один!)
+              this.createItemSprite(targetPos, item);
+            }
+          }
+        }
+      }
+
+      // 2. Находим предметы, которые есть на экране, но НЕ должны быть там согласно снимку
+      // (Это те, которые были добавлены после сохраненного снимка)
+      for (const [id, container] of this.sprites.entries()) {
+        if (!targetItemIds.has(id)) {
+          // 🎯 Удаляем только лишние предметы
+          container.destroy();
+          this.sprites.delete(id);
+        }
+      }
     });
 
     this.grid.on("gridCleared", () => {
