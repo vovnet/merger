@@ -1,5 +1,6 @@
 import * as Phaser from "phaser";
 import { Cell, GridConfig, GridPosition, ItemData } from "../types/Item";
+import { ItemRegistry } from "./ItemRegistry";
 
 export enum MergeResult {
   INVALID = "invalid", // Нельзя слить (разные уровни или недопустимая клетка)
@@ -11,8 +12,6 @@ export interface GridSnapshot {
   nextId: number;
   maxUnlockedLevel: number;
 }
-
-const MAX_LEVEL = 72;
 
 export class Grid extends Phaser.Events.EventEmitter {
   private cells: Cell[][];
@@ -141,7 +140,11 @@ export class Grid extends Phaser.Events.EventEmitter {
     const dy = Math.abs(from.y - to.y);
     const isAdjacent = Math.max(dx, dy) === 1;
 
-    if (!isAdjacent || itemFrom.level !== itemTo.level || itemFrom.level >= MAX_LEVEL) {
+    if (
+      !isAdjacent ||
+      itemFrom.level !== itemTo.level ||
+      itemFrom.level >= ItemRegistry.getMaxLevel()
+    ) {
       return { result: MergeResult.INVALID, itemFrom, itemTo };
     }
 

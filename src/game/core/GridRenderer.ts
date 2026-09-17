@@ -1,6 +1,7 @@
 import * as Phaser from "phaser";
 import { Grid, GridSnapshot, MergeResult } from "./Grid";
 import { GridPosition, ItemData } from "../types/Item";
+import { ItemRegistry } from "./ItemRegistry";
 
 export class GridRenderer {
   private scene: Phaser.Scene;
@@ -173,10 +174,7 @@ export class GridRenderer {
     container.setData("gridPos", { ...pos });
     container.setData("itemId", item.id);
 
-    // 🎯 Определяем имя кадра из атласа (циклически по количеству кадров)
-    const totalFrames = 72; // Количество сквишей в атласе
-    const frameIndex = ((item.level - 1) % totalFrames) + 1;
-    const frameName = String(frameIndex); // Имена кадров: "1", "2", ... "72"
+    const frameName = ItemRegistry.getFrameName(item.level);
 
     // 🎯 Загружаем спрайт из атласа
     const squish = this.scene.add.image(0, 0, "squishes", frameName);
