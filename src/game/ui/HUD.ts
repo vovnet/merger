@@ -1,11 +1,13 @@
 import * as Phaser from "phaser";
 import { EventBus } from "../core/EventBus";
 import { GameEvents } from "../types/GameEvents";
+import { ItemChain } from "./ItemChain";
 
 export class HUD {
   private scene: Phaser.Scene;
-  private coinsText!: Phaser.GameObjects.Text;
-  private levelText!: Phaser.GameObjects.Text;
+  private coinsText: Phaser.GameObjects.Text;
+  private levelText: Phaser.GameObjects.Text;
+  private itemChain: ItemChain;
 
   private currentCoins: number = 0;
   private currentLevel: number = 1;
@@ -30,18 +32,7 @@ export class HUD {
       .setOrigin(0, 0)
       .setDepth(100);
 
-    // 🏆 Текст уровня (по центру сверху)
-    this.levelText = this.scene.add
-      .text(this.scene.scale.width / 2, 60, ` Макс. уровень: ${this.currentLevel}`, {
-        fontSize: "24px",
-        color: "#ffd700",
-        fontFamily: "Arial",
-        fontStyle: "bold",
-        stroke: "#000000",
-        strokeThickness: 3,
-      })
-      .setOrigin(0.5)
-      .setDepth(100);
+    this.itemChain = new ItemChain(this.scene);
   }
 
   private setupListeners(): void {
@@ -54,6 +45,10 @@ export class HUD {
     );
 
     // 🎯 Слушаем EventBus для уровня
+    EventBus.on(GameEvents.LEVEL_CHANGED, (level: number) => {
+      this.updateLevel(level);
+    });
+
     EventBus.on(GameEvents.LEVEL_CHANGED, (level: number) => {
       this.updateLevel(level);
     });
@@ -77,16 +72,7 @@ export class HUD {
 
   private updateLevel(level: number): void {
     this.currentLevel = level;
-    this.levelText.setText(`🏆 Макс. уровень: ${level}`);
-
-    // Анимация появления
-    this.levelText.setScale(0);
-    this.scene.tweens.add({
-      targets: this.levelText,
-      scale: { from: 0, to: 1 },
-      duration: 300,
-      ease: "Back.easeOut",
-    });
+    this.itemChain.update(level);
   }
 
   // 🎯 Публичный метод для установки начальных значений (при загрузке сохранения)
@@ -100,5 +86,6 @@ export class HUD {
   destroy(): void {
     this.coinsText.destroy();
     this.levelText.destroy();
+    this.itemChain.destroy();
   }
 }
