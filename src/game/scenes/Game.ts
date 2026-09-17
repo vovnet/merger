@@ -8,13 +8,12 @@ import { GameEvents, UIEvents } from "../types/GameEvents";
 import { UIScene } from "./UIScene";
 
 export class Game extends Phaser.Scene {
-  private grid!: Grid;
-  private gridRenderer!: GridRenderer;
-  private economy!: Economy;
+  private grid: Grid;
+  private gridRenderer: GridRenderer;
+  private economy: Economy;
 
   private currentLevel: number = 1;
 
-  private spawnClickCount: number = 0;
   private historyService!: HistoryService;
 
   constructor() {
@@ -40,8 +39,7 @@ export class Game extends Phaser.Scene {
 
     // 3. Создаём UI
     this.scene.launch("UIScene", { economy: this.economy });
-
-    const uiScene = this.scene.get("UIScene") as UIScene;
+    this.scene.get("UIScene") as UIScene;
 
     // 4. Слушаем события
     this.setupEventListeners();
@@ -57,12 +55,7 @@ export class Game extends Phaser.Scene {
     }
 
     // 5. Заполняем сетку
-    const filledCount = this.grid.fillEmptyCells(levelToSpawn);
-
-    if (filledCount > 0) {
-      this.spawnClickCount += filledCount;
-      console.log(`✨ Заполнено ${filledCount} ячеек предметами ур.${levelToSpawn}`);
-    }
+    this.grid.fillEmptyCells(levelToSpawn);
   }
 
   private setupEventListeners(): void {
@@ -113,8 +106,6 @@ export class Game extends Phaser.Scene {
   private onNewLevelUnlocked(level: number): void {
     this.currentLevel = level;
 
-    this.spawnClickCount = 0;
-
     // 🎯 НОВОЕ: Очищаем поле от мёртвых предметов
     const spawnLevel = this.getSpawnLevel();
     const removedItems = this.grid.removeItemsBelowLevel(spawnLevel);
@@ -143,10 +134,6 @@ export class Game extends Phaser.Scene {
     }
 
     this.economy.spendCoins(cost);
-    const item = this.grid.spawnRandomItem(levelToSpawn);
-
-    if (item) {
-      this.spawnClickCount++;
-    }
+    this.grid.spawnRandomItem(levelToSpawn);
   }
 }
