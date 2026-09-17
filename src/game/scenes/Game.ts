@@ -14,7 +14,7 @@ export class Game extends Phaser.Scene {
 
   private currentLevel: number = 1;
 
-  private historyService!: HistoryService;
+  private historyService: HistoryService;
 
   constructor() {
     super({ key: "GameScene" });
@@ -59,16 +59,20 @@ export class Game extends Phaser.Scene {
   }
 
   private setupEventListeners(): void {
-    this.grid.on("newLevelUnlocked", (data: { level: number }) => {
-      EventBus.emit(GameEvents.LEVEL_CHANGED, data.level);
-      this.onNewLevelUnlocked(data.level);
-    });
+    // this.grid.on("newLevelUnlocked", (data: { level: number }) => {
+    //   EventBus.emit(GameEvents.LEVEL_CHANGED, data.level);
+    //   this.onNewLevelUnlocked(data.level);
+    // });
 
     // 🎯 Награда за слияние (теперь в монетах)
     this.grid.on("itemMerged", (data: { newLevel: number; from: any; to: any }) => {
       const reward = this.economy.getMergeReward(data.newLevel);
       this.economy.addCoins(reward);
       console.log(`💰 Слияние в ур.${data.newLevel} → +${reward} монет`);
+      if (data.newLevel > this.currentLevel) {
+        this.currentLevel = data.newLevel;
+        this.handleLevelUp();
+      }
     });
 
     EventBus.on(UIEvents.SPAWN_REQUESTED, () => {
@@ -103,9 +107,7 @@ export class Game extends Phaser.Scene {
     return Math.max(1, this.currentLevel - 6);
   }
 
-  private onNewLevelUnlocked(level: number): void {
-    this.currentLevel = level;
-
+  private handleLevelUp(): void {
     // 🎯 НОВОЕ: Очищаем поле от мёртвых предметов
     const spawnLevel = this.getSpawnLevel();
     const removedItems = this.grid.removeItemsBelowLevel(spawnLevel);
@@ -114,8 +116,9 @@ export class Game extends Phaser.Scene {
     if (removedItems.length > 0) {
       const compensation = removedItems.reduce((sum, item) => sum + item.level * 5, 0);
       this.economy.addCoins(compensation);
-      // this.showCleanupMessage(removedItems.length, compensation);
     }
+
+    EventBus.emit(GameEvents.LEVEL_CHANGED, this.currentLevel);
 
     this.historyService.clear();
   }

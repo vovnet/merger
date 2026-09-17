@@ -10,15 +10,12 @@ export enum MergeResult {
 export interface GridSnapshot {
   cells: (ItemData | null)[][];
   nextId: number;
-  maxUnlockedLevel: number;
 }
 
 export class Grid extends Phaser.Events.EventEmitter {
   private cells: Cell[][];
   private readonly config: GridConfig;
   private nextId = 0;
-
-  private maxUnlockedLevel: number = 1;
 
   constructor(config: GridConfig) {
     super();
@@ -43,9 +40,6 @@ export class Grid extends Phaser.Events.EventEmitter {
   }
   get totalCells(): number {
     return this.config.cols * this.config.rows;
-  }
-  get currentMaxLevel(): number {
-    return this.maxUnlockedLevel;
   }
 
   getCell(pos: GridPosition): Cell {
@@ -166,11 +160,6 @@ export class Grid extends Phaser.Events.EventEmitter {
       itemTo: { ...itemTo, pos: to },
     });
 
-    if (newLevel > this.maxUnlockedLevel) {
-      this.maxUnlockedLevel = newLevel;
-      this.emit("newLevelUnlocked", { level: newLevel, item: newItem });
-    }
-
     return { result: MergeResult.MERGED, newItem, itemFrom, itemTo };
   }
 
@@ -265,7 +254,6 @@ export class Grid extends Phaser.Events.EventEmitter {
       // Глубокое копирование 2D-массива, чтобы изменения в игре не меняли снимок
       cells: this.cells.map((row) => row.map((cell) => (cell ? { ...cell } : null))),
       nextId: this.nextId,
-      maxUnlockedLevel: this.maxUnlockedLevel,
     };
   }
 
@@ -275,7 +263,6 @@ export class Grid extends Phaser.Events.EventEmitter {
     console.log("restore to: ", this.cells);
     // Восстанавливаем служебные переменные
     this.nextId = snapshot.nextId;
-    this.maxUnlockedLevel = snapshot.maxUnlockedLevel;
 
     // 🎯 3. Сообщаем рендереру, что нужно перерисовать поле
     this.emit("gridRestored", snapshot);
