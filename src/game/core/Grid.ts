@@ -114,68 +114,61 @@ export class Grid extends Phaser.Events.EventEmitter {
     return item;
   }
 
-  tryMerge(from: GridPosition, to: GridPosition): { result: MergeResult; newItem?: ItemData } {
+  tryMerge(
+    from: GridPosition,
+    to: GridPosition,
+  ): {
+    result: MergeResult;
+    newItem?: ItemData;
+    itemFrom?: ItemData | null;
+    itemTo?: ItemData | null;
+  } {
     const itemFrom = this.getCell(from);
     const itemTo = this.getCell(to);
 
+    // 1. Guard Clauses: Быстрый отказ при невозможных условиях
     if (!itemFrom || !this.isValidPosition(to)) {
-      return { result: MergeResult.INVALID };
+      return { result: MergeResult.INVALID, itemFrom, itemTo };
     }
 
-    // 🎯 НОВОЕ ПРАВИЛО: Проверка соседства по 8 направлениям (Чебышёвское расстояние)
+    // Перемещение на пустую клетку запрещено
+    if (!itemTo) {
+      return { result: MergeResult.INVALID, itemFrom, itemTo };
+    }
+
+    // Проверка правил слияния: должны быть соседи, одного уровня и не достигать максимума
     const dx = Math.abs(from.x - to.x);
     const dy = Math.abs(from.y - to.y);
     const isAdjacent = Math.max(dx, dy) === 1;
 
-    if (!isAdjacent) {
-      // Нельзя слить предметы, которые не соседи (даже по диагонали)
-      if (itemTo && itemFrom.level === itemTo.level) {
-        return { result: MergeResult.INVALID };
-      }
+    if (!isAdjacent || itemFrom.level !== itemTo.level || itemFrom.level >= MAX_LEVEL) {
+      return { result: MergeResult.INVALID, itemFrom, itemTo };
     }
 
-    if (!itemTo) {
-      return { result: MergeResult.INVALID };
+    // 2. Если мы здесь, значит слияние 100% произойдет. Сохраняем историю.
+    this.emit("historyCheckpoint");
+
+    // 3. Выполняем слияние
+    this.removeItem(from);
+    this.removeItem(to);
+
+    const newLevel = itemFrom.level + 1;
+    const newItem = this.createItem(newLevel);
+    this.setItem(to, newItem);
+
+    this.emit("itemMerged", {
+      newLevel,
+      item: { ...newItem, pos: to },
+      itemFrom: { ...itemFrom, pos: from },
+      itemTo: { ...itemTo, pos: to },
+    });
+
+    if (newLevel > this.maxUnlockedLevel) {
+      this.maxUnlockedLevel = newLevel;
+      this.emit("newLevelUnlocked", { level: newLevel, item: newItem });
     }
 
-    if (!itemTo || (itemFrom.level === itemTo.level && itemFrom.level < MAX_LEVEL)) {
-      this.emit("historyCheckpoint");
-    }
-
-    if (itemFrom.level === itemTo.level && itemFrom.level < MAX_LEVEL) {
-      this.removeItem(from);
-      this.removeItem(to);
-
-      const newLevel = itemFrom.level + 1;
-      const newItem = this.createItem(newLevel);
-      this.setItem(to, newItem);
-
-      this.emit("itemMerged", {
-        newLevel,
-        item: { ...newItem, pos: to },
-        itemFrom: { ...itemFrom, pos: from },
-        itemTo: { ...itemTo, pos: to },
-      });
-
-      if (newLevel > this.maxUnlockedLevel) {
-        this.maxUnlockedLevel = newLevel;
-        this.emit("newLevelUnlocked", { level: newLevel, item: newItem });
-      }
-
-      return { result: MergeResult.MERGED, newItem };
-    }
-
-    return { result: MergeResult.INVALID };
-  }
-
-  moveItem(from: GridPosition, to: GridPosition): boolean {
-    const item = this.getCell(from);
-    if (!item || this.isEmpty(to)) return false;
-
-    this.cells[from.y][from.x] = null;
-    this.cells[to.y][to.x] = item;
-    this.emit("itemMoved", { from, to, item });
-    return true;
+    return { result: MergeResult.MERGED, newItem, itemFrom, itemTo };
   }
 
   spawnRandomItem(level: number = 1): ItemData | null {
@@ -286,11 +279,16 @@ export class Grid extends Phaser.Events.EventEmitter {
   }
 
   serialize(): string {
-    return JSON.stringify(this.cells);
+    return JSON.stringify(this.getSnapshot());
   }
 
   deserialize(data: string): void {
-    this.cells = JSON.parse(data);
-    this.emit("gridChanged");
+    try {
+      const snapshot = JSON.parse(data) as GridSnapshot;
+      this.restoreSnapshot(snapshot);
+      this.emit("gridChanged");
+    } catch (e) {
+      console.error("Ошибка десериализации Grid:", e);
+    }
   }
 }
