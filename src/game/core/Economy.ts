@@ -45,4 +45,20 @@ export class Economy {
   canAfford(amount: number): boolean {
     return this.currentCoins >= amount;
   }
+
+  getSpawnRefund(level: number) {
+    const cost = this.getSpawnCost(level);
+    // Округляем вниз до целого числа, чтобы не было дробных монет (например, 2.5)
+    return Math.floor(cost * 0.05);
+  }
+
+  addSpawnRefund(level: number): number {
+    const refundAmount = this.getSpawnRefund(level);
+    if (refundAmount > 0) {
+      this.addCoins(refundAmount);
+    }
+
+    // Возвращаем фактическую добавленную сумму, чтобы UI мог её красиво показать игроку
+    return refundAmount;
+  }
 }

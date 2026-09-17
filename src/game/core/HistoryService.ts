@@ -1,5 +1,7 @@
 import { Events } from "phaser";
 import { Grid, GridSnapshot } from "./Grid";
+import { EventBus } from "./EventBus";
+import { GameEvents } from "../types/GameEvents";
 
 export class HistoryService extends Events.EventEmitter {
   private historyStack: GridSnapshot[] = [];
@@ -27,7 +29,8 @@ export class HistoryService extends Events.EventEmitter {
   private save(): void {
     if (!this.grid) return;
     this.historyStack.push(this.grid.getSnapshot());
-    this.emit("historyChanged", this.canUndo());
+    EventBus.emit(GameEvents.HISTORY_CHANGED, this.canUndo());
+    // this.emit("historyChanged", this.canUndo());
   }
 
   // 🎯 Единственный метод, который мы вызываем извне (по кнопке)
@@ -39,7 +42,8 @@ export class HistoryService extends Events.EventEmitter {
     const snapshot = this.historyStack.pop()!;
     this.grid.restoreSnapshot(snapshot);
 
-    this.emit("historyChanged", this.canUndo());
+    EventBus.emit(GameEvents.HISTORY_CHANGED, this.canUndo());
+    // this.emit("historyChanged", this.canUndo());
     return true;
   }
 
@@ -49,6 +53,7 @@ export class HistoryService extends Events.EventEmitter {
 
   clear(): void {
     this.historyStack = [];
-    this.emit("historyChanged", false);
+    EventBus.emit(GameEvents.HISTORY_CHANGED, false);
+    // this.emit("historyChanged", false);
   }
 }

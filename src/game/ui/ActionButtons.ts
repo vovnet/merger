@@ -1,0 +1,197 @@
+import * as Phaser from "phaser";
+import { EventBus } from "../core/EventBus";
+import { GameEvents, UIEvents } from "../types/GameEvents";
+import { Economy } from "../core/Economy";
+
+export class ActionButtons {
+  private scene: Phaser.Scene;
+
+  private economy: Economy;
+
+  private spawnButtonBg: Phaser.GameObjects.Rectangle;
+  private spawnButtonText: Phaser.GameObjects.Text;
+  private fillButtonBg: Phaser.GameObjects.Rectangle;
+  private fillButtonText: Phaser.GameObjects.Text;
+  private undoButtonBg: Phaser.GameObjects.Rectangle;
+  private undoButtonText: Phaser.GameObjects.Text;
+  private debugButtonBg: Phaser.GameObjects.Rectangle;
+  private debugButtonText: Phaser.GameObjects.Text;
+
+  private currentSpawnLevel: number = 1;
+
+  constructor(scene: Phaser.Scene, economy: Economy) {
+    this.scene = scene;
+    this.economy = economy;
+    this.create();
+    this.setupListeners();
+    this.updateSpawnButtonText();
+    this.updateAddCoinsButton();
+  }
+
+  private create(): void {
+    const width = this.scene.scale.width;
+    const height = this.scene.scale.height;
+
+    // 🎯 Кнопка спауна (по центру внизу)
+    this.spawnButtonBg = this.scene.add
+      .rectangle(width / 2, height - 80, 200, 60, 0x4a90e2)
+      .setInteractive({ useHandCursor: true })
+      .setDepth(100);
+
+    this.spawnButtonBg.setStrokeStyle(2, 0xffffff);
+
+    this.spawnButtonText = this.scene.add
+      .text(width / 2, height - 80, `СПАУН (Ур. ${this.currentSpawnLevel})`, {
+        fontSize: "20px",
+        color: "#ffffff",
+        fontFamily: "Arial",
+        fontStyle: "bold",
+      })
+      .setOrigin(0.5)
+      .setDepth(101);
+
+    this.spawnButtonBg.on("pointerdown", () => {
+      EventBus.emit(UIEvents.SPAWN_REQUESTED);
+    });
+    this.spawnButtonBg.on("pointerover", () => this.spawnButtonBg.setFillStyle(0x5aa0f2));
+    this.spawnButtonBg.on("pointerout", () => this.spawnButtonBg.setFillStyle(0x4a90e2));
+
+    // 🎯 Кнопка заполнения (справа внизу)
+    this.fillButtonBg = this.scene.add
+      .rectangle(width - 100, height - 160, 140, 50, 0x9b59b6)
+      .setInteractive({ useHandCursor: true })
+      .setDepth(100);
+
+    this.fillButtonBg.setStrokeStyle(2, 0xffffff);
+
+    this.fillButtonText = this.scene.add
+      .text(width - 100, height - 160, "ЗАПОЛНИТЬ", {
+        fontSize: "18px",
+        color: "#ffffff",
+        fontFamily: "Arial",
+        fontStyle: "bold",
+      })
+      .setOrigin(0.5)
+      .setDepth(101);
+
+    this.fillButtonBg.on("pointerdown", () => {
+      EventBus.emit(UIEvents.FILL_REQUESTED);
+    });
+    this.fillButtonBg.on("pointerover", () => this.fillButtonBg.setFillStyle(0xa96ac6));
+    this.fillButtonBg.on("pointerout", () => this.fillButtonBg.setFillStyle(0x9b59b6));
+
+    //  Кнопка отмены (слева внизу)
+    this.undoButtonBg = this.scene.add
+      .rectangle(
+        100,
+        height - 160,
+        140,
+        50,
+        0x7f8c8d, // Изначально серая (неактивная)
+      )
+      .setDepth(100);
+
+    this.undoButtonBg.setStrokeStyle(2, 0xffffff);
+    this.undoButtonBg.disableInteractive();
+
+    this.undoButtonText = this.scene.add
+      .text(100, height - 160, "ОТМЕНА", {
+        fontSize: "18px",
+        color: "#ffffff",
+        fontFamily: "Arial",
+        fontStyle: "bold",
+      })
+      .setOrigin(0.5)
+      .setDepth(101);
+
+    this.undoButtonBg.on("pointerdown", () => {
+      EventBus.emit(UIEvents.UNDO_REQUESTED);
+    });
+    this.undoButtonBg.on("pointerover", () => {
+      if (this.undoButtonBg.input) this.undoButtonBg.setFillStyle(0xd35400);
+    });
+    this.undoButtonBg.on("pointerout", () => {
+      if (this.undoButtonBg.input) this.undoButtonBg.setFillStyle(0xe67e22);
+    });
+
+    //  Слушаем изменение истории для обновления кнопки отмены
+    EventBus.on(GameEvents.HISTORY_CHANGED, (canUndo: boolean) => {
+      this.updateUndoButtonState(canUndo);
+    });
+
+    const debugBtnX = width - 100;
+    const debugBtnY = 100;
+
+    this.debugButtonBg = this.scene.add
+      .rectangle(debugBtnX, debugBtnY, 140, 50, 0x2ecc71)
+      .setInteractive({ useHandCursor: true })
+      .setDepth(100);
+
+    this.debugButtonBg.setStrokeStyle(2, 0xffffff);
+
+    this.debugButtonText = this.scene.add
+      .text(debugBtnX, debugBtnY, "+500 💰 (Тест)", {
+        fontSize: "16px",
+        color: "#ffffff",
+        fontFamily: "Arial",
+        fontStyle: "bold",
+      })
+      .setOrigin(0.5)
+      .setDepth(101);
+
+    this.debugButtonBg.on("pointerdown", () => {
+      // 🎯 Эмитим событие, которое GameScene подхватит и добавит монеты
+      EventBus.emit(UIEvents.DEBUG_ADD_COINS);
+
+      // Анимация нажатия для фидбека
+      this.scene.tweens.add({
+        targets: this.debugButtonBg,
+        scale: { from: 1.1, to: 1 },
+        duration: 150,
+        ease: "Power2",
+      });
+    });
+    this.debugButtonBg.on("pointerover", () => this.debugButtonBg.setFillStyle(0x27ae60));
+    this.debugButtonBg.on("pointerout", () => this.debugButtonBg.setFillStyle(0x2ecc71));
+  }
+
+  private updateSpawnButtonText(): void {
+    const cost = this.economy.getSpawnCost(this.currentSpawnLevel);
+    this.spawnButtonText.setText(`СПАУН (${cost} 💰)`);
+  }
+
+  private updateAddCoinsButton() {
+    const cost = this.economy.getSpawnRefund(this.currentSpawnLevel);
+    this.debugButtonText.setText(`+${cost} 💰`);
+  }
+
+  private updateUndoButtonState(canUndo: boolean): void {
+    const color = canUndo ? 0xe67e22 : 0x7f8c8d;
+    this.undoButtonBg.setFillStyle(color);
+
+    if (canUndo) {
+      this.undoButtonBg.setInteractive({ useHandCursor: true });
+    } else {
+      this.undoButtonBg.disableInteractive();
+    }
+  }
+
+  private setupListeners(): void {
+    EventBus.on(GameEvents.LEVEL_CHANGED, (level: number) => {
+      this.currentSpawnLevel = level;
+      this.updateSpawnButtonText();
+      this.updateAddCoinsButton();
+    });
+  }
+
+  destroy(): void {
+    this.spawnButtonBg.destroy();
+    this.spawnButtonText.destroy();
+    this.fillButtonBg.destroy();
+    this.fillButtonText.destroy();
+    this.undoButtonBg.destroy();
+    this.undoButtonText.destroy();
+    this.debugButtonBg.destroy();
+    this.debugButtonText.destroy();
+  }
+}
