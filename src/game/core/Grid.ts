@@ -3,7 +3,6 @@ import { Cell, GridConfig, GridPosition, ItemData } from "../types/Item";
 
 export enum MergeResult {
   INVALID = "invalid", // Нельзя слить (разные уровни или недопустимая клетка)
-  MOVED = "moved", // Просто переместили на пустую клетку
   MERGED = "merged", // Успешное слияние!
 }
 
@@ -135,14 +134,12 @@ export class Grid extends Phaser.Events.EventEmitter {
       }
     }
 
-    if (!itemTo || (itemFrom.level === itemTo.level && itemFrom.level < MAX_LEVEL)) {
-      this.emit("historyCheckpoint");
+    if (!itemTo) {
+      return { result: MergeResult.INVALID };
     }
 
-    // Дальше стандартная логика
-    if (!itemTo) {
-      this.moveItem(from, to);
-      return { result: MergeResult.MOVED };
+    if (!itemTo || (itemFrom.level === itemTo.level && itemFrom.level < MAX_LEVEL)) {
+      this.emit("historyCheckpoint");
     }
 
     if (itemFrom.level === itemTo.level && itemFrom.level < MAX_LEVEL) {

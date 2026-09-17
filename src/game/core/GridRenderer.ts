@@ -160,9 +160,6 @@ export class GridRenderer {
 
       if (mergeResult.result === MergeResult.INVALID) {
         this.snapBack(container, startPos);
-      } else if (mergeResult.result === MergeResult.MOVED) {
-        // Анимацию сделает moveItemSprite через событие itemMoved
-        this.snapBack(container, startPos);
       } else if (mergeResult.result === MergeResult.MERGED && mergeResult.newItem) {
         // Слияние произошло — спрайты уже обновлены через события
       }
