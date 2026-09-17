@@ -30,15 +30,31 @@ export class GridRenderer {
     for (let y = 0; y < this.grid.rows; y++) {
       for (let x = 0; x < this.grid.cols; x++) {
         const { px, py } = this.gridToPixel({ x, y });
-        const cell = this.scene.add.rectangle(
-          px,
-          py,
-          this.cellSize - this.padding,
-          this.cellSize - this.padding,
-          0x2a2a3e,
-          0.8,
+        const cellSize = this.cellSize - this.padding;
+        const cornerRadius = 12; // 🎯 Скругление углов
+
+        const graphics = this.scene.add.graphics();
+        graphics.setDepth(0);
+
+        // 🎯 Полупрозрачный фон клетки (alpha 0.3 вместо 0.8)
+        graphics.fillStyle(0x2a2a3e, 0.3);
+        graphics.fillRoundedRect(
+          px - cellSize / 2,
+          py - cellSize / 2,
+          cellSize,
+          cellSize,
+          cornerRadius,
         );
-        cell.setStrokeStyle(2, 0x4a4a6e);
+
+        // 🎯 Мягкая обводка (тоньше и светлее)
+        graphics.lineStyle(1.5, 0x4a4a6e, 0.5); // alpha 0.5 вместо 1.0
+        graphics.strokeRoundedRect(
+          px - cellSize / 2,
+          py - cellSize / 2,
+          cellSize,
+          cellSize,
+          cornerRadius,
+        );
       }
     }
   }
