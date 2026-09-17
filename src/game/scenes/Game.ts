@@ -2,6 +2,7 @@ import * as Phaser from "phaser";
 import { Grid } from "../core/Grid";
 import { GridRenderer } from "../core/GridRenderer";
 import { Economy } from "../core/Economy";
+import { HistoryService } from "../core/HistoryService";
 
 export class Game extends Phaser.Scene {
   private grid!: Grid;
@@ -17,6 +18,7 @@ export class Game extends Phaser.Scene {
   private coinsText!: Phaser.GameObjects.Text;
 
   private spawnClickCount: number = 0;
+  private historyService!: HistoryService;
 
   constructor() {
     super({ key: "GameScene" });
@@ -29,6 +31,9 @@ export class Game extends Phaser.Scene {
   create(): void {
     // 1. Создаём логику поля 6×5
     this.grid = new Grid({ cols: 6, rows: 5 });
+
+    this.historyService = new HistoryService();
+    this.historyService.bind(this.grid);
 
     // 2. Создаём рендерер
     this.gridRenderer = new GridRenderer(this, this.grid);
@@ -223,6 +228,10 @@ export class Game extends Phaser.Scene {
     );
   }
 
+  private handleUndo(): void {
+    this.historyService.undo();
+  }
+
   private undoButton() {
     const undoButtonX = 100; // Слева
     const undoButtonY = this.scale.height - 160;
@@ -248,7 +257,7 @@ export class Game extends Phaser.Scene {
 
     // Логика кнопки
     undoButtonBg.on("pointerdown", () => {
-      this.grid.undo();
+      this.handleUndo();
     });
     undoButtonBg.on("pointerover", () => undoButtonBg.setFillStyle(0xd35400));
     undoButtonBg.on("pointerout", () => undoButtonBg.setFillStyle(0xe67e22));
@@ -284,7 +293,7 @@ export class Game extends Phaser.Scene {
 
     // Показываем уведомление об уровне
     this.showLevelUpMessage(level);
-    this.grid.clearHistory();
+    this.historyService.clear();
 
     console.log(`🎉 НОВЫЙ УРОВЕНЬ: ${level}! Удалено предметов: ${removedItems.length}`);
   }

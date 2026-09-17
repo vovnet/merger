@@ -22,8 +22,6 @@ export class Grid extends Phaser.Events.EventEmitter {
 
   private maxUnlockedLevel: number = 1;
 
-  private history: GridSnapshot[] = [];
-
   constructor(config: GridConfig) {
     super();
     this.config = config;
@@ -137,6 +135,10 @@ export class Grid extends Phaser.Events.EventEmitter {
       }
     }
 
+    if (!itemTo || (itemFrom.level === itemTo.level && itemFrom.level < MAX_LEVEL)) {
+      this.emit("historyCheckpoint");
+    }
+
     // Дальше стандартная логика
     if (!itemTo) {
       this.moveItem(from, to);
@@ -144,9 +146,6 @@ export class Grid extends Phaser.Events.EventEmitter {
     }
 
     if (itemFrom.level === itemTo.level && itemFrom.level < MAX_LEVEL) {
-      // 🎯 Сохраняем состояние ДО слияния
-      this.history.push(this.getSnapshot());
-
       this.removeItem(from);
       this.removeItem(to);
 
@@ -163,7 +162,6 @@ export class Grid extends Phaser.Events.EventEmitter {
 
       if (newLevel > this.maxUnlockedLevel) {
         this.maxUnlockedLevel = newLevel;
-        this.history = [];
         this.emit("newLevelUnlocked", { level: newLevel, item: newItem });
       }
 
@@ -183,7 +181,6 @@ export class Grid extends Phaser.Events.EventEmitter {
     return true;
   }
 
-  // 🎯 Упрощённый спаун — только уровень
   spawnRandomItem(level: number = 1): ItemData | null {
     const emptyCell = this.getRandomEmptyCell();
     if (!emptyCell) {
@@ -191,7 +188,8 @@ export class Grid extends Phaser.Events.EventEmitter {
       return null;
     }
 
-    this.history.push(this.getSnapshot());
+    this.emit("historyCheckpoint");
+
     const item = this.createItem(level);
     this.setItem(emptyCell, item);
     return item;
@@ -214,7 +212,7 @@ export class Grid extends Phaser.Events.EventEmitter {
     const emptyCells = this.getEmptyCells();
     if (emptyCells.length === 0) return 0;
 
-    this.history.push(this.getSnapshot());
+    this.emit("historyCheckpoint");
 
     let filledCount = 0;
     for (const cell of emptyCells) {
@@ -266,26 +264,9 @@ export class Grid extends Phaser.Events.EventEmitter {
         this.cells[y][x] = null;
       }
     }
-    this.clearHistory();
     this.emit("gridCleared");
   }
 
-  clearHistory(): void {
-    this.history = [];
-  }
-
-  undo(): boolean {
-    if (this.history.length === 0) return false;
-    const snapshot = this.history.pop()!;
-    this.restoreSnapshot(snapshot);
-    return true;
-  }
-
-  canUndo(): boolean {
-    return this.history.length > 0;
-  }
-
-  // 🎯 1. Создание глубокой копии текущего состояния
   getSnapshot(): GridSnapshot {
     return {
       // Глубокое копирование 2D-массива, чтобы изменения в игре не меняли снимок
@@ -295,7 +276,6 @@ export class Grid extends Phaser.Events.EventEmitter {
     };
   }
 
-  // 🎯 2. Восстановление состояния из снимка
   restoreSnapshot(snapshot: GridSnapshot): void {
     // Восстанавливаем клетки (опять глубокое копирование для безопасности)
     this.cells = snapshot.cells.map((row) => row.map((cell) => (cell ? { ...cell } : null)));
