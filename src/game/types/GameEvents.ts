@@ -24,6 +24,11 @@ export const GameEvents = {
   // События ComboService
   COMBO_UPDATED: "combo_updated",
   COMBO_RESET: "combo_reset",
+
+  // Контракты
+  CONTRACT_CREATED: "contract_created",
+  CONTRACT_UPDATED: "contract_updated",
+  CONTRACT_COMPLETED: "contract_completed",
 } as const;
 
 // События, которые UIScene эмитит, а GameScene слушает

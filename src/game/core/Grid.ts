@@ -242,6 +242,18 @@ export class Grid extends Phaser.Events.EventEmitter {
     return removedItems;
   }
 
+  countItemsByLevel(level: number): number {
+    let count = 0;
+    for (let y = 0; y < this.rows; y++) {
+      for (let x = 0; x < this.cols; x++) {
+        if (this.cells[y][x]?.level === level) {
+          count++;
+        }
+      }
+    }
+    return count;
+  }
+
   clear(): void {
     for (let y = 0; y < this.config.rows; y++) {
       for (let x = 0; x < this.config.cols; x++) {

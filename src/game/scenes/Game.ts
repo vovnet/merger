@@ -7,6 +7,8 @@ import { EventBus } from "../core/EventBus";
 import { ComboData, GameEvents, UIEvents } from "../types/GameEvents";
 import { UIScene } from "./UIScene";
 import { ComboService } from "../core/ComboService";
+import { ContractService } from "../core/ContractService";
+import { ContractUpdateData } from "../types/Contract";
 
 export class Game extends Phaser.Scene {
   private grid: Grid;
@@ -16,7 +18,8 @@ export class Game extends Phaser.Scene {
   private currentLevel: number = 1;
 
   private historyService: HistoryService;
-  private comboService!: ComboService;
+  private comboService: ComboService;
+  private contractService: ContractService;
 
   constructor() {
     super({ key: "GameScene" });
@@ -34,6 +37,8 @@ export class Game extends Phaser.Scene {
 
     this.gridRenderer = new GridRenderer(this, this.grid);
     this.comboService = new ComboService();
+    this.contractService = new ContractService(this.grid);
+    this.contractService.init(this.currentLevel);
 
     this.economy = new Economy(this.registry);
     this.registry.set("economy", this.economy);
@@ -107,6 +112,15 @@ export class Game extends Phaser.Scene {
     EventBus.on(GameEvents.COMBO_RESET, () => {
       console.log("💔 Цепочка комбо разорвана");
       // Здесь можно убрать текст комбо с экрана
+    });
+
+    EventBus.on(GameEvents.CONTRACT_CREATED, (data: ContractUpdateData) => {
+      console.log("contract: ", data.contract);
+    });
+
+    EventBus.on(GameEvents.CONTRACT_COMPLETED, (data: ContractUpdateData) => {
+      // Здесь можно запустить красивую анимацию монет в UI
+      console.log(`💰 Начислена награда за контракт!`);
     });
   }
 
