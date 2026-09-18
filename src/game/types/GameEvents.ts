@@ -10,6 +10,16 @@ export const GameEvents = {
   LEVEL_CHANGED: "levelChanged",
   EMPTY_CELLS_CHANGED: "emptyCellsChanged",
   HISTORY_CHANGED: "historyChanged",
+
+  GRID_ITEM_ADDED: "itemAdded",
+  GRID_ITEM_REMOVED: "itemRemoved",
+  GRID_ITEM_MERGED: "itemMerged",
+  GRID_FULL: "gridFull",
+  GRID_FILLED: "gridFilled",
+  GRID_ITEMS_CLEANED: "itemsCleaned",
+  GRID_CLEARED: "gridCleared",
+  GRID_RESTORED: "gridRestored",
+  HISTORY_CHECKPOINT: "historyCheckpoint",
 } as const;
 
 // События, которые UIScene эмитит, а GameScene слушает

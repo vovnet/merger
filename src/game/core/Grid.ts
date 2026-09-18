@@ -1,10 +1,12 @@
 import * as Phaser from "phaser";
 import { Cell, GridConfig, GridPosition, ItemData } from "../types/Item";
 import { ItemRegistry } from "./ItemRegistry";
+import { EventBus } from "./EventBus";
+import { GameEvents } from "../types/GameEvents";
 
 export enum MergeResult {
-  INVALID = "invalid", // Нельзя слить (разные уровни или недопустимая клетка)
-  MERGED = "merged", // Успешное слияние!
+  INVALID = "invalid",
+  MERGED = "merged",
 }
 
 export interface GridSnapshot {
@@ -31,7 +33,6 @@ export class Grid extends Phaser.Events.EventEmitter {
     return grid;
   }
 
-  // Геттеры
   get cols(): number {
     return this.config.cols;
   }
@@ -79,7 +80,6 @@ export class Grid extends Phaser.Events.EventEmitter {
     return emptyCells[randomIndex];
   }
 
-  // 🎯 Упрощённое создание предмета — только уровень
   createItem(level: number = 1): ItemData {
     return {
       id: `item_${this.nextId++}`,
@@ -92,7 +92,7 @@ export class Grid extends Phaser.Events.EventEmitter {
       return false;
     }
     this.cells[pos.y][pos.x] = item;
-    this.emit("itemAdded", { position: pos, item });
+    EventBus.emit(GameEvents.GRID_ITEM_ADDED, { position: pos, item });
     return true;
   }
 
@@ -102,7 +102,7 @@ export class Grid extends Phaser.Events.EventEmitter {
     const item = this.cells[pos.y][pos.x];
     if (item) {
       this.cells[pos.y][pos.x] = null;
-      this.emit("itemRemoved", { position: pos, item });
+      EventBus.emit(GameEvents.GRID_ITEM_REMOVED, { position: pos, item });
     }
     return item;
   }
@@ -119,7 +119,6 @@ export class Grid extends Phaser.Events.EventEmitter {
     const itemFrom = this.getCell(from);
     const itemTo = this.getCell(to);
 
-    // 1. Guard Clauses: Быстрый отказ при невозможных условиях
     if (!itemFrom || !this.isValidPosition(to)) {
       return { result: MergeResult.INVALID, itemFrom, itemTo };
     }
@@ -143,7 +142,7 @@ export class Grid extends Phaser.Events.EventEmitter {
     }
 
     // 2. Если мы здесь, значит слияние 100% произойдет. Сохраняем историю.
-    this.emit("historyCheckpoint");
+    EventBus.emit(GameEvents.HISTORY_CHECKPOINT);
 
     // 3. Выполняем слияние
     this.removeItem(from);
@@ -153,7 +152,7 @@ export class Grid extends Phaser.Events.EventEmitter {
     const newItem = this.createItem(newLevel);
     this.setItem(to, newItem);
 
-    this.emit("itemMerged", {
+    EventBus.emit(GameEvents.GRID_ITEM_MERGED, {
       newLevel,
       item: { ...newItem, pos: to },
       itemFrom: { ...itemFrom, pos: from },
@@ -166,11 +165,11 @@ export class Grid extends Phaser.Events.EventEmitter {
   spawnRandomItem(level: number = 1): ItemData | null {
     const emptyCell = this.getRandomEmptyCell();
     if (!emptyCell) {
-      this.emit("gridFull");
+      EventBus.emit(GameEvents.GRID_FULL);
       return null;
     }
 
-    this.emit("historyCheckpoint");
+    EventBus.emit(GameEvents.HISTORY_CHECKPOINT);
 
     const item = this.createItem(level);
     this.setItem(emptyCell, item);
@@ -194,7 +193,7 @@ export class Grid extends Phaser.Events.EventEmitter {
     const emptyCells = this.getEmptyCells();
     if (emptyCells.length === 0) return 0;
 
-    this.emit("historyCheckpoint");
+    EventBus.emit(GameEvents.HISTORY_CHECKPOINT);
 
     let filledCount = 0;
     for (const cell of emptyCells) {
@@ -203,7 +202,7 @@ export class Grid extends Phaser.Events.EventEmitter {
       filledCount++;
     }
 
-    this.emit("gridFilled", { count: filledCount });
+    EventBus.emit(GameEvents.GRID_FILLED, { count: filledCount });
     return filledCount;
   }
 
@@ -228,13 +227,16 @@ export class Grid extends Phaser.Events.EventEmitter {
         if (item && item.level < minLevel) {
           removedItems.push(item);
           this.cells[y][x] = null;
-          this.emit("itemRemoved", { position: { x, y }, item });
+          EventBus.emit(GameEvents.GRID_ITEM_REMOVED, { position: { x, y }, item });
         }
       }
     }
 
     if (removedItems.length > 0) {
-      this.emit("itemsCleaned", { count: removedItems.length, items: removedItems });
+      EventBus.emit(GameEvents.GRID_ITEMS_CLEANED, {
+        count: removedItems.length,
+        items: removedItems,
+      });
     }
 
     return removedItems;
@@ -246,7 +248,7 @@ export class Grid extends Phaser.Events.EventEmitter {
         this.cells[y][x] = null;
       }
     }
-    this.emit("gridCleared");
+    EventBus.emit(GameEvents.GRID_CLEARED);
   }
 
   getSnapshot(): GridSnapshot {
@@ -265,7 +267,7 @@ export class Grid extends Phaser.Events.EventEmitter {
     this.nextId = snapshot.nextId;
 
     // 🎯 3. Сообщаем рендереру, что нужно перерисовать поле
-    this.emit("gridRestored", snapshot);
+    EventBus.emit(GameEvents.GRID_RESTORED, snapshot);
   }
 
   serialize(): string {
@@ -276,7 +278,6 @@ export class Grid extends Phaser.Events.EventEmitter {
     try {
       const snapshot = JSON.parse(data) as GridSnapshot;
       this.restoreSnapshot(snapshot);
-      this.emit("gridChanged");
     } catch (e) {
       console.error("Ошибка десериализации Grid:", e);
     }

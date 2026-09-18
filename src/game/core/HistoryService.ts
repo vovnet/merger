@@ -11,17 +11,14 @@ export class HistoryService extends Events.EventEmitter {
     super();
   }
 
-  // 🎯 Привязываем сервис к Grid ОДИН раз при старте
   bind(grid: Grid): void {
     this.grid = grid;
 
-    // Слушаем маркер: "Эй, сейчас будет действие игрока, сохрани состояние!"
-    this.grid.on("historyCheckpoint", () => {
+    EventBus.on(GameEvents.HISTORY_CHECKPOINT, () => {
       this.save();
     });
 
-    // Слушаем повышение уровня: "Эй, уровень повышен, историю надо обнулить!"
-    this.grid.on("newLevelUnlocked", () => {
+    EventBus.on(GameEvents.LEVEL_CHANGED, () => {
       this.clear();
     });
   }
@@ -30,10 +27,8 @@ export class HistoryService extends Events.EventEmitter {
     if (!this.grid) return;
     this.historyStack.push(this.grid.getSnapshot());
     EventBus.emit(GameEvents.HISTORY_CHANGED, this.canUndo());
-    // this.emit("historyChanged", this.canUndo());
   }
 
-  // 🎯 Единственный метод, который мы вызываем извне (по кнопке)
   undo(): boolean {
     if (this.historyStack.length === 0 || !this.grid) {
       return false;
@@ -43,7 +38,6 @@ export class HistoryService extends Events.EventEmitter {
     this.grid.restoreSnapshot(snapshot);
 
     EventBus.emit(GameEvents.HISTORY_CHANGED, this.canUndo());
-    // this.emit("historyChanged", this.canUndo());
     return true;
   }
 
@@ -54,6 +48,5 @@ export class HistoryService extends Events.EventEmitter {
   clear(): void {
     this.historyStack = [];
     EventBus.emit(GameEvents.HISTORY_CHANGED, false);
-    // this.emit("historyChanged", false);
   }
 }

@@ -2,6 +2,8 @@ import * as Phaser from "phaser";
 import { Grid, GridSnapshot, MergeResult } from "./Grid";
 import { GridPosition, ItemData } from "../types/Item";
 import { ItemRegistry } from "./ItemRegistry";
+import { EventBus } from "./EventBus";
+import { GameEvents } from "../types/GameEvents";
 
 export class GridRenderer {
   private scene: Phaser.Scene;
@@ -60,20 +62,18 @@ export class GridRenderer {
   }
 
   private bindGridEvents(): void {
-    this.grid.on("itemAdded", ({ position, item }: { position: GridPosition; item: ItemData }) => {
-      this.createItemSprite(position, item);
-    });
+    EventBus.on(
+      GameEvents.GRID_ITEM_ADDED,
+      ({ position, item }: { position: GridPosition; item: ItemData }) => {
+        this.createItemSprite(position, item);
+      },
+    );
 
-    this.grid.on("itemRemoved", ({ position }: { position: GridPosition }) => {
+    EventBus.on(GameEvents.GRID_ITEM_REMOVED, ({ position }: { position: GridPosition }) => {
       this.removeItemSprite(position);
     });
 
-    this.grid.on("itemMoved", ({ from, to }: { from: GridPosition; to: GridPosition }) => {
-      this.moveItemSprite(from, to);
-    });
-
-    // 🎯 НОВОЕ: Умная точечная перерисовка при отмене хода (Diffing)
-    this.grid.on("gridRestored", (snapshot: GridSnapshot) => {
+    EventBus.on(GameEvents.GRID_RESTORED, (snapshot: GridSnapshot) => {
       console.log("↩️ Отмена хода: точечное обновление");
 
       // 1. Собираем все ID предметов, которые ДОЛЖНЫ быть на поле согласно снимку
@@ -125,7 +125,7 @@ export class GridRenderer {
       }
     });
 
-    this.grid.on("gridCleared", () => {
+    EventBus.on(GameEvents.GRID_CLEARED, () => {
       this.clearAllSprites();
     });
   }
@@ -157,7 +157,7 @@ export class GridRenderer {
       container.setDepth(100);
     });
 
-    container.on("drag", (pointer: Phaser.Input.Pointer, dragX: number, dragY: number) => {
+    container.on("drag", (_: Phaser.Input.Pointer, dragX: number, dragY: number) => {
       container.x = dragX;
       container.y = dragY;
     });
@@ -256,20 +256,6 @@ export class GridRenderer {
     const { px, py } = this.gridToPixel(pos);
     container.x = px;
     container.y = py;
-  }
-
-  private moveItemSprite(from: GridPosition, to: GridPosition): void {
-    const { px, py } = this.gridToPixel(to);
-
-    for (const sprite of this.sprites.values()) {
-      const spritePos = sprite.getData("gridPos");
-      if (spritePos && spritePos.x === from.x && spritePos.y === from.y) {
-        sprite.setData("gridPos", { ...to });
-        sprite.x = px;
-        sprite.y = py;
-        break;
-      }
-    }
   }
 
   private removeItemSprite(pos: GridPosition): void {

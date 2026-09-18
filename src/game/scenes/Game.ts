@@ -59,13 +59,7 @@ export class Game extends Phaser.Scene {
   }
 
   private setupEventListeners(): void {
-    // this.grid.on("newLevelUnlocked", (data: { level: number }) => {
-    //   EventBus.emit(GameEvents.LEVEL_CHANGED, data.level);
-    //   this.onNewLevelUnlocked(data.level);
-    // });
-
-    // 🎯 Награда за слияние (теперь в монетах)
-    this.grid.on("itemMerged", (data: { newLevel: number; from: any; to: any }) => {
+    EventBus.on(GameEvents.GRID_ITEM_MERGED, (data: { newLevel: number; from: any; to: any }) => {
       const reward = this.economy.getMergeReward(data.newLevel);
       this.economy.addCoins(reward);
       console.log(`💰 Слияние в ур.${data.newLevel} → +${reward} монет`);
