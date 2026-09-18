@@ -4,8 +4,9 @@ import { GridRenderer } from "../core/GridRenderer";
 import { Economy } from "../core/Economy";
 import { HistoryService } from "../core/HistoryService";
 import { EventBus } from "../core/EventBus";
-import { GameEvents, UIEvents } from "../types/GameEvents";
+import { ComboData, GameEvents, UIEvents } from "../types/GameEvents";
 import { UIScene } from "./UIScene";
+import { ComboService } from "../core/ComboService";
 
 export class Game extends Phaser.Scene {
   private grid: Grid;
@@ -15,6 +16,7 @@ export class Game extends Phaser.Scene {
   private currentLevel: number = 1;
 
   private historyService: HistoryService;
+  private comboService!: ComboService;
 
   constructor() {
     super({ key: "GameScene" });
@@ -25,23 +27,20 @@ export class Game extends Phaser.Scene {
   }
 
   create(): void {
-    // 1. Создаём логику поля 6×5
     this.grid = new Grid({ cols: 6, rows: 5 });
 
     this.historyService = new HistoryService();
     this.historyService.bind(this.grid);
 
-    // 2. Создаём рендерер
     this.gridRenderer = new GridRenderer(this, this.grid);
+    this.comboService = new ComboService();
 
     this.economy = new Economy(this.registry);
     this.registry.set("economy", this.economy);
 
-    // 3. Создаём UI
     this.scene.launch("UIScene", { economy: this.economy });
     this.scene.get("UIScene") as UIScene;
 
-    // 4. Слушаем события
     this.setupEventListeners();
   }
 
@@ -93,6 +92,22 @@ export class Game extends Phaser.Scene {
         EventBus.emit(GameEvents.COINS_CHANGED, { value, previousValue });
       },
     );
+
+    EventBus.on(GameEvents.COMBO_UPDATED, (data: ComboData) => {
+      console.log(`🔥 КОМБО x${data.multiplier}!`);
+
+      // Здесь можно запустить анимацию текста "x2!", "x3!" на экране
+      // Или начислить бонусные монеты прямо сейчас:
+      if (data.multiplier > 1) {
+        const bonus = data.multiplier * 10; // Пример формулы
+        this.economy.addCoins(bonus);
+      }
+    });
+
+    EventBus.on(GameEvents.COMBO_RESET, () => {
+      console.log("💔 Цепочка комбо разорвана");
+      // Здесь можно убрать текст комбо с экрана
+    });
   }
 
   // Вычисление уровня для кнопки спауна

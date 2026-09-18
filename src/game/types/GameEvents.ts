@@ -20,6 +20,10 @@ export const GameEvents = {
   GRID_CLEARED: "gridCleared",
   GRID_RESTORED: "gridRestored",
   HISTORY_CHECKPOINT: "historyCheckpoint",
+
+  // События ComboService
+  COMBO_UPDATED: "combo_updated",
+  COMBO_RESET: "combo_reset",
 } as const;
 
 // События, которые UIScene эмитит, а GameScene слушает
@@ -44,4 +48,9 @@ export interface CleanupData {
 
 export interface ComboData {
   multiplier: number;
+}
+
+export interface ComboData {
+  multiplier: number; // 1, 2, 3, 4, 5...
+  itemId: string; // ID предмета, который продолжает цепочку
 }
