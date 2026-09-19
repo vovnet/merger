@@ -77,6 +77,14 @@ export class GridRenderer {
       this.removeItemSprite(position);
     });
 
+    EventBus.on(
+      GameEvents.GRID_ITEM_MERGED,
+      (data: { newLevel: number; item: any; itemFrom: any; itemTo: any }) => {
+        // Создаем частицы в точке слияния (позиция нового предмета)
+        this.createMergeParticles(data.item.pos, data.newLevel);
+      },
+    );
+
     EventBus.on(GameEvents.GRID_RESTORED, (snapshot: GridSnapshot) => {
       console.log("↩️ Отмена хода: точечное обновление");
 
@@ -302,6 +310,46 @@ export class GridRenderer {
       targets: squish,
       ...idleConfig,
       delay: 400 + Phaser.Math.Between(0, 800), // Начинаем парить после того, как предмет "упал"
+    });
+  }
+
+  // В GridRenderer.ts добавь новый метод:
+
+  private createMergeParticles(pos: GridPosition, level: number): void {
+    const { px, py } = this.gridToPixel(pos);
+
+    //  Определяем цвет частиц на основе уровня (можно использовать цвет сквиша)
+    const particleColors = [
+      0xff6b9d, // Розовый (уровень 1)
+      0x4ecdc4, // Бирюзовый (уровень 2)
+      0xffd93d, // Желтый (уровень 3)
+      0xff8c42, // Оранжевый (уровень 4)
+      0x9b59b6, // Фиолетовый (уровень 5)
+      0xe74c3c, // Красный (уровень 6)
+      0xffd700, // Золотой (уровень 7+)
+    ];
+
+    const color = particleColors[Math.min(level - 1, particleColors.length - 1)];
+
+    // 🎯 Создаем эмиттер частиц
+    const particles = this.scene.add.particles(px, py, "particle_blob", {
+      speed: { min: 80, max: 160 },
+      angle: { min: 0, max: 360 },
+      scale: { start: 0.6, end: 0 }, // Уменьшаются до исчезновения
+      lifespan: 500, // Живут 0.5 секунды
+      gravityY: 150, // Слегка падают вниз (как брызги)
+      tint: color, // Цвет на основе уровня
+      alpha: { start: 1, end: 0.3 }, // Постепенно исчезают
+      emitting: false, // Не эмитим постоянно
+      blendMode: "ADD", // Режим смешивания для свечения
+    });
+
+    // 🎯 Выпускаем частицы одним "пшиком"
+    particles.explode(12); // 12 частиц за раз
+
+    // 🎯 Уничтожаем эмиттер после завершения анимации
+    this.scene.time.delayedCall(600, () => {
+      particles.destroy();
     });
   }
 

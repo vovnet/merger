@@ -27,6 +27,17 @@ export class Game extends Phaser.Scene {
 
   preload() {
     this.load.atlas("squishes", "assets/spritesheet.png", "assets/spritesheet.json");
+
+    // 1. Создаем временный Graphics объект
+    const graphics = this.add.graphics({ x: 0, y: 0 });
+    // 2. Рисуем мягкий круг (16x16 пикселей)
+    graphics.fillStyle(0xffffff, 1);
+    graphics.fillCircle(8, 8, 8);
+    // 3. Генерируем текстуру из нарисованного
+    graphics.generateTexture("particle_blob", 16, 16);
+    // 4. Сразу удаляем сам Graphics объект!
+    // (Если этого не сделать, белый круг так и останется висеть в левом верхнем углу экрана)
+    graphics.destroy();
   }
 
   create(): void {
