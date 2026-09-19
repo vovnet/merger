@@ -337,15 +337,15 @@ export class GridRenderer {
       angle: { min: 0, max: 360 },
       scale: { start: 0.6, end: 0 }, // Уменьшаются до исчезновения
       lifespan: 500, // Живут 0.5 секунды
-      gravityY: 150, // Слегка падают вниз (как брызги)
+      gravityY: 250, // Слегка падают вниз (как брызги)
       tint: color, // Цвет на основе уровня
-      alpha: { start: 1, end: 0.3 }, // Постепенно исчезают
+      alpha: { start: 1, end: 0.5 }, // Постепенно исчезают
       emitting: false, // Не эмитим постоянно
       blendMode: "ADD", // Режим смешивания для свечения
     });
 
     // 🎯 Выпускаем частицы одним "пшиком"
-    particles.explode(12); // 12 частиц за раз
+    particles.explode(20); // 12 частиц за раз
 
     // 🎯 Уничтожаем эмиттер после завершения анимации
     this.scene.time.delayedCall(600, () => {

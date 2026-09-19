@@ -9,6 +9,7 @@ import { UIScene } from "./UIScene";
 import { ComboService } from "../core/ComboService";
 import { ContractService } from "../core/ContractService";
 import { ContractUpdateData } from "../types/Contract";
+import { AudioService } from "../core/AudioService";
 
 export class Game extends Phaser.Scene {
   private grid: Grid;
@@ -20,6 +21,7 @@ export class Game extends Phaser.Scene {
   private historyService: HistoryService;
   private comboService: ComboService;
   private contractService: ContractService;
+  private audioService: AudioService;
 
   constructor() {
     super({ key: "GameScene" });
@@ -27,6 +29,8 @@ export class Game extends Phaser.Scene {
 
   preload() {
     this.load.atlas("squishes", "assets/spritesheet.png", "assets/spritesheet.json");
+
+    this.load.audio("merge_pop", "assets/sound/bubble_1.mp3");
 
     // 1. Создаем временный Graphics объект
     const graphics = this.add.graphics({ x: 0, y: 0 });
@@ -41,6 +45,7 @@ export class Game extends Phaser.Scene {
   }
 
   create(): void {
+    this.audioService = new AudioService(this);
     this.grid = new Grid({ cols: 7, rows: 5 });
 
     this.historyService = new HistoryService();
