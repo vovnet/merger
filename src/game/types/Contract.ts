@@ -4,6 +4,7 @@ export interface ContractTask {
   requiredCount: number; // Сколько штук нужно держать на поле
   currentCount: number; // Текущее количество на поле (обновляется при проверке)
   isCompleted: boolean; // Флаг: задача выполнена и больше не проверяется
+  isLocked: boolean;
 }
 
 export interface Contract {

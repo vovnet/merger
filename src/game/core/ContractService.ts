@@ -1,3 +1,4 @@
+// core/ContractService.ts
 import * as Phaser from "phaser";
 import { EventBus } from "./EventBus";
 import { GameEvents } from "../types/GameEvents";
@@ -15,10 +16,7 @@ export class ContractService {
   }
 
   private bindEvents(): void {
-    // 🎯 Генерируем новый контракт ТОЛЬКО при повышении уровня
     EventBus.on(GameEvents.LEVEL_CHANGED, this.handleLevelUp, this);
-
-    // 🎯 Проверяем поле при ЛЮБОМ изменении, которое может повлиять на количество предметов
     EventBus.on(GameEvents.GRID_ITEM_MERGED, this.checkTasks, this);
     EventBus.on(GameEvents.GRID_ITEM_ADDED, this.checkTasks, this);
     EventBus.on(GameEvents.GRID_ITEM_REMOVED, this.checkTasks, this);
@@ -26,7 +24,6 @@ export class ContractService {
     EventBus.on(GameEvents.GRID_RESTORED, this.checkTasks, this);
   }
 
-  // 🎯 Публичный метод для инициализации при старте игры
   public init(startLevel: number): void {
     this.currentLevel = startLevel;
     if (this.currentLevel >= 7) {
@@ -36,39 +33,26 @@ export class ContractService {
 
   private handleLevelUp(newLevel: number): void {
     this.currentLevel = newLevel;
-
-    // 🎯 КЛЮЧЕВОЕ ИЗМЕНЕНИЕ: Контракты генерируются только с 7 уровня
     if (this.currentLevel < 7) {
-      console.log(`📜 Уровень ${newLevel}. Контракты откроются на 7 уровне.`);
-      this.activeContract = null; // Гарантируем отсутствие контракта
+      this.activeContract = null;
       return;
     }
-
-    console.log(`📜 Уровень повышен до ${newLevel}. Генерация нового контракта...`);
     this.generateNewContract();
   }
 
   private generateNewContract(): void {
     const tasks: ContractTask[] = [];
-
-    // 🎯 Диапазон уровней для заданий: от (currentLevel - 6) до (currentLevel - 1)
-    // Но не ниже 1-го уровня.
     const maxLevel = this.currentLevel - 1;
     const minLevel = Math.max(1, this.currentLevel - 5);
 
-    // Создаем пул доступных уровней
     const levelPool: number[] = [];
     for (let i = minLevel; i <= maxLevel; i++) {
       levelPool.push(i);
     }
 
     for (let i = 0; i < 3; i++) {
-      //  ИЗМЕНЕНО: Используем splice, чтобы удалить выбранный уровень из пула
-      // Это гарантирует, что один уровень не попадется дважды
       const randomIndex = Phaser.Math.Between(0, levelPool.length - 1);
       const targetLevel = levelPool.splice(randomIndex, 1)[0];
-
-      // Требуется собрать от 2 до 6 штук
       const requiredCount = Phaser.Math.Between(2, 6);
 
       tasks.push({
@@ -77,8 +61,17 @@ export class ContractService {
         requiredCount,
         currentCount: 0,
         isCompleted: false,
+        isLocked: false, // Временно false, будет пересчитано при сортировке
       });
     }
+
+    // 🎯 1. СОРТИРОВКА: По убыванию уровня (сначала высокий, потом ниже)
+    tasks.sort((a, b) => b.targetLevel - a.targetLevel);
+
+    // 🎯 2. БЛОКИРОВКА: Первая задача активна, остальные заблокированы
+    tasks.forEach((task, index) => {
+      task.isLocked = index > 0;
+    });
 
     this.activeContract = {
       id: `contract_${Date.now()}`,
@@ -90,49 +83,82 @@ export class ContractService {
       contract: this.activeContract,
     } as ContractUpdateData);
 
-    // Сразу проверяем, вдруг при апе уровня на поле уже есть нужные предметы
     this.checkTasks();
   }
 
   private checkTasks(): void {
-    // 🎯 Если уровень < 7 или контракт уже выполнен, просто выходим
     if (!this.activeContract || this.activeContract.isCompleted) return;
 
-    let allTasksCompleted = true;
+    let changed = false;
 
-    for (const task of this.activeContract.tasks) {
-      // 🎯 КЛЮЧЕВОЕ ПРАВИЛО: Если задача уже выполнена, мы ее НЕ ПРОВЕРЯЕМ и НЕ МЕНЯЕМ
-      if (!task.isCompleted) {
-        // Спрашиваем у Grid реальное количество предметов на поле
-        const countOnBoard = this.grid.countItemsByLevel(task.targetLevel);
-        task.currentCount = countOnBoard;
+    // 🎯 Находим ПЕРВУЮ задачу, которая не выполнена и не заблокирована
+    const activeTask = this.activeContract.tasks.find((t) => !t.isCompleted && !t.isLocked);
 
-        // Если требуемое количество достигнуто, фиксируем выполнение
-        if (countOnBoard >= task.requiredCount) {
-          task.isCompleted = true;
-          console.log(
-            `✅ Задача выполнена: На поле есть ${task.requiredCount}x Ур.${task.targetLevel}`,
-          );
-        } else {
-          allTasksCompleted = false;
+    if (activeTask) {
+      const countOnBoard = this.grid.countItemsByLevel(activeTask.targetLevel);
+
+      if (activeTask.currentCount !== countOnBoard) {
+        activeTask.currentCount = countOnBoard;
+        changed = true;
+      }
+
+      // Если требуемое количество достигнуто
+      if (countOnBoard >= activeTask.requiredCount && !activeTask.isCompleted) {
+        activeTask.isCompleted = true;
+        console.log(
+          `✅ Задача выполнена: На поле есть ${activeTask.requiredCount}x Ур.${activeTask.targetLevel}`,
+        );
+        changed = true;
+
+        // 🎯 Разблокируем следующую задачу
+        const nextTaskIndex = this.activeContract.tasks.indexOf(activeTask) + 1;
+        if (nextTaskIndex < this.activeContract.tasks.length) {
+          const nextTask = this.activeContract.tasks[nextTaskIndex];
+          nextTask.isLocked = false;
+          nextTask.currentCount = 0; // Сбрасываем счетчик для новой активной задачи
+
+          // 🎯 Рекурсивный вызов: вдруг на поле УЖЕ есть предметы для следующей задачи?
+          // Это позволит выполнить несколько задач мгновенно, если игрок сделал массовое действие (например, Fill)
+          this.checkTasks();
+          return;
         }
       }
     }
 
-    // Эмитим обновление для UI (даже если ничего не изменилось, UI должен знать актуальные currentCount)
-    EventBus.emit(GameEvents.CONTRACT_UPDATED, {
-      contract: this.activeContract,
-    } as ContractUpdateData);
+    // 🎯 Пересчитываем статусы блокировки для всех задач (на случай отмены хода, которая могла "откатить" выполнение)
+    this.updateLockStates();
 
-    // 🎯 Если все задачи помечены как выполненные, контракт завершен
-    if (allTasksCompleted) {
+    if (changed) {
+      EventBus.emit(GameEvents.CONTRACT_UPDATED, {
+        contract: this.activeContract,
+      } as ContractUpdateData);
+    }
+
+    // Проверка на полное завершение контракта
+    if (this.activeContract.tasks.every((t) => t.isCompleted)) {
       this.activeContract.isCompleted = true;
       console.log(`🎉 КОНТРАКТ ВЫПОЛНЕН!`);
-
-      // Эмитим событие завершения. Game.ts подхватит его и начислит награду.
       EventBus.emit(GameEvents.CONTRACT_COMPLETED, {
         contract: this.activeContract,
       } as ContractUpdateData);
+    }
+  }
+
+  // 🎯 Отдельный метод для гарантированного обновления статусов isLocked
+  private updateLockStates(): void {
+    let isPreviousCompleted = true;
+    for (const task of this.activeContract.tasks) {
+      if (!isPreviousCompleted) {
+        task.isLocked = true;
+        task.currentCount = 0; // Сбрасываем визуальный прогресс заблокированных задач
+      } else {
+        task.isLocked = false;
+      }
+
+      // Если текущая задача не выполнена, все последующие должны быть заблокированы
+      if (!task.isCompleted) {
+        isPreviousCompleted = false;
+      }
     }
   }
 

@@ -30,7 +30,7 @@ export class Game extends Phaser.Scene {
   }
 
   create(): void {
-    this.grid = new Grid({ cols: 6, rows: 5 });
+    this.grid = new Grid({ cols: 7, rows: 5 });
 
     this.historyService = new HistoryService();
     this.historyService.bind(this.grid);
