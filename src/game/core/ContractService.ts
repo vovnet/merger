@@ -81,20 +81,33 @@ export class ContractService {
 
     EventBus.emit(GameEvents.CONTRACT_CREATED, {
       contract: this.activeContract,
+      activeTargetLevel: this.getActiveTargetLevel(),
     } as ContractUpdateData);
 
     this.checkTasks();
+  }
+
+  private getActiveTargetLevel(): number | null {
+    if (!this.activeContract || this.activeContract.isCompleted) return null;
+
+    const activeTask = this.activeContract.tasks.find((t) => !t.isCompleted && !t.isLocked);
+    return activeTask ? activeTask.targetLevel : null;
   }
 
   private checkTasks(): void {
     if (!this.activeContract || this.activeContract.isCompleted) return;
 
     let changed = false;
+    let keepChecking = true;
 
-    // 🎯 Находим ПЕРВУЮ задачу, которая не выполнена и не заблокирована
-    const activeTask = this.activeContract.tasks.find((t) => !t.isCompleted && !t.isLocked);
+    // 🎯 Используем цикл вместо рекурсии для безопасной обработки цепных реакций
+    while (keepChecking) {
+      keepChecking = false; // По умолчанию останавливаем цикл
 
-    if (activeTask) {
+      const activeTask = this.activeContract.tasks.find((t) => !t.isCompleted && !t.isLocked);
+
+      if (!activeTask) break; // Если активных задач нет, выходим
+
       const countOnBoard = this.grid.countItemsByLevel(activeTask.targetLevel);
 
       if (activeTask.currentCount !== countOnBoard) {
@@ -117,20 +130,21 @@ export class ContractService {
           nextTask.isLocked = false;
           nextTask.currentCount = 0; // Сбрасываем счетчик для новой активной задачи
 
-          // 🎯 Рекурсивный вызов: вдруг на поле УЖЕ есть предметы для следующей задачи?
-          // Это позволит выполнить несколько задач мгновенно, если игрок сделал массовое действие (например, Fill)
-          this.checkTasks();
-          return;
+          // 🎯 Заставляем цикл пройти еще раз ПРЯМО СЕЙЧАС, чтобы проверить,
+          // не выполнена ли новая задача мгновенно (например, после кнопки Fill)
+          keepChecking = true;
         }
       }
     }
 
-    // 🎯 Пересчитываем статусы блокировки для всех задач (на случай отмены хода, которая могла "откатить" выполнение)
+    // 🎯 Пересчитываем статусы блокировки для всех задач (после завершения всех цепных реакций)
     this.updateLockStates();
 
+    // 🎯 ГАРАНТИРОВАННЫЙ ВЫСТРЕЛ СОБЫТИЯ: мы здесь, только когда все while-циклы завершены
     if (changed) {
       EventBus.emit(GameEvents.CONTRACT_UPDATED, {
         contract: this.activeContract,
+        activeTargetLevel: this.getActiveTargetLevel(),
       } as ContractUpdateData);
     }
 

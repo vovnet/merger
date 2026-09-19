@@ -4,11 +4,13 @@ import { GridPosition, ItemData } from "../types/Item";
 import { ItemRegistry } from "./ItemRegistry";
 import { EventBus } from "./EventBus";
 import { GameEvents } from "../types/GameEvents";
+import { ContractUpdateData } from "../types/Contract";
 
 export class GridRenderer {
   private scene: Phaser.Scene;
   private grid: Grid;
   private sprites: Map<string, Phaser.GameObjects.Container> = new Map();
+  private activeContractLevel: number | null = null;
 
   private readonly cellSize: number = 100;
   private readonly padding: number = 10;
@@ -26,6 +28,8 @@ export class GridRenderer {
 
     this.drawGridBackground();
     this.bindGridEvents();
+
+    EventBus.on(GameEvents.CONTRACT_UPDATED, this.onContractHighlightUpdated, this);
   }
 
   private drawGridBackground(): void {
@@ -144,6 +148,60 @@ export class GridRenderer {
     return this.grid.isValidPosition(pos) ? pos : null;
   }
 
+  private onContractHighlightUpdated(data: ContractUpdateData): void {
+    // 🛠️ ДОБАВИЛ КОНСОЛЬ ДЛЯ ОТЛАДКИ: Убедись, что это число выводится в консоль!
+    console.log("🎯 Обновление подсветки. Целевой уровень:", data.activeTargetLevel);
+
+    this.activeContractLevel = data.activeTargetLevel;
+    this.updateAllHighlights();
+  }
+
+  private updateAllHighlights(): void {
+    this.sprites.forEach((container) => {
+      const level = container.getData("level") as number;
+      let highlight = container.getData("highlightGraphics") as Phaser.GameObjects.Graphics;
+
+      if (!highlight) {
+        // Создаем графику для подсветки один раз при первом использовании
+        highlight = this.scene.add.graphics();
+
+        // 🎯 ВАЖНО: Сначала добавляем в контейнер, потом задаем глубину относительно него
+        container.add(highlight);
+        highlight.setDepth(-1); // Рисуем ПОД основным спрайтом сквиша (у него depth 0)
+
+        container.setData("highlightGraphics", highlight);
+      }
+
+      // Очищаем предыдущую отрисовку и убиваем старые твины
+      highlight.clear();
+      this.scene.tweens.killTweensOf(highlight);
+      highlight.setScale(1); // Сбрасываем масштаб на случай предыдущей анимации
+
+      // Если уровень совпадает с активным заданием — рисуем ауру
+      if (this.activeContractLevel !== null && level === this.activeContractLevel) {
+        const radius = (this.cellSize - this.padding) / 2;
+
+        // 🎯 Используем более заметную альфу для заливки (0.4 вместо 0.3)
+        highlight.fillStyle(0xffd700, 0.4);
+        highlight.fillCircle(0, 0, radius);
+
+        // Яркая золотая обводка (толще и полностью непрозрачная)
+        highlight.lineStyle(4, 0xffd700, 1.0);
+        highlight.strokeCircle(0, 0, radius);
+
+        // 🎯 НАДЕЖНАЯ АНИМАЦИЯ: Пульсация масштаба вместо альфы
+        this.scene.tweens.add({
+          targets: highlight,
+          scale: { from: 1.0, to: 1.15 }, // Увеличиваем на 15%
+          duration: 600,
+          yoyo: true,
+          repeat: -1,
+          ease: "Sine.easeInOut",
+        });
+      }
+    });
+  }
+
   private setupDraggable(container: Phaser.GameObjects.Container): void {
     const hitArea = new Phaser.Geom.Circle(0, 0, 40);
 
@@ -189,6 +247,7 @@ export class GridRenderer {
 
     container.setData("gridPos", { ...pos });
     container.setData("itemId", item.id);
+    container.setData("level", item.level);
 
     const frameName = ItemRegistry.getFrameName(item.level);
 
