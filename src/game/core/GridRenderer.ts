@@ -149,9 +149,6 @@ export class GridRenderer {
   }
 
   private onContractHighlightUpdated(data: ContractUpdateData): void {
-    // 🛠️ ДОБАВИЛ КОНСОЛЬ ДЛЯ ОТЛАДКИ: Убедись, что это число выводится в консоль!
-    console.log("🎯 Обновление подсветки. Целевой уровень:", data.activeTargetLevel);
-
     this.activeContractLevel = data.activeTargetLevel;
     this.updateAllHighlights();
   }
@@ -159,45 +156,43 @@ export class GridRenderer {
   private updateAllHighlights(): void {
     this.sprites.forEach((container) => {
       const level = container.getData("level") as number;
-      let highlight = container.getData("highlightGraphics") as Phaser.GameObjects.Graphics;
+      const mainSprite = container.getData("mainSprite") as Phaser.GameObjects.Image;
 
-      if (!highlight) {
-        // Создаем графику для подсветки один раз при первом использовании
-        highlight = this.scene.add.graphics();
+      if (!mainSprite) return;
 
-        // 🎯 ВАЖНО: Сначала добавляем в контейнер, потом задаем глубину относительно него
-        container.add(highlight);
-        highlight.setDepth(-1); // Рисуем ПОД основным спрайтом сквиша (у него depth 0)
+      // 🎯 Получаем или создаем Graphics объект для свечения (один раз на контейнер)
+      let glowGraphics = container.getData("glowGraphics") as Phaser.GameObjects.Graphics;
 
-        container.setData("highlightGraphics", highlight);
+      if (!glowGraphics) {
+        glowGraphics = this.scene.add.graphics();
+        glowGraphics.setDepth(-1); // Рисуем ПОД основным спрайтом
+        container.add(glowGraphics);
+        container.setData("glowGraphics", glowGraphics);
       }
 
-      // Очищаем предыдущую отрисовку и убиваем старые твины
-      highlight.clear();
-      this.scene.tweens.killTweensOf(highlight);
-      highlight.setScale(1); // Сбрасываем масштаб на случай предыдущей анимации
+      // Очищаем предыдущее свечение
+      glowGraphics.clear();
 
-      // Если уровень совпадает с активным заданием — рисуем ауру
+      // 🎯 Если это целевой айтем для текущего задания
       if (this.activeContractLevel !== null && level === this.activeContractLevel) {
-        const radius = (this.cellSize - this.padding) / 2;
+        // Накладываем желтый tint на сам спрайт
+        mainSprite.setTint(0xffff00);
 
-        // 🎯 Используем более заметную альфу для заливки (0.4 вместо 0.3)
-        highlight.fillStyle(0xffd700, 0.4);
-        highlight.fillCircle(0, 0, radius);
+        //  Рисуем мягкое золотое свечение позади спрайта
+        const radius = 45; // Радиус свечения (чуть больше размера сквиша)
 
-        // Яркая золотая обводка (толще и полностью непрозрачная)
-        highlight.lineStyle(4, 0xffd700, 1.0);
-        highlight.strokeCircle(0, 0, radius);
+        // Внешнее мягкое свечение (полупрозрачное)
+        glowGraphics.fillStyle(0xffd700, 0.3);
+        glowGraphics.fillCircle(0, 0, radius + 10);
 
-        // 🎯 НАДЕЖНАЯ АНИМАЦИЯ: Пульсация масштаба вместо альфы
-        this.scene.tweens.add({
-          targets: highlight,
-          scale: { from: 1.0, to: 1.15 }, // Увеличиваем на 15%
-          duration: 600,
-          yoyo: true,
-          repeat: -1,
-          ease: "Sine.easeInOut",
-        });
+        // Внутреннее более яркое свечение
+        glowGraphics.fillStyle(0xffff00, 0.5);
+        glowGraphics.fillCircle(0, 0, radius);
+      }
+      //  Если это НЕ целевой айтем
+      else {
+        // Возвращаем оригинальные цвета
+        mainSprite.clearTint();
       }
     });
   }
@@ -259,11 +254,11 @@ export class GridRenderer {
     const targetSize = this.cellSize - this.padding - 10; // 80px (немного меньше клетки для отступа)
     const maxDimension = Math.max(squish.width, squish.height);
     const targetScale = targetSize / maxDimension;
-    // squish.setScale(targetScale);
 
     squish.setScale(0);
 
     container.add([squish]);
+    container.setData("mainSprite", squish);
 
     // 🎯 Увеличиваем хитбокс для удобства (радиус 45px = диаметр 90px)
     const hitArea = new Phaser.Geom.Circle(0, 0, 45);
