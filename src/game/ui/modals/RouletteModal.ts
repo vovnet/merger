@@ -8,10 +8,11 @@ export class RouletteModal extends BaseModal {
   private rouletteService: RouletteService;
   private gameState: GameState;
 
-  private rouletteContainer!: Phaser.GameObjects.Container;
-  private spinButton!: Phaser.GameObjects.Rectangle;
-  private spinButtonText!: Phaser.GameObjects.Text;
-  private pointer!: Phaser.GameObjects.Triangle;
+  private rouletteContainer: Phaser.GameObjects.Container;
+  private spinButton: Phaser.GameObjects.Rectangle;
+  private spinButtonText: Phaser.GameObjects.Text;
+  private pointer: Phaser.GameObjects.Triangle;
+  private pointerBottom: Phaser.GameObjects.Triangle;
 
   // 🎯 Ссылки на элементы экрана победы, чтобы мы могли их удалить при сбросе
   private resultOverlay!: Phaser.GameObjects.Rectangle;
@@ -66,8 +67,8 @@ export class RouletteModal extends BaseModal {
     this.pointer = this.scene.add.triangle(0, -100, 0, 0, 15, 20, -15, 20, 0xff0000);
     this.container.add(this.pointer);
 
-    const pointerBottom = this.scene.add.triangle(0, 120, 0, 0, 15, -20, -15, -20, 0xff0000);
-    this.container.add(pointerBottom);
+    this.pointerBottom = this.scene.add.triangle(0, 120, 0, 0, 15, -20, -15, -20, 0xff0000);
+    this.container.add(this.pointerBottom);
 
     // 6. Золотая рамка
     const framePadding = 40;
@@ -205,13 +206,13 @@ export class RouletteModal extends BaseModal {
     this.scene.tweens.add({
       targets: this.rouletteContainer,
       x: targetX,
-      duration: this.SPIN_DURATION, // 7000 мс
+      duration: this.SPIN_DURATION, // 10000 мс
       ease: "Cubic.easeOut", // Просто плавное торможение до полной остановки
 
       onComplete: () => {
         this.isSpinning = false;
 
-        // 🎯 ЭТАП 2: МИКРО-ОТСКАК (ровно на 8 пикселей, независимо от дистанции)
+        // 🎯 ЭТАП 2: МИКРО-ОТСКАК (ровно на 8 пикселей)
         this.scene.tweens.add({
           targets: this.rouletteContainer,
           x: targetX + 8, // Сдвигаем контейнер назад всего на 8 пикселей
@@ -219,16 +220,11 @@ export class RouletteModal extends BaseModal {
           ease: "Sine.easeOut",
 
           onComplete: () => {
-            // Анимация указателя (тычок вниз)
-            this.scene.tweens.add({
-              targets: this.pointer,
-              y: -85, // Чуть вниз от исходных -95
-              duration: 100,
-              yoyo: true,
-              ease: "Power2",
+            // 🎯 ЭТАП 3: ЗАДЕРЖКА ПЕРЕД ПОКАЗОМ ПОБЕДЫ
+            // Даем игроку 800 мс, чтобы он сам осознал результат, прежде чем мы его "объявим"
+            this.scene.time.delayedCall(800, () => {
+              this.showResult(winningIndex);
             });
-
-            this.showResult(winningIndex);
           },
         });
       },
