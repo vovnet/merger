@@ -4,19 +4,31 @@ import { EventBus } from "./EventBus";
 import { GameEvents } from "../types/GameEvents";
 import { Contract, ContractTask, ContractUpdateData } from "../types/Contract";
 import { Grid } from "./Grid";
+import { GameState } from "./GameState"; // 🎯 Импортируем GameState
 
 export class ContractService {
   private grid: Grid;
+  private gameState: GameState; // 🎯 Ссылка на единый источник истины
   private activeContract: Contract | null = null;
-  private currentLevel: number = 1;
 
-  constructor(grid: Grid) {
+  constructor(grid: Grid, gameState: GameState) {
     this.grid = grid;
+    this.gameState = gameState;
+
     this.bindEvents();
+
+    // 🎯 Проверяем начальный уровень при создании.
+    // Если игра загрузилась сразу с 7+ уровня, контракт создастся автоматически.
+    if (this.gameState.level >= 7) {
+      this.generateNewContract();
+    }
   }
 
   private bindEvents(): void {
-    EventBus.on(GameEvents.LEVEL_CHANGED, this.handleLevelUp, this);
+    // 🎯 При изменении уровня (включая загрузку сохранения) генерируем новый контракт
+    EventBus.on(GameEvents.LEVEL_CHANGED, this.handleLevelChanged, this);
+
+    // Проверяем поле при любом изменении
     EventBus.on(GameEvents.GRID_ITEM_MERGED, this.checkTasks, this);
     EventBus.on(GameEvents.GRID_ITEM_ADDED, this.checkTasks, this);
     EventBus.on(GameEvents.GRID_ITEM_REMOVED, this.checkTasks, this);
@@ -24,26 +36,23 @@ export class ContractService {
     EventBus.on(GameEvents.GRID_RESTORED, this.checkTasks, this);
   }
 
-  public init(startLevel: number): void {
-    this.currentLevel = startLevel;
-    if (this.currentLevel >= 7) {
-      this.generateNewContract();
-    }
-  }
-
-  private handleLevelUp(newLevel: number): void {
-    this.currentLevel = newLevel;
-    if (this.currentLevel < 7) {
+  private handleLevelChanged(newLevel: number): void {
+    if (this.gameState.level < 7) {
+      console.log(`📜 Уровень ${this.gameState.level}. Контракты откроются на 7 уровне.`);
       this.activeContract = null;
       return;
     }
+
+    console.log(`📜 Уровень повышен до ${this.gameState.level}. Генерация нового контракта...`);
     this.generateNewContract();
   }
 
   private generateNewContract(): void {
     const tasks: ContractTask[] = [];
-    const maxLevel = this.currentLevel - 1;
-    const minLevel = Math.max(1, this.currentLevel - 5);
+
+    // 🎯 Берем уровень напрямую из GameState
+    const maxLevel = this.gameState.level - 1;
+    const minLevel = Math.max(1, this.gameState.level - 5);
 
     const levelPool: number[] = [];
     for (let i = minLevel; i <= maxLevel; i++) {
@@ -61,11 +70,11 @@ export class ContractService {
         requiredCount,
         currentCount: 0,
         isCompleted: false,
-        isLocked: false, // Временно false, будет пересчитано при сортировке
+        isLocked: false,
       });
     }
 
-    // 🎯 1. СОРТИРОВКА: По убыванию уровня (сначала высокий, потом ниже)
+    // 🎯 1. СОРТИРОВКА: По убыванию уровня
     tasks.sort((a, b) => b.targetLevel - a.targetLevel);
 
     // 🎯 2. БЛОКИРОВКА: Первая задача активна, остальные заблокированы
@@ -87,9 +96,8 @@ export class ContractService {
     this.checkTasks();
   }
 
-  private getActiveTargetLevel(): number | null {
+  getActiveTargetLevel(): number | null {
     if (!this.activeContract || this.activeContract.isCompleted) return null;
-
     const activeTask = this.activeContract.tasks.find((t) => !t.isCompleted && !t.isLocked);
     return activeTask ? activeTask.targetLevel : null;
   }
@@ -100,13 +108,11 @@ export class ContractService {
     let changed = false;
     let keepChecking = true;
 
-    // 🎯 Используем цикл вместо рекурсии для безопасной обработки цепных реакций
     while (keepChecking) {
-      keepChecking = false; // По умолчанию останавливаем цикл
+      keepChecking = false;
 
       const activeTask = this.activeContract.tasks.find((t) => !t.isCompleted && !t.isLocked);
-
-      if (!activeTask) break; // Если активных задач нет, выходим
+      if (!activeTask) break;
 
       const countOnBoard = this.grid.countItemsByLevel(activeTask.targetLevel);
 
@@ -115,7 +121,6 @@ export class ContractService {
         changed = true;
       }
 
-      // Если требуемое количество достигнуто
       if (countOnBoard >= activeTask.requiredCount && !activeTask.isCompleted) {
         activeTask.isCompleted = true;
         console.log(
@@ -123,24 +128,18 @@ export class ContractService {
         );
         changed = true;
 
-        // 🎯 Разблокируем следующую задачу
         const nextTaskIndex = this.activeContract.tasks.indexOf(activeTask) + 1;
         if (nextTaskIndex < this.activeContract.tasks.length) {
           const nextTask = this.activeContract.tasks[nextTaskIndex];
           nextTask.isLocked = false;
-          nextTask.currentCount = 0; // Сбрасываем счетчик для новой активной задачи
-
-          // 🎯 Заставляем цикл пройти еще раз ПРЯМО СЕЙЧАС, чтобы проверить,
-          // не выполнена ли новая задача мгновенно (например, после кнопки Fill)
+          nextTask.currentCount = 0;
           keepChecking = true;
         }
       }
     }
 
-    // 🎯 Пересчитываем статусы блокировки для всех задач (после завершения всех цепных реакций)
     this.updateLockStates();
 
-    // 🎯 ГАРАНТИРОВАННЫЙ ВЫСТРЕЛ СОБЫТИЯ: мы здесь, только когда все while-циклы завершены
     if (changed) {
       EventBus.emit(GameEvents.CONTRACT_UPDATED, {
         contract: this.activeContract,
@@ -148,7 +147,6 @@ export class ContractService {
       } as ContractUpdateData);
     }
 
-    // Проверка на полное завершение контракта
     if (this.activeContract.tasks.every((t) => t.isCompleted)) {
       this.activeContract.isCompleted = true;
       console.log(`🎉 КОНТРАКТ ВЫПОЛНЕН!`);
@@ -158,18 +156,15 @@ export class ContractService {
     }
   }
 
-  // 🎯 Отдельный метод для гарантированного обновления статусов isLocked
   private updateLockStates(): void {
     let isPreviousCompleted = true;
     for (const task of this.activeContract.tasks) {
       if (!isPreviousCompleted) {
         task.isLocked = true;
-        task.currentCount = 0; // Сбрасываем визуальный прогресс заблокированных задач
+        task.currentCount = 0;
       } else {
         task.isLocked = false;
       }
-
-      // Если текущая задача не выполнена, все последующие должны быть заблокированы
       if (!task.isCompleted) {
         isPreviousCompleted = false;
       }
@@ -181,7 +176,7 @@ export class ContractService {
   }
 
   public destroy(): void {
-    EventBus.off(GameEvents.LEVEL_CHANGED, this.handleLevelUp, this);
+    EventBus.off(GameEvents.LEVEL_CHANGED, this.handleLevelChanged, this);
     EventBus.off(GameEvents.GRID_ITEM_MERGED, this.checkTasks, this);
     EventBus.off(GameEvents.GRID_ITEM_ADDED, this.checkTasks, this);
     EventBus.off(GameEvents.GRID_ITEM_REMOVED, this.checkTasks, this);

@@ -57,13 +57,12 @@ export class Game extends Phaser.Scene {
 
     this.gridRenderer = new GridRenderer(this, this.grid);
     this.comboService = new ComboService();
-    this.contractService = new ContractService(this.grid);
-    this.contractService.init(this.gameState.level);
+    this.contractService = new ContractService(this.grid, this.gameState);
 
     this.economy = new Economy(this.gameState);
     this.registry.set("economy", this.economy);
 
-    this.scene.launch("UIScene", { economy: this.economy });
+    this.scene.launch("UIScene", { economy: this.economy, contractService: this.contractService });
     this.scene.get("UIScene") as UIScene;
 
     this.setupEventListeners();

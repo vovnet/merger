@@ -4,10 +4,12 @@ import { EventBus } from "../core/EventBus";
 import { GameEvents } from "../types/GameEvents";
 import { ContractTask, ContractUpdateData } from "../types/Contract";
 import { ItemRegistry } from "../core/ItemRegistry";
+import { ContractService } from "../core/ContractService";
 
 export class ContractPanel {
   private scene: Phaser.Scene;
   private container: Phaser.GameObjects.Container;
+  private contractService: ContractService;
 
   private titleText!: Phaser.GameObjects.Text;
   private taskCards: Phaser.GameObjects.Container[] = [];
@@ -19,14 +21,23 @@ export class ContractPanel {
   private readonly PANEL_X = 80;
   private readonly PANEL_Y = 150;
 
-  constructor(scene: Phaser.Scene) {
+  constructor(scene: Phaser.Scene, contractService: ContractService) {
     this.scene = scene;
+    this.contractService = contractService;
     this.container = scene.add.container(this.PANEL_X, this.PANEL_Y).setDepth(150);
 
     this.createVisuals();
     this.bindEvents();
 
-    this.container.setVisible(false);
+    const existingContract = this.contractService.getActiveContract();
+    if (existingContract) {
+      this.renderContract({
+        contract: existingContract,
+        activeTargetLevel: this.contractService.getActiveTargetLevel(),
+      });
+    } else {
+      this.container.setVisible(false);
+    }
   }
 
   private createVisuals(): void {
