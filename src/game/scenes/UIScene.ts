@@ -6,7 +6,7 @@ import { ComboScale } from "../ui/ComboScale";
 import { ContractPanel } from "../ui/ContractPanel";
 import { ContractService } from "../core/ContractService";
 import { ModalManager } from "../ui/modals/ModalManager";
-import { RouletteModal } from "../ui/modals/RouletteModal";
+import { RouletteModal } from "../ui/modals/roulette/RouletteModal";
 import { EventBus } from "../core/EventBus";
 import { UIEvents } from "../types/GameEvents";
 
