@@ -42,6 +42,8 @@ export const UIEvents = {
   UNDO_REQUESTED: "undoRequested",
   DEBUG_ADD_COINS: "debugAddCoins",
   ROULETTE_OPEN_REQUESTED: "roulette_open_requested",
+  MODAL_OPEN_REQUESTED: "modal_open_requested",
+  MODAL_CLOSED: "modal_closed",
 } as const;
 
 // Типы данных для событий
@@ -63,4 +65,8 @@ export interface ComboData {
 export interface ComboData {
   multiplier: number; // 1, 2, 3, 4, 5...
   itemId: string; // ID предмета, который продолжает цепочку
+}
+
+export interface ModalData {
+  [key: string]: any;
 }
