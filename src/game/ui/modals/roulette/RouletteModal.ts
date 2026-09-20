@@ -34,8 +34,8 @@ export class RouletteModal extends BaseModal {
 
     // 1. Фон
     const bg = this.scene.add.graphics();
-    bg.fillStyle(0x2a2a3e, 1);
-    bg.fillRoundedRect(-halfWidth, -220, screenWidth, MODAL_HEIGHT, 20);
+    bg.fillStyle(0x2f4f6f, 1);
+    bg.fillRoundedRect(-halfWidth, -MODAL_HEIGHT / 2, screenWidth, MODAL_HEIGHT, 20);
     this.container.add(bg);
 
     // 2. Заголовок
@@ -72,10 +72,10 @@ export class RouletteModal extends BaseModal {
 
     // 6. Шторки
     const leftCover = this.scene.add
-      .rectangle(-frameWidth / 2 - COVER_WIDTH / 2, 0, COVER_WIDTH, FRAME_HEIGHT + 20, 0x2a2a3e)
+      .rectangle(-frameWidth / 2 - COVER_WIDTH / 2, 0, COVER_WIDTH, FRAME_HEIGHT + 20, 0x2f4f6f)
       .setDepth(5);
     const rightCover = this.scene.add
-      .rectangle(frameWidth / 2 + COVER_WIDTH / 2, 0, COVER_WIDTH, FRAME_HEIGHT + 20, 0x2a2a3e)
+      .rectangle(frameWidth / 2 + COVER_WIDTH / 2, 0, COVER_WIDTH, FRAME_HEIGHT + 20, 0x2f4f6f)
       .setDepth(5);
     this.container.add([leftCover, rightCover]);
 

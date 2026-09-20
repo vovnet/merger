@@ -13,5 +13,5 @@ export const RouletteConfig = {
   FRAME_PADDING: 40,
   FRAME_HEIGHT: 170,
   COVER_WIDTH: 40,
-  MODAL_HEIGHT: 440,
+  MODAL_HEIGHT: 540,
 } as const;
