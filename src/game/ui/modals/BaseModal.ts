@@ -22,8 +22,9 @@ export abstract class BaseModal {
         0.7, // Черный с прозрачностью 70%
       )
       .setOrigin(0)
-      .setDepth(900);
-    // .setInteractive();
+      .setDepth(900)
+      .setSize(this.scene.scale.width, this.scene.scale.height)
+      .setInteractive();
 
     // Закрытие по клику на затемненный фон
     // this.bg.on("pointerdown", () => this.close());
@@ -32,6 +33,7 @@ export abstract class BaseModal {
     this.container = this.scene.add
       .container(this.scene.scale.width / 2, this.scene.scale.height / 2)
       .setDepth(1000)
+      .setSize(this.scene.scale.width, this.scene.scale.height)
       .setInteractive();
   }
 
