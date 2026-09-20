@@ -29,6 +29,8 @@ export const GameEvents = {
   CONTRACT_CREATED: "contract_created",
   CONTRACT_UPDATED: "contract_updated",
   CONTRACT_COMPLETED: "contract_completed",
+
+  GAME_STATE_LOADED: "game_state_loaded",
 } as const;
 
 // События, которые UIScene эмитит, а GameScene слушает

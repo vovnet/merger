@@ -10,8 +10,10 @@ import { ComboService } from "../core/ComboService";
 import { ContractService } from "../core/ContractService";
 import { ContractUpdateData } from "../types/Contract";
 import { AudioService } from "../core/AudioService";
+import { GameState } from "../core/GameState";
 
 export class Game extends Phaser.Scene {
+  private gameState: GameState;
   private grid: Grid;
   private gridRenderer: GridRenderer;
   private economy: Economy;
@@ -45,6 +47,10 @@ export class Game extends Phaser.Scene {
   }
 
   create(): void {
+    this.gameState = new GameState();
+    this.registry.set("gameState", this.gameState);
+    this.loadGameProgress();
+
     this.audioService = new AudioService(this);
     this.grid = new Grid({ cols: 7, rows: 5 });
 
@@ -56,13 +62,30 @@ export class Game extends Phaser.Scene {
     this.contractService = new ContractService(this.grid);
     this.contractService.init(this.currentLevel);
 
-    this.economy = new Economy(this.registry);
+    this.economy = new Economy(this.gameState);
     this.registry.set("economy", this.economy);
 
     this.scene.launch("UIScene", { economy: this.economy });
     this.scene.get("UIScene") as UIScene;
 
     this.setupEventListeners();
+  }
+
+  private loadGameProgress(): void {
+    const saved = localStorage.getItem("my_merge_game_save");
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        this.gameState.deserialize(parsed); // Магия: все классы обновятся сами!
+      } catch (e) {
+        console.error("Ошибка загрузки сохранения", e);
+      }
+    }
+  }
+
+  public saveGameProgress(): void {
+    const dataToSave = this.gameState.serialize();
+    localStorage.setItem("my_merge_game_save", JSON.stringify(dataToSave));
   }
 
   private fillAllEmptyCells(): void {
@@ -81,7 +104,7 @@ export class Game extends Phaser.Scene {
   private setupEventListeners(): void {
     EventBus.on(GameEvents.GRID_ITEM_MERGED, (data: { newLevel: number; from: any; to: any }) => {
       const reward = this.economy.getMergeReward(data.newLevel);
-      this.economy.addCoins(reward);
+      this.gameState.setCoins(reward);
       console.log(`💰 Слияние в ур.${data.newLevel} → +${reward} монет`);
       if (data.newLevel > this.currentLevel) {
         this.currentLevel = data.newLevel;
@@ -106,14 +129,6 @@ export class Game extends Phaser.Scene {
       this.economy.addSpawnRefund(this.currentLevel);
     });
 
-    // 🎯 Слушаем встроенные события registry
-    this.registry.events.on(
-      "changedata-coins",
-      (parent: any, value: number, previousValue: number) => {
-        EventBus.emit(GameEvents.COINS_CHANGED, { value, previousValue });
-      },
-    );
-
     EventBus.on(GameEvents.COMBO_UPDATED, (data: ComboData) => {
       console.log(`🔥 КОМБО x${data.multiplier}!`);
 
@@ -121,7 +136,7 @@ export class Game extends Phaser.Scene {
       // Или начислить бонусные монеты прямо сейчас:
       if (data.multiplier > 1) {
         const bonus = data.multiplier * 10; // Пример формулы
-        this.economy.addCoins(bonus);
+        this.gameState.addCoins(bonus);
       }
     });
 
@@ -154,7 +169,7 @@ export class Game extends Phaser.Scene {
     // 💰 Компенсация: даём монеты за каждый удалённый предмет
     if (removedItems.length > 0) {
       const compensation = removedItems.reduce((sum, item) => sum + item.level * 5, 0);
-      this.economy.addCoins(compensation);
+      this.gameState.addCoins(compensation);
     }
 
     EventBus.emit(GameEvents.LEVEL_CHANGED, this.currentLevel);

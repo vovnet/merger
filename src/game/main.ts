@@ -16,6 +16,7 @@ const config: Types.Core.GameConfig = {
   },
   disableContextMenu: true,
   scene: [MainGame, UIScene],
+  banner: { hidePhaser: true },
 };
 
 const StartGame = (parent: string) => {

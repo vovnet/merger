@@ -1,64 +1,50 @@
-import * as Phaser from "phaser";
+import { GameState } from "./GameState";
 
 export class Economy {
-  private registry: Phaser.Data.DataManager;
+  // 🎯 Внедряем GameState вместо registry
+  constructor(private gameState: GameState) {}
 
-  constructor(registry: Phaser.Data.DataManager) {
-    this.registry = registry;
-
-    // 🎯 Снижаем стартовый капитал, чтобы дефицит чувствовался быстрее
-    if (!this.registry.has("coins")) {
-      this.registry.set("coins", 500);
-    }
-  }
-
+  // Читаем актуальные монеты напрямую из GameState
   get currentCoins(): number {
-    return this.registry.get("coins");
+    return this.gameState.coins;
   }
 
-  // 🎯 Формула стоимости спауна (растёт быстро)
-  getSpawnCost(level: number): number {
-    // Пример: Ур.1 = 65, Ур.2 = 110, Ур.3 = 185, Ур.4 = 290
+  // 🎯 Формула стоимости спауна (чистая функция)
+  public getSpawnCost(level: number): number {
     return 50 + Math.pow(level, 2) * 15;
   }
 
-  // 🎯 Формула награды за слияние (растёт медленно, линейно или слабо квадратично)
-  getMergeReward(newLevel: number): number {
-    // Пример: Ур.2 = 12, Ур.3 = 27, Ур.4 = 48, Ур.5 = 75
-    // Это даёт приятное "большое число" на экране, но математически всегда меньше затрат
+  // 🎯 Формула награды за слияние (чистая функция)
+  public getMergeReward(newLevel: number): number {
     return Math.pow(newLevel, 2) * 3;
   }
 
-  // 💰 Изменение монет
-  addCoins(amount: number): boolean {
-    const newBalance = this.currentCoins + amount;
-    if (newBalance < 0) return false;
-
-    this.registry.set("coins", newBalance);
-    return true;
-  }
-
-  spendCoins(amount: number): boolean {
-    return this.addCoins(-amount);
-  }
-
-  canAfford(amount: number): boolean {
+  // 🎯 Проверка возможности покупки
+  public canAfford(amount: number): boolean {
     return this.currentCoins >= amount;
   }
 
-  getSpawnRefund(level: number) {
+  // 🎯 Трата монет (делегирование в GameState)
+  public spendCoins(amount: number): boolean {
+    if (!this.canAfford(amount)) {
+      return false;
+    }
+    this.gameState.addCoins(-amount);
+    return true;
+  }
+
+  // 🎯 Расчет возврата
+  public getSpawnRefund(level: number): number {
     const cost = this.getSpawnCost(level);
-    // Округляем вниз до целого числа, чтобы не было дробных монет (например, 2.5)
     return Math.floor(cost * 0.05);
   }
 
-  addSpawnRefund(level: number): number {
+  // 🎯 Начисление возврата (делегирование в GameState)
+  public addSpawnRefund(level: number): number {
     const refundAmount = this.getSpawnRefund(level);
     if (refundAmount > 0) {
-      this.addCoins(refundAmount);
+      this.gameState.addCoins(refundAmount);
     }
-
-    // Возвращаем фактическую добавленную сумму, чтобы UI мог её красиво показать игроку
     return refundAmount;
   }
 }

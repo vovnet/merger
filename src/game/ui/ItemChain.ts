@@ -1,4 +1,3 @@
-// ui/ItemChain.ts
 import * as Phaser from "phaser";
 import { ItemRegistry } from "../core/ItemRegistry";
 
