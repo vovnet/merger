@@ -101,12 +101,12 @@ export class RouletteModal extends BaseModal {
 
   private createSpinButton(): void {
     this.spinButton = this.scene.add
-      .rectangle(0, 150, 250, 70, 0x4caf50)
+      .rectangle(0, 180, 250, 70, 0x4caf50)
       .setInteractive({ useHandCursor: true });
     this.spinButton.setStrokeStyle(3, 0xffffff);
 
     this.spinButtonText = this.scene.add
-      .text(0, 150, `️ КРУТИТЬ (${this.gameState.spins})`, {
+      .text(0, 180, `️ КРУТИТЬ (${this.gameState.spins})`, {
         fontSize: "22px",
         color: "#ffffff",
         fontFamily: "Arial",
