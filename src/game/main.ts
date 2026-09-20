@@ -14,6 +14,7 @@ const config: Types.Core.GameConfig = {
     mode: Scale.FIT,
     autoCenter: Scale.CENTER_BOTH,
   },
+  disableContextMenu: true,
   scene: [MainGame, UIScene],
 };
 
