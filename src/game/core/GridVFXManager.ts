@@ -43,10 +43,10 @@ export class GridVFXManager {
     const color = colors[Math.min(level - 1, colors.length - 1)];
 
     const particles = this.scene.add.particles(px, py, "particle_blob", {
-      speed: { min: 80, max: 160 },
+      speed: { min: 180, max: 960 },
       angle: { min: 0, max: 360 },
-      scale: { start: 0.6, end: 0 },
-      lifespan: 500,
+      scale: { start: 1.6, end: 0 },
+      lifespan: 300,
       gravityY: 250,
       tint: color,
       alpha: { start: 1, end: 0.5 },
