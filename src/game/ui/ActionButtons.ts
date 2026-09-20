@@ -17,6 +17,8 @@ export class ActionButtons {
   private undoButtonText: Phaser.GameObjects.Text;
   private debugButtonBg: Phaser.GameObjects.Rectangle;
   private debugButtonText: Phaser.GameObjects.Text;
+  private spinButtonBg: Phaser.GameObjects.Rectangle;
+  private spinButtonText: Phaser.GameObjects.Text;
 
   private gameState: GameState;
 
@@ -28,6 +30,7 @@ export class ActionButtons {
     this.setupListeners();
     this.updateSpawnButtonText();
     this.updateAddCoinsButton();
+    this.updateSpinButtonText();
   }
 
   private create(): void {
@@ -155,6 +158,71 @@ export class ActionButtons {
     });
     this.debugButtonBg.on("pointerover", () => this.debugButtonBg.setFillStyle(0x27ae60));
     this.debugButtonBg.on("pointerout", () => this.debugButtonBg.setFillStyle(0x2ecc71));
+
+    const spinBtnX = 100;
+    const spinBtnY = height - 40;
+
+    this.spinButtonBg = this.scene.add
+      .rectangle(spinBtnX, spinBtnY, 160, 50, 0xffd700) // Золотой цвет для награды
+      .setInteractive({ useHandCursor: true })
+      .setDepth(100);
+
+    this.spinButtonBg.setStrokeStyle(2, 0xffffff);
+
+    this.spinButtonText = this.scene.add
+      .text(spinBtnX, spinBtnY, `🎟️ 0`, {
+        fontSize: "20px",
+        color: "#000000", // Черный текст лучше читается на золотом
+        fontFamily: "Arial",
+        fontStyle: "bold",
+        stroke: "#ffffff",
+        strokeThickness: 2,
+      })
+      .setOrigin(0.5)
+      .setDepth(101);
+
+    this.spinButtonBg.on("pointerdown", () => {
+      if (this.gameState.spins > 0) {
+        // 🎯 Эмитим событие для открытия рулетки
+        EventBus.emit(UIEvents.ROULETTE_OPEN_REQUESTED);
+      } else {
+        // Визуальный фидбек: легкая тряска, если спинов нет
+        this.scene.tweens.add({
+          targets: this.spinButtonBg,
+          x: { from: spinBtnX, to: spinBtnX - 5 },
+          duration: 50,
+          yoyo: true,
+          repeat: 3,
+          ease: "Sine.easeInOut",
+        });
+      }
+    });
+
+    this.spinButtonBg.on("pointerover", () => {
+      if (this.gameState.spins > 0) this.spinButtonBg.setFillStyle(0xffe44d);
+    });
+
+    this.spinButtonBg.on("pointerout", () => {
+      if (this.gameState.spins > 0) this.spinButtonBg.setFillStyle(0xffd700);
+    });
+  }
+
+  private updateSpinButtonText(): void {
+    const spins = this.gameState.spins;
+    this.spinButtonText.setText(`🎟️ ${spins}`);
+
+    // Если спинов 0, делаем кнопку серой и неактивной
+    if (spins === 0) {
+      this.spinButtonBg.setFillStyle(0x7f8c8d);
+      this.spinButtonText.setColor("#ffffff");
+      this.spinButtonBg.disableInteractive();
+    }
+    // Если есть спины, возвращаем золотой цвет и активность
+    else {
+      this.spinButtonBg.setFillStyle(0xffd700);
+      this.spinButtonText.setColor("#000000");
+      this.spinButtonBg.setInteractive({ useHandCursor: true });
+    }
   }
 
   private updateSpawnButtonText(): void {
@@ -183,6 +251,20 @@ export class ActionButtons {
       this.updateSpawnButtonText();
       this.updateAddCoinsButton();
     });
+
+    EventBus.on(GameEvents.SPINS_CHANGED, () => {
+      this.updateSpinButtonText();
+
+      // Небольшая анимация "пульса" при получении нового спина
+      if (this.gameState.spins > 0) {
+        this.scene.tweens.add({
+          targets: this.spinButtonBg,
+          scale: { from: 1.2, to: 1 },
+          duration: 300,
+          ease: "Back.easeOut",
+        });
+      }
+    });
   }
 
   destroy(): void {
@@ -194,5 +276,7 @@ export class ActionButtons {
     this.undoButtonText.destroy();
     this.debugButtonBg.destroy();
     this.debugButtonText.destroy();
+    this.spinButtonBg.destroy();
+    this.spinButtonText.destroy();
   }
 }

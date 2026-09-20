@@ -4,6 +4,7 @@ import { GameEvents } from "../types/GameEvents";
 export interface GameStateData {
   coins: number;
   level: number;
+  spins: number;
   // В будущем здесь будут: inventory, completedContracts, settings и т.д.
 }
 
@@ -15,6 +16,7 @@ export class GameState {
     this.data = {
       coins: 500,
       level: 15,
+      spins: 120,
     };
   }
 
@@ -24,6 +26,9 @@ export class GameState {
   }
   public get level(): number {
     return this.data.level;
+  }
+  public get spins(): number {
+    return this.data.spins;
   }
 
   // --- МЕТОДЫ ИЗМЕНЕНИЯ (с автоматическим оповещением) ---
@@ -44,6 +49,14 @@ export class GameState {
     if (this.data.level !== value) {
       this.data.level = value;
       EventBus.emit(GameEvents.LEVEL_CHANGED, value);
+    }
+  }
+
+  public addSpins(amount: number): void {
+    if (amount > 0) {
+      this.data.spins += amount;
+      // Оповещаем всех, кто слушает (например, UI)
+      EventBus.emit(GameEvents.SPINS_CHANGED, this.data.spins);
     }
   }
 

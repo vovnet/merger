@@ -148,6 +148,7 @@ export class Game extends Phaser.Scene {
     EventBus.on(GameEvents.CONTRACT_COMPLETED, (data: ContractUpdateData) => {
       // Здесь можно запустить красивую анимацию монет в UI
       console.log(`💰 Начислена награда за контракт!`);
+      this.gameState.addSpins(1);
     });
   }
 

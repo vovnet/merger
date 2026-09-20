@@ -30,6 +30,8 @@ export const GameEvents = {
   CONTRACT_UPDATED: "contract_updated",
   CONTRACT_COMPLETED: "contract_completed",
 
+  SPINS_CHANGED: "spins_changed",
+
   GAME_STATE_LOADED: "game_state_loaded",
 } as const;
 
@@ -39,6 +41,7 @@ export const UIEvents = {
   FILL_REQUESTED: "fillRequested",
   UNDO_REQUESTED: "undoRequested",
   DEBUG_ADD_COINS: "debugAddCoins",
+  ROULETTE_OPEN_REQUESTED: "roulette_open_requested",
 } as const;
 
 // Типы данных для событий
