@@ -82,9 +82,9 @@ export class RouletteModal extends BaseModal {
     // 7. Кнопка "Крутить"
     this.createSpinButton();
 
-    // 8. Кнопка закрытия
+    // 8. Кнопка закрытия 🎯 ИСПРАВЛЕНО: добавлен текст "✖"
     const closeBtn = this.scene.add
-      .text(halfWidth - 40, -200, "", {
+      .text(halfWidth - 40, -200, "✖", {
         fontSize: "28px",
         color: "#ffffff",
       })
