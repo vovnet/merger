@@ -1,9 +1,6 @@
-// ui/modals/RouletteModal.ts
 import * as Phaser from "phaser";
 import { BaseModal } from "./BaseModal";
 import { RouletteService } from "../../core/RouletteService";
-import { EventBus } from "../../core/EventBus";
-import { GameEvents } from "../../types/GameEvents";
 import { GameState } from "../../core/GameState";
 import { RoulettePrize } from "../../types/Rulette";
 
@@ -16,10 +13,15 @@ export class RouletteModal extends BaseModal {
   private spinButtonText!: Phaser.GameObjects.Text;
   private pointer!: Phaser.GameObjects.Triangle;
 
+  // 🎯 Ссылки на элементы экрана победы, чтобы мы могли их удалить при сбросе
+  private resultOverlay!: Phaser.GameObjects.Rectangle;
+  private resultText!: Phaser.GameObjects.Text;
+  private claimButton!: Phaser.GameObjects.Text;
+
   private readonly ITEM_WIDTH = 120;
   private readonly ITEM_GAP = 10;
-  private readonly TOTAL_ITEMS = 30; // 🎯 Увеличили до 30, чтобы лента была длиннее для широкого экрана
-  private readonly SPIN_DURATION = 5000;
+  private readonly TOTAL_ITEMS = 80;
+  private readonly SPIN_DURATION = 10000;
 
   private isSpinning = false;
 
@@ -30,18 +32,17 @@ export class RouletteModal extends BaseModal {
   }
 
   protected buildUI(): void {
-    // 🎯 Получаем динамическую ширину экрана
     const screenWidth = this.scene.scale.width;
     const halfWidth = screenWidth / 2;
     const modalHeight = 440;
 
-    // 1. Фон модалки (теперь на всю ширину)
+    // 1. Фон модалки
     const bg = this.scene.add.graphics();
     bg.fillStyle(0x2a2a3e, 1);
     bg.fillRoundedRect(-halfWidth, -220, screenWidth, modalHeight, 20);
     this.container.add(bg);
 
-    // 2. Заголовок (остается по центру)
+    // 2. Заголовок
     const title = this.scene.add
       .text(0, -180, "🎰 РУЛЕТКА", {
         fontSize: "36px",
@@ -58,17 +59,17 @@ export class RouletteModal extends BaseModal {
     this.rouletteContainer = this.scene.add.container(0, 0);
     this.container.add(this.rouletteContainer);
 
-    // 4. Генерируем элементы ленты
+    // 4. Генерируем элементы ленты (сразу с рандомной стартовой позицией)
     this.generateStrip();
 
     // 5. Указатели
-    this.pointer = this.scene.add.triangle(0, -95, 0, 0, 15, 20, -15, 20, 0xff0000);
+    this.pointer = this.scene.add.triangle(0, -100, 0, 0, 15, 20, -15, 20, 0xff0000);
     this.container.add(this.pointer);
 
-    const pointerBottom = this.scene.add.triangle(0, 95, 0, 0, 15, -20, -15, -20, 0xff0000);
+    const pointerBottom = this.scene.add.triangle(0, 120, 0, 0, 15, -20, -15, -20, 0xff0000);
     this.container.add(pointerBottom);
 
-    // 6. 🎯 Динамическая золотая рамка (с отступом 40px от краев экрана)
+    // 6. Золотая рамка
     const framePadding = 40;
     const frameWidth = screenWidth - framePadding;
     const frameHeight = 170;
@@ -78,10 +79,10 @@ export class RouletteModal extends BaseModal {
     stripFrame.strokeRoundedRect(-frameWidth / 2, -frameHeight / 2, frameWidth, frameHeight, 10);
     this.container.add(stripFrame);
 
-    // 7. 🎯 Динамические ШТОРКИ по краям
+    // 7. Шторки по краям
     const coverColor = 0x2a2a3e;
     const coverDepth = 5;
-    const coverWidth = 40; // Ширина шторки, чтобы гарантированно перекрыть выходящие элементы
+    const coverWidth = 40;
 
     const leftCover = this.scene.add
       .rectangle(-frameWidth / 2 - coverWidth / 2, 0, coverWidth, frameHeight + 20, coverColor)
@@ -96,7 +97,7 @@ export class RouletteModal extends BaseModal {
     // 8. Кнопка "Крутить"
     this.createSpinButton();
 
-    // 9. 🎯 Кнопка закрытия (сдвинута в правый верхний угол с учетом новой ширины)
+    // 9. Кнопка закрытия
     const closeBtn = this.scene.add
       .text(halfWidth - 40, -200, "✖", {
         fontSize: "28px",
@@ -112,7 +113,6 @@ export class RouletteModal extends BaseModal {
 
   private generateStrip(): void {
     this.rouletteContainer.removeAll(true);
-    this.rouletteContainer.x = 0;
 
     const strip: RoulettePrize[] = [];
     for (let i = 0; i < this.TOTAL_ITEMS; i++) {
@@ -147,6 +147,8 @@ export class RouletteModal extends BaseModal {
         .setOrigin(0.5);
       this.rouletteContainer.add(levelText);
     });
+
+    this.setRandomStartPosition();
   }
 
   private createSpinButton(): void {
@@ -183,42 +185,74 @@ export class RouletteModal extends BaseModal {
     this.spinButton.setVisible(false);
     this.spinButtonText.setVisible(false);
 
-    // 🎯 Выбираем выигрышный индекс ближе к концу ленты (например, 22-й из 30)
-    const winningIndex = 22;
+    const winningIndex = 70;
+
+    // 🎯 ПЕРЕГЕНЕРАЦИЯ ЛЕНТЫ ПРЯМО ПЕРЕД СПИНОМ
+    // Это создает эффект "перетасовки" барабана перед новым вращением
+    this.generateStrip();
 
     this.spinToItem(winningIndex);
   }
 
   private spinToItem(winningIndex: number): void {
-    this.rouletteContainer.x = 0;
-
     const cellWidth = this.ITEM_WIDTH + this.ITEM_GAP;
-    const randomOffset = Phaser.Math.Between(-this.ITEM_WIDTH / 3, this.ITEM_WIDTH / 3);
 
-    const targetX = -(winningIndex * cellWidth) + randomOffset;
+    // Небольшой рандом, чтобы указатель не всегда был идеально по центру
+    const endRandomOffset = Phaser.Math.Between(-this.ITEM_WIDTH / 4, this.ITEM_WIDTH / 4);
+    const targetX = -(winningIndex * cellWidth) + endRandomOffset;
 
+    // 🎯 ЭТАП 1: Плавное, длинное замедление БЕЗ отскока
     this.scene.tweens.add({
       targets: this.rouletteContainer,
       x: targetX,
-      duration: this.SPIN_DURATION,
-      ease: "Cubic.easeOut",
+      duration: this.SPIN_DURATION, // 7000 мс
+      ease: "Cubic.easeOut", // Просто плавное торможение до полной остановки
+
       onComplete: () => {
-        console.log(`🎉 Рулетка остановилась! Выигрышный элемент: ${winningIndex}`);
         this.isSpinning = false;
-        this.showResult(winningIndex);
+
+        // 🎯 ЭТАП 2: МИКРО-ОТСКАК (ровно на 8 пикселей, независимо от дистанции)
+        this.scene.tweens.add({
+          targets: this.rouletteContainer,
+          x: targetX + 8, // Сдвигаем контейнер назад всего на 8 пикселей
+          duration: 120, // Очень быстрый "щелчок"
+          ease: "Sine.easeOut",
+
+          onComplete: () => {
+            // Анимация указателя (тычок вниз)
+            this.scene.tweens.add({
+              targets: this.pointer,
+              y: -85, // Чуть вниз от исходных -95
+              duration: 100,
+              yoyo: true,
+              ease: "Power2",
+            });
+
+            this.showResult(winningIndex);
+          },
+        });
       },
     });
   }
 
+  private setRandomStartPosition(): void {
+    const cellWidth = this.ITEM_WIDTH + this.ITEM_GAP;
+    const startRandomIndex = 5;
+    const startRandomOffset = -20;
+    this.rouletteContainer.x = -(startRandomIndex * cellWidth) + startRandomOffset;
+  }
+
+  // 🎯 НОВЫЙ МЕТОД: Показывает результат и готовит модалку к следующему спину
   private showResult(winningIndex: number): void {
     const screenWidth = this.scene.scale.width;
     const modalHeight = 440;
 
-    // 🎯 Оверлей теперь тоже на всю ширину
-    const overlay = this.scene.add.rectangle(0, 0, screenWidth, modalHeight, 0x000000, 0.7);
-    this.container.add(overlay);
+    this.resultOverlay = this.scene.add
+      .rectangle(0, 0, screenWidth, modalHeight, 0x000000, 0.7)
+      .setDepth(50);
+    this.container.add(this.resultOverlay);
 
-    const winText = this.scene.add
+    this.resultText = this.scene.add
       .text(0, -50, "🎉 ПОБЕДА!", {
         fontSize: "48px",
         color: "#ffd700",
@@ -227,10 +261,11 @@ export class RouletteModal extends BaseModal {
         stroke: "#000000",
         strokeThickness: 6,
       })
-      .setOrigin(0.5);
-    this.container.add(winText);
+      .setOrigin(0.5)
+      .setDepth(51);
+    this.container.add(this.resultText);
 
-    const closeBtn = this.scene.add
+    this.claimButton = this.scene.add
       .text(0, 50, "ЗАБРАТЬ", {
         fontSize: "24px",
         color: "#4caf50",
@@ -240,15 +275,45 @@ export class RouletteModal extends BaseModal {
         strokeThickness: 3,
       })
       .setOrigin(0.5)
-      .setInteractive({ useHandCursor: true });
+      .setInteractive({ useHandCursor: true })
+      .setDepth(52);
 
-    closeBtn.on("pointerdown", () => {
-      // this.gameState.spendSpin();
-      // TODO: EventBus.emit(GameEvents.ROULETTE_WON, prize);
-      this.close();
+    this.claimButton.on("pointerdown", () => {
+      this.claimPrizeAndReset();
     });
+    this.claimButton.on("pointerover", () => this.claimButton.setColor("#66bb6a"));
+    this.claimButton.on("pointerout", () => this.claimButton.setColor("#4caf50"));
 
-    this.container.add(closeBtn);
+    this.container.add(this.claimButton);
+  }
+
+  // 🎯 НОВЫЙ МЕТОД: Логика после нажатия "ЗАБРАТЬ"
+  private claimPrizeAndReset(): void {
+    // 1. Очищаем экран победы
+    if (this.resultOverlay) this.resultOverlay.destroy();
+    if (this.resultText) this.resultText.destroy();
+    if (this.claimButton) this.claimButton.destroy();
+
+    // TODO: Здесь будет логика добавления приза в инвентарь
+    // EventBus.emit(GameEvents.ROULETTE_WON, prize);
+
+    // 2. Проверяем, остались ли спины
+    if (this.gameState.spins <= 0) {
+      // Спинов нет, закрываем модалку.
+      // ActionButtons на главном экране подхватит это и станет серой.
+      this.close();
+      return;
+    }
+
+    // 3. Если спины есть, готовим модалку к новому вращению!
+    // Обновляем текст кнопки с актуальным количеством спинов
+    this.spinButtonText.setText(`🎟️ КРУТИТЬ (${this.gameState.spins})`);
+
+    // Показываем кнопку снова
+    this.spinButton.setVisible(true);
+    this.spinButtonText.setVisible(true);
+
+    // (Лента уже будет перегенерирована при следующем нажатии на "Крутить" в startSpin)
   }
 
   private getRarityColor(rarity: RoulettePrize["rarity"]): number {
@@ -268,11 +333,22 @@ export class RouletteModal extends BaseModal {
 
   public close(): void {
     if (this.isSpinning) return;
+
+    // 🎯 Гарантированная очистка элементов результата при закрытии
+    if (this.resultOverlay) this.resultOverlay.destroy();
+    if (this.resultText) this.resultText.destroy();
+    if (this.claimButton) this.claimButton.destroy();
+
     super.close();
   }
 
   public destroy(): void {
     if (this.isSpinning) return;
+
+    if (this.resultOverlay) this.resultOverlay.destroy();
+    if (this.resultText) this.resultText.destroy();
+    if (this.claimButton) this.claimButton.destroy();
+
     super.destroy();
   }
 }

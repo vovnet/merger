@@ -22,11 +22,11 @@ export abstract class BaseModal {
         0.7, // Черный с прозрачностью 70%
       )
       .setOrigin(0)
-      .setDepth(900)
-      .setInteractive();
+      .setDepth(900);
+    // .setInteractive();
 
     // Закрытие по клику на затемненный фон
-    this.bg.on("pointerdown", () => this.close());
+    // this.bg.on("pointerdown", () => this.close());
 
     // 2. Создаем основной контейнер модалки (будет по центру)
     this.container = this.scene.add
