@@ -18,8 +18,6 @@ export class Game extends Phaser.Scene {
   private gridRenderer: GridRenderer;
   private economy: Economy;
 
-  private currentLevel: number = 1;
-
   private historyService: HistoryService;
   private comboService: ComboService;
   private contractService: ContractService;
@@ -60,7 +58,7 @@ export class Game extends Phaser.Scene {
     this.gridRenderer = new GridRenderer(this, this.grid);
     this.comboService = new ComboService();
     this.contractService = new ContractService(this.grid);
-    this.contractService.init(this.currentLevel);
+    this.contractService.init(this.gameState.level);
 
     this.economy = new Economy(this.gameState);
     this.registry.set("economy", this.economy);
@@ -106,8 +104,8 @@ export class Game extends Phaser.Scene {
       const reward = this.economy.getMergeReward(data.newLevel);
       this.gameState.setCoins(reward);
       console.log(`💰 Слияние в ур.${data.newLevel} → +${reward} монет`);
-      if (data.newLevel > this.currentLevel) {
-        this.currentLevel = data.newLevel;
+      if (data.newLevel > this.gameState.level) {
+        this.gameState.setLevel(data.newLevel);
         this.handleLevelUp();
       }
     });
@@ -125,8 +123,7 @@ export class Game extends Phaser.Scene {
     });
 
     EventBus.on(UIEvents.DEBUG_ADD_COINS, () => {
-      console.log("add money: ", this.economy.getSpawnRefund(this.currentLevel));
-      this.economy.addSpawnRefund(this.currentLevel);
+      this.economy.addSpawnRefund(this.gameState.level);
     });
 
     EventBus.on(GameEvents.COMBO_UPDATED, (data: ComboData) => {
@@ -158,7 +155,7 @@ export class Game extends Phaser.Scene {
   // Вычисление уровня для кнопки спауна
   private getSpawnLevel(): number {
     // Если currentLevel <= 4, вернёт 1. Если 5, вернёт 2. Если 6, вернёт 3 и т.д.
-    return Math.max(1, this.currentLevel - 6);
+    return Math.max(1, this.gameState.level - 6);
   }
 
   private handleLevelUp(): void {
@@ -172,15 +169,13 @@ export class Game extends Phaser.Scene {
       this.gameState.addCoins(compensation);
     }
 
-    EventBus.emit(GameEvents.LEVEL_CHANGED, this.currentLevel);
-
     this.historyService.clear();
   }
 
   // 🎯 ГЛАВНЫЙ МЕТОД: Спаун случайного предмета с учётом задержки
   private spawnRandomItem(): void {
     const levelToSpawn = this.getSpawnLevel();
-    const cost = this.economy.getSpawnCost(this.currentLevel);
+    const cost = this.economy.getSpawnCost(this.gameState.level);
 
     if (!this.grid.hasEmptyCell()) {
       return;

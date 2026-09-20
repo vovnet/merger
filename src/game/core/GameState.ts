@@ -14,7 +14,7 @@ export class GameState {
     // Значения по умолчанию для новой игры
     this.data = {
       coins: 500,
-      level: 1,
+      level: 15,
     };
   }
 
@@ -40,6 +40,7 @@ export class GameState {
   }
 
   public setLevel(value: number): void {
+    console.log("set leve: ", value);
     if (this.data.level !== value) {
       this.data.level = value;
       EventBus.emit(GameEvents.LEVEL_CHANGED, value);

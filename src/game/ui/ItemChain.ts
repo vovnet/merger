@@ -1,24 +1,45 @@
+// ui/ItemChain.ts
 import * as Phaser from "phaser";
 import { ItemRegistry } from "../core/ItemRegistry";
+import { GameState } from "../core/GameState";
+import { EventBus } from "../core/EventBus";
+import { GameEvents } from "../types/GameEvents";
 
 export class ItemChain {
   private scene: Phaser.Scene;
+  private gameState: GameState; // 🎯 Ссылка на единый источник истины
+
   private container: Phaser.GameObjects.Container;
   private sprites: Phaser.GameObjects.Image[] = [];
-  private currentLevel: number = 0; // 🎯 Изменено с 1 на 0
+  private currentLevel: number = 1;
 
   private readonly itemDisplaySize = 45;
   private readonly gap = 8;
 
-  constructor(scene: Phaser.Scene, initialLevel: number = 1) {
+  constructor(scene: Phaser.Scene) {
     this.scene = scene;
+
+    // 🎯 Получаем GameState из Registry (никаких аргументов в конструкторе!)
+    this.gameState = this.scene.registry.get("gameState") as GameState;
+    this.currentLevel = this.gameState.level;
+
     this.container = this.scene.add.container(scene.scale.width / 2, 60).setDepth(100);
 
-    // 🎯 Рисуем начальное состояние
-    this.drawInitial(initialLevel);
+    // 🎯 Рисуем начальное состояние на основе загруженных данных
+    this.drawInitial(this.currentLevel);
+    this.setupListeners();
   }
 
-  // 🎯 НОВЫЙ МЕТОД: Рисует начальную цепочку без анимаций
+  private setupListeners(): void {
+    // 🎯 Слушаем изменения уровня. При загрузке сохранения это сработает автоматически!
+    EventBus.on(GameEvents.LEVEL_CHANGED, this.onLevelChanged);
+  }
+
+  // 🎯 Используем стрелочную функцию для безопасного удаления слушателя в destroy()
+  private onLevelChanged = (level: number) => {
+    this.update(level);
+  };
+
   private drawInitial(level: number): void {
     this.currentLevel = level;
 
@@ -37,10 +58,10 @@ export class ItemChain {
       sprite.setScale(scale);
 
       if (lvl === endLevel) {
-        sprite.setTint(0x000000);
+        sprite.setTint(0x000000); // Затемненный (заблокированный)
         sprite.setAlpha(1.0);
       } else {
-        sprite.setTint(0xffffff);
+        sprite.setTint(0xffffff); // Обычный
         sprite.setAlpha(1);
       }
 
@@ -51,27 +72,23 @@ export class ItemChain {
     }
   }
 
-  update(newLevel: number): void {
+  private update(newLevel: number): void {
     const oldLevel = this.currentLevel;
 
-    // Если уровень не изменился, ничего не делаем
+    // Если уровень не изменился, ничего не делаем (защита от лишних перерисовок)
     if (newLevel === oldLevel) return;
 
     this.currentLevel = newLevel;
 
-    // Вычисляем новые диапазоны
     const newEndLevel = newLevel + 1;
     const newStartLevel = Math.max(1, newEndLevel - 7);
 
     const oldEndLevel = oldLevel + 1;
     const oldStartLevel = Math.max(1, oldEndLevel - 7);
 
-    // Сценарий 1: Уровень повысился (новый айтем справа)
     if (newLevel > oldLevel) {
       this.handleLevelUp(newStartLevel, newEndLevel, oldStartLevel, oldEndLevel);
-    }
-    // Сценарий 2: Уровень понизился (отмена хода - удаляем правый айтем)
-    else {
+    } else {
       this.handleLevelDown(newStartLevel, newEndLevel, oldStartLevel, oldEndLevel);
     }
   }
@@ -82,7 +99,7 @@ export class ItemChain {
     oldStartLevel: number,
     oldEndLevel: number,
   ): void {
-    // 1. Открываем последний затемненный айтем (он становится светлым)
+    // 1. Открываем последний затемненный айтем
     if (this.sprites.length > 0) {
       const lastSprite = this.sprites[this.sprites.length - 1];
       lastSprite.setTint(0xffffff);
@@ -137,18 +154,7 @@ export class ItemChain {
     }
 
     // 4. Анимируем сдвиг всех оставшихся спрайтов влево
-    this.sprites.forEach((sprite, index) => {
-      const targetX =
-        -((this.sprites.length - 1) * (this.itemDisplaySize + this.gap)) / 2 +
-        index * (this.itemDisplaySize + this.gap);
-
-      this.scene.tweens.add({
-        targets: sprite,
-        x: Math.round(targetX),
-        duration: 300,
-        ease: "Power2.out",
-      });
-    });
+    this.animateSpritesShift();
   }
 
   private handleLevelDown(
@@ -178,6 +184,11 @@ export class ItemChain {
     }
 
     // Анимируем сдвиг всех спрайтов вправо
+    this.animateSpritesShift();
+  }
+
+  // 🎯 Вынес логику сдвига в отдельный метод, чтобы не дублировать код
+  private animateSpritesShift(): void {
     this.sprites.forEach((sprite, index) => {
       const targetX =
         -((this.sprites.length - 1) * (this.itemDisplaySize + this.gap)) / 2 +
@@ -193,6 +204,9 @@ export class ItemChain {
   }
 
   destroy(): void {
+    // 🎯 Обязательно отписываемся от EventBus, чтобы избежать утечек памяти
+    EventBus.off(GameEvents.LEVEL_CHANGED, this.onLevelChanged);
+
     this.sprites.forEach((sprite) => sprite.destroy());
     this.container.destroy();
   }

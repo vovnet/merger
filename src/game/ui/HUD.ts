@@ -44,9 +44,7 @@ export class HUD {
   }
 
   private syncUI(): void {
-    console.log("sync: ", this.gameState.coins);
     this.coinsText.setText(`💰 ${this.gameState.coins}`);
-    this.itemChain.update(this.gameState.level);
   }
 
   destroy(): void {

@@ -11,9 +11,7 @@ export class ComboService {
 
   private bindEvents(): void {
     EventBus.on(GameEvents.GRID_ITEM_MERGED, this.handleMerge, this);
-
     EventBus.on(GameEvents.GRID_RESTORED, this.reset, this);
-    // EventBus.on(GameEvents.LEVEL_CHANGED, this.reset, this);
   }
 
   private handleMerge(data: { newLevel: number; item: any; itemFrom: any; itemTo: any }): void {

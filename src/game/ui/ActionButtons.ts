@@ -2,6 +2,7 @@ import * as Phaser from "phaser";
 import { EventBus } from "../core/EventBus";
 import { GameEvents, UIEvents } from "../types/GameEvents";
 import { Economy } from "../core/Economy";
+import { GameState } from "../core/GameState";
 
 export class ActionButtons {
   private scene: Phaser.Scene;
@@ -17,10 +18,11 @@ export class ActionButtons {
   private debugButtonBg: Phaser.GameObjects.Rectangle;
   private debugButtonText: Phaser.GameObjects.Text;
 
-  private currentSpawnLevel: number = 1;
+  private gameState: GameState;
 
   constructor(scene: Phaser.Scene, economy: Economy) {
     this.scene = scene;
+    this.gameState = scene.registry.get("gameState") as GameState;
     this.economy = economy;
     this.create();
     this.setupListeners();
@@ -41,7 +43,7 @@ export class ActionButtons {
     this.spawnButtonBg.setStrokeStyle(2, 0xffffff);
 
     this.spawnButtonText = this.scene.add
-      .text(width / 2, height - 80, `СПАУН (Ур. ${this.currentSpawnLevel})`, {
+      .text(width / 2, height - 80, `СПАУН (Ур. ${this.gameState.level})`, {
         fontSize: "20px",
         color: "#ffffff",
         fontFamily: "Arial",
@@ -156,12 +158,12 @@ export class ActionButtons {
   }
 
   private updateSpawnButtonText(): void {
-    const cost = this.economy.getSpawnCost(this.currentSpawnLevel);
+    const cost = this.economy.getSpawnCost(this.gameState.level);
     this.spawnButtonText.setText(`СПАУН (${cost} 💰)`);
   }
 
   private updateAddCoinsButton() {
-    const cost = this.economy.getSpawnRefund(this.currentSpawnLevel);
+    const cost = this.economy.getSpawnRefund(this.gameState.level);
     this.debugButtonText.setText(`+${cost} 💰`);
   }
 
@@ -178,7 +180,6 @@ export class ActionButtons {
 
   private setupListeners(): void {
     EventBus.on(GameEvents.LEVEL_CHANGED, (level: number) => {
-      this.currentSpawnLevel = level;
       this.updateSpawnButtonText();
       this.updateAddCoinsButton();
     });
