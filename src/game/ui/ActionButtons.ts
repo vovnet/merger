@@ -12,7 +12,7 @@ export class ActionButtons {
   private spawnButtonBg: Phaser.GameObjects.Rectangle;
   private spawnButtonText: Phaser.GameObjects.Text;
   private fillButtonBg: Phaser.GameObjects.Rectangle;
-  private fillButtonText: Phaser.GameObjects.Text;
+  private fillButtonText: Phaser.GameObjects.BitmapText;
   private undoButtonBg: Phaser.GameObjects.Rectangle;
   private undoButtonText: Phaser.GameObjects.Text;
   private debugButtonBg: Phaser.GameObjects.Rectangle;
@@ -70,12 +70,7 @@ export class ActionButtons {
     this.fillButtonBg.setStrokeStyle(2, 0xffffff);
 
     this.fillButtonText = this.scene.add
-      .text(width - 100, height - 160, "ЗАПОЛНИТЬ", {
-        fontSize: "18px",
-        color: "#ffffff",
-        fontFamily: "Arial",
-        fontStyle: "bold",
-      })
+      .bitmapText(width - 100, height - 160, "russo", "ЗАПОЛНИТЬ", 20)
       .setOrigin(0.5)
       .setDepth(101);
 
