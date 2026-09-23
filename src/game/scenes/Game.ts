@@ -114,6 +114,7 @@ export class Game extends Phaser.Scene {
       if (data.newLevel > this.gameState.level) {
         this.gameState.setLevel(data.newLevel);
         this.handleLevelUp();
+        this.scene.launch("LevelUpScene", { level: data.newLevel });
       }
     });
 
