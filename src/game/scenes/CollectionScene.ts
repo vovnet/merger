@@ -38,6 +38,8 @@ export class CollectionScene extends Phaser.Scene {
       .setInteractive()
       .setDepth(0);
 
+    this.createCardTextures();
+
     this.gridContainer = this.add.container(0, 0).setDepth(1);
     this.renderCollection();
     this.setupScrolling();
@@ -90,13 +92,36 @@ export class CollectionScene extends Phaser.Scene {
     this.minScroll = Math.min(0, viewHeight - contentHeight);
   }
 
+  // 🎯 Генерация скруглённых текстур карточки (вызывается один раз)
+  private createCardTextures(): void {
+    if (this.textures.exists("card_fill")) return;
+
+    const w = this.CARD_W;
+    const h = this.CARD_H;
+    const r = 18; // радиус скругления
+
+    // Текстура заливки
+    const fillGraphics = this.make.graphics({ x: 0, y: 0 }, false);
+    fillGraphics.fillStyle(0xffffff);
+    fillGraphics.fillRoundedRect(0, 0, w, h, r);
+    fillGraphics.generateTexture("card_fill", w, h);
+    fillGraphics.destroy();
+
+    // Текстура обводки
+    const borderGraphics = this.make.graphics({ x: 0, y: 0 }, false);
+    borderGraphics.lineStyle(2, 0xffffff, 1);
+    borderGraphics.strokeRoundedRect(1, 1, w - 2, h - 2, r);
+    borderGraphics.generateTexture("card_border", w, h);
+    borderGraphics.destroy();
+  }
+
   private createCell(level: number, x: number, y: number): void {
     const { discovered, rank } = this.getCellState(level);
 
     // Подложка карточки
-    const bg = this.add.rectangle(x, y, this.CARD_W, this.CARD_H, discovered ? 0x3a3a5e : 0x26263c);
-    bg.setStrokeStyle(2, discovered ? 0xffffff : 0x444466, discovered ? 0.35 : 0.2);
-    this.gridContainer.add(bg);
+    const fill = this.add.image(x, y, "card_fill");
+    fill.setTint(discovered ? 0x3a3a5e : 0x26263c);
+    this.gridContainer.add(fill);
 
     if (discovered) {
       // Иконка ранга над сквишем, по центру
