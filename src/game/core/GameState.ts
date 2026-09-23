@@ -5,22 +5,29 @@ export interface GameStateData {
   coins: number;
   level: number;
   spins: number;
-  // В будущем здесь будут: inventory, completedContracts, settings и т.д.
+  round: number; // 🎯 НОВОЕ: текущий раунд
+  totalMerges: number; // 🎯 НОВОЕ: общее количество слияний (для статистики)
+  highestLevel: number; // 🎯 НОВОЕ: максимальный достигнутый уровень за всё время
 }
 
 export class GameState {
   private data: GameStateData;
 
+  // 🎯 Константы для престижа
+  private readonly MAX_LEVEL = 72; // Максимальный уровень
+
   constructor() {
-    // Значения по умолчанию для новой игры
     this.data = {
       coins: 500,
-      level: 15,
+      level: 72,
       spins: 120,
+      round: 1,
+      totalMerges: 0,
+      highestLevel: 1,
     };
   }
 
-  // --- ГЕТТЕРЫ (для чтения) ---
+  // --- ГЕТТЕРЫ ---
   public get coins(): number {
     return this.data.coins;
   }
@@ -30,8 +37,17 @@ export class GameState {
   public get spins(): number {
     return this.data.spins;
   }
+  public get round(): number {
+    return this.data.round;
+  }
+  public get totalMerges(): number {
+    return this.data.totalMerges;
+  }
+  public get highestLevel(): number {
+    return this.data.highestLevel;
+  }
 
-  // --- МЕТОДЫ ИЗМЕНЕНИЯ (с автоматическим оповещением) ---
+  // --- МЕТОДЫ ИЗМЕНЕНИЯ ---
   public setCoins(value: number): void {
     if (this.data.coins !== value) {
       const previous = this.data.coins;
@@ -45,35 +61,66 @@ export class GameState {
   }
 
   public setLevel(value: number): void {
-    console.log("set leve: ", value);
     if (this.data.level !== value) {
+      const previous = this.data.level;
       this.data.level = value;
-      EventBus.emit(GameEvents.LEVEL_CHANGED, value);
+
+      // Обновляем highestLevel
+      if (value > this.data.highestLevel) {
+        this.data.highestLevel = value;
+      }
+
+      EventBus.emit(GameEvents.LEVEL_CHANGED, { value, previousValue: previous });
     }
   }
 
   public addSpins(amount: number): void {
     if (amount > 0) {
       this.data.spins += amount;
-      // Оповещаем всех, кто слушает (например, UI)
       EventBus.emit(GameEvents.SPINS_CHANGED, this.data.spins);
     }
   }
 
-  // --- СОХРАНЕНИЕ И ЗАГРУЗКА (Самое важное!) ---
+  // 🎯 НОВОЕ: Увеличиваем счётчик слияний
+  public incrementMerges(): void {
+    this.data.totalMerges++;
+  }
 
-  // Превращает состояние в обычный объект для JSON
+  // 🎯 НОВОЕ: Проверка, достигнут ли максимальный уровень
+  public hasReachedMaxLevel(): boolean {
+    return this.data.level >= this.MAX_LEVEL;
+  }
+
+  // 🎯 НОВОЕ: Престиж (перерождение)
+  public prestige(): void {
+    // Сбрасываем уровень на 1
+    this.data.level = 1;
+
+    // Увеличиваем раунд
+    this.data.round++;
+
+    // Даём бонусные спины
+    this.data.spins += 10;
+
+    console.log(`🔄 ПРЕСТИЖ! Раунд ${this.data.round}`);
+
+    // Оповещаем всех о престиже
+    EventBus.emit(GameEvents.PRESTIGE_OCCURRED, {
+      newRound: this.data.round,
+    });
+  }
+
+  // --- СОХРАНЕНИЕ И ЗАГРУЗКА ---
   public serialize(): GameStateData {
     return { ...this.data };
   }
 
-  // Загружает данные и рассылает события, чтобы UI обновился
   public deserialize(savedData: Partial<GameStateData>): void {
     this.data = { ...this.data, ...savedData };
 
-    // Оповещаем всех, кто слушает, что данные загружены
     EventBus.emit(GameEvents.COINS_CHANGED, { value: this.data.coins, previousValue: 0 });
-    EventBus.emit(GameEvents.LEVEL_CHANGED, this.data.level);
+    EventBus.emit(GameEvents.LEVEL_CHANGED, { value: this.data.level, previousValue: 0 });
+    EventBus.emit(GameEvents.SPINS_CHANGED, this.data.spins);
     EventBus.emit(GameEvents.GAME_STATE_LOADED);
   }
 }

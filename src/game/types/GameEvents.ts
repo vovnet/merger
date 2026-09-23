@@ -20,6 +20,7 @@ export const GameEvents = {
   GRID_CLEARED: "gridCleared",
   GRID_RESTORED: "gridRestored",
   HISTORY_CHECKPOINT: "historyCheckpoint",
+  GRID_PRESTIGE_MERGED: "grid_prestige_merged",
 
   // События ComboService
   COMBO_UPDATED: "combo_updated",
@@ -33,6 +34,7 @@ export const GameEvents = {
   SPINS_CHANGED: "spins_changed",
 
   GAME_STATE_LOADED: "game_state_loaded",
+  PRESTIGE_OCCURRED: "prestige_occurred",
 } as const;
 
 // События, которые UIScene эмитит, а GameScene слушает

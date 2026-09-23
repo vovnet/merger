@@ -7,6 +7,7 @@ import { GameEvents } from "../types/GameEvents";
 export enum MergeResult {
   INVALID = "invalid",
   MERGED = "merged",
+  PRESTIGE = "prestige",
 }
 
 export interface GridSnapshot {
@@ -115,6 +116,7 @@ export class Grid extends Phaser.Events.EventEmitter {
     newItem?: ItemData;
     itemFrom?: ItemData | null;
     itemTo?: ItemData | null;
+    isPrestige?: boolean; // 🎯 НОВОЕ: флаг престиж-слияния
   } {
     const itemFrom = this.getCell(from);
     const itemTo = this.getCell(to);
@@ -128,38 +130,56 @@ export class Grid extends Phaser.Events.EventEmitter {
       return { result: MergeResult.INVALID, itemFrom, itemTo };
     }
 
-    // Проверка правил слияния: должны быть соседи, одного уровня и не достигать максимума
+    // Проверка соседства и равенства уровней
     const dx = Math.abs(from.x - to.x);
     const dy = Math.abs(from.y - to.y);
     const isAdjacent = Math.max(dx, dy) === 1;
 
-    if (
-      !isAdjacent ||
-      itemFrom.level !== itemTo.level ||
-      itemFrom.level >= ItemRegistry.getMaxLevel()
-    ) {
+    if (!isAdjacent || itemFrom.level !== itemTo.level) {
       return { result: MergeResult.INVALID, itemFrom, itemTo };
     }
 
-    // 2. Если мы здесь, значит слияние 100% произойдет. Сохраняем историю.
+    // 🎯 СОХРАНЯЕМ ИСТОРИЮ ПЕРЕД ЛЮБЫМ СЛИЯНИЕМ
     EventBus.emit(GameEvents.HISTORY_CHECKPOINT);
 
-    // 3. Выполняем слияние
+    const maxLevel = ItemRegistry.getMaxLevel();
+    const isPrestige = itemFrom.level >= maxLevel;
+
+    // Выполняем слияние: удаляем оба старых предмета
     this.removeItem(from);
     this.removeItem(to);
 
-    const newLevel = itemFrom.level + 1;
+    // 🎯 ОПРЕДЕЛЯЕМ НОВЫЙ УРОВЕНЬ
+    // Если это престиж-слияние → предмет 1-го уровня
+    // Иначе → обычный level + 1
+    const newLevel = isPrestige ? 1 : itemFrom.level + 1;
     const newItem = this.createItem(newLevel);
     this.setItem(to, newItem);
 
-    EventBus.emit(GameEvents.GRID_ITEM_MERGED, {
-      newLevel,
-      item: { ...newItem, pos: to },
-      itemFrom: { ...itemFrom, pos: from },
-      itemTo: { ...itemTo, pos: to },
-    });
+    // 🎯 ЭМИТИМ СООТВЕТСТВУЮЩЕЕ СОБЫТИЕ
+    if (isPrestige) {
+      EventBus.emit(GameEvents.GRID_PRESTIGE_MERGED, {
+        newLevel,
+        item: { ...newItem, pos: to },
+        itemFrom: { ...itemFrom, pos: from },
+        itemTo: { ...itemTo, pos: to },
+      });
+    } else {
+      EventBus.emit(GameEvents.GRID_ITEM_MERGED, {
+        newLevel,
+        item: { ...newItem, pos: to },
+        itemFrom: { ...itemFrom, pos: from },
+        itemTo: { ...itemTo, pos: to },
+      });
+    }
 
-    return { result: MergeResult.MERGED, newItem, itemFrom, itemTo };
+    return {
+      result: isPrestige ? MergeResult.PRESTIGE : MergeResult.MERGED,
+      newItem,
+      itemFrom,
+      itemTo,
+      isPrestige,
+    };
   }
 
   spawnRandomItem(level: number = 1): ItemData | null {

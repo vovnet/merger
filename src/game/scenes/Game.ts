@@ -11,6 +11,7 @@ import { ContractService } from "../core/ContractService";
 import { ContractUpdateData } from "../types/Contract";
 import { AudioService } from "../core/AudioService";
 import { GameState } from "../core/GameState";
+import { ItemRegistry } from "../core/ItemRegistry";
 
 export class Game extends Phaser.Scene {
   private gameState: GameState;
@@ -49,7 +50,6 @@ export class Game extends Phaser.Scene {
   create(): void {
     this.gameState = new GameState();
     this.registry.set("gameState", this.gameState);
-    this.loadGameProgress();
 
     this.audioService = new AudioService(this);
     this.grid = new Grid({ cols: 7, rows: 5 });
@@ -68,6 +68,8 @@ export class Game extends Phaser.Scene {
     this.scene.get("UIScene") as UIScene;
 
     this.setupEventListeners();
+
+    this.loadGameProgress();
   }
 
   private loadGameProgress(): void {
@@ -103,13 +105,38 @@ export class Game extends Phaser.Scene {
   private setupEventListeners(): void {
     EventBus.on(GameEvents.GRID_ITEM_MERGED, (data: { newLevel: number; from: any; to: any }) => {
       const reward = this.economy.getMergeReward(data.newLevel);
-      this.gameState.setCoins(reward);
+      this.gameState.addCoins(reward);
+      this.gameState.incrementMerges();
+
       console.log(`💰 Слияние в ур.${data.newLevel} → +${reward} монет`);
+
       if (data.newLevel > this.gameState.level) {
         this.gameState.setLevel(data.newLevel);
         this.handleLevelUp();
       }
     });
+
+    // 🎯 Престиж-слияния (два предмета максимального уровня)
+    EventBus.on(
+      GameEvents.GRID_PRESTIGE_MERGED,
+      (data: { newLevel: number; itemFrom: any; itemTo: any }) => {
+        console.log(`🌟 ПРЕСТИЖ-СЛИЯНИЕ! Два предмета максимального уровня слились`);
+
+        // 1. Устанавливаем уровень на максимум перед престижем (для статистики/UI)
+        const maxLevel = ItemRegistry.getMaxLevel();
+        if (this.gameState.level < maxLevel) {
+          this.gameState.setLevel(maxLevel);
+        }
+
+        // 2. Начисляем специальную награду за престиж (не за 1-й уровень)
+        // const prestigeReward = this.economy.getPrestigeReward(this.gameState.round);
+        // this.gameState.addCoins(prestigeReward);
+        this.gameState.incrementMerges();
+
+        // 3. Запускаем престиж (сброс уровня, новый раунд, бонусы)
+        this.handlePrestige();
+      },
+    );
 
     EventBus.on(UIEvents.SPAWN_REQUESTED, () => {
       this.spawnRandomItem();
@@ -152,6 +179,23 @@ export class Game extends Phaser.Scene {
       console.log(`💰 Начислена награда за контракт!`);
       this.gameState.addSpins(1);
     });
+  }
+
+  private handlePrestige(): void {
+    console.log("🌟 Достигнут максимальный уровень! Готовимся к престижу...");
+
+    // 1. Показываем красивый экран престижа (опционально)
+    // this.showPrestigeScreen();
+    // 2. Очищаем поле от всех предметов
+    this.grid.clear();
+    // 3. Выполняем престиж (сброс уровня, увеличение раунда, бонусы)
+    this.gameState.prestige();
+    // 4. Заполняем поле новыми предметами 1-го уровня
+    this.fillAllEmptyCells();
+    // 5. Сохраняем прогресс
+    this.saveGameProgress();
+    // 6. Сбрасываем историю (undo больше не работает после престижа)
+    this.historyService.clear();
   }
 
   // Вычисление уровня для кнопки спауна
