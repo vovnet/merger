@@ -129,8 +129,8 @@ export class Game extends Phaser.Scene {
         }
 
         // 2. Начисляем специальную награду за престиж (не за 1-й уровень)
-        // const prestigeReward = this.economy.getPrestigeReward(this.gameState.round);
-        // this.gameState.addCoins(prestigeReward);
+        const prestigeReward = this.economy.getPrestigeReward(this.gameState.round);
+        this.gameState.addCoins(prestigeReward);
         this.gameState.incrementMerges();
 
         // 3. Запускаем престиж (сброс уровня, новый раунд, бонусы)

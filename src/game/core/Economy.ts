@@ -47,4 +47,11 @@ export class Economy {
     }
     return refundAmount;
   }
+
+  public getPrestigeReward(currentRound: number): number {
+    // Формула: базовая награда × множитель раунда
+    const baseReward = 1000;
+    const roundMultiplier = Math.pow(1.5, currentRound - 1); // Рост на 50% за каждый раунд
+    return Math.floor(baseReward * roundMultiplier);
+  }
 }
