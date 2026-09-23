@@ -19,11 +19,11 @@ export class GameState {
   constructor() {
     this.data = {
       coins: 500,
-      level: 72,
-      spins: 120,
-      round: 1,
-      totalMerges: 0,
-      highestLevel: 1,
+      level: 76,
+      spins: 10,
+      round: 10,
+      totalMerges: 200,
+      highestLevel: 72,
     };
   }
 
@@ -91,22 +91,25 @@ export class GameState {
     return this.data.level >= this.MAX_LEVEL;
   }
 
-  // 🎯 НОВОЕ: Престиж (перерождение)
   public prestige(): void {
-    // Сбрасываем уровень на 1
-    this.data.level = 1;
+    const previousRound = this.data.round;
+    const bonus = 100 * this.data.round;
 
-    // Увеличиваем раунд
+    // 🎯 ИСПРАВЛЕНО: используем setLevel() вместо прямого присваивания
+    // Это эмитит событие LEVEL_CHANGED, и все подписчики обновятся
+    this.setLevel(1);
+
     this.data.round++;
-
-    // Даём бонусные спины
+    this.data.coins += bonus;
     this.data.spins += 10;
 
-    console.log(`🔄 ПРЕСТИЖ! Раунд ${this.data.round}`);
+    console.log(`🔄 ПРЕСТИЖ! Раунд ${previousRound} → ${this.data.round}`);
+    console.log(`💰 Бонус: +${bonus} монет, +10 спинов`);
 
-    // Оповещаем всех о престиже
     EventBus.emit(GameEvents.PRESTIGE_OCCURRED, {
       newRound: this.data.round,
+      previousRound: previousRound,
+      bonusCoins: bonus,
     });
   }
 
