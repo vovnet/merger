@@ -145,7 +145,7 @@ export class LevelUpScene extends Phaser.Scene {
     this.tweens.add({
       targets: rankText,
       alpha: 1,
-      y: screenHeight / 2 - 175,
+      y: screenHeight / 2 - 140,
       duration: 400,
       ease: "Power2.out",
       delay: 200,
