@@ -22,10 +22,23 @@ export class LevelUpScene extends Phaser.Scene {
     const screenHeight = this.scale.height;
     const CLOSE_DELAY = 1000;
 
-    this.cameras.main.fadeIn(300, 0, 0, 0);
+    // 🎯 ЛОКАЛЬНЫЕ флаги: создаются заново при каждом открытии сцены
+    // Это решает проблему с переиспользованием экземпляра сцены Phaser'ом
+    let canClose = false; // защита от кликов в первые 1 сек
+    let isClosing = false; // защита от повторного запуска fadeOut
 
-    // 🎯 Флаг: можно ли закрывать сцену
-    let canClose = false;
+    // 🎯 Локальная функция закрытия (замыкает флаги из create)
+    const closeScene = () => {
+      if (isClosing) return;
+      isClosing = true;
+
+      this.cameras.main.fadeOut(200, 0, 0, 0);
+      this.cameras.main.once("camerafadeoutcomplete", () => {
+        this.scene.stop();
+      });
+    };
+
+    this.cameras.main.fadeIn(300, 0, 0, 0);
 
     // 1. Затемнение блокирует клики СРАЗУ
     const overlay = this.add
@@ -34,9 +47,9 @@ export class LevelUpScene extends Phaser.Scene {
       .setInteractive();
 
     overlay.on("pointerdown", () => {
-      // 🎯 Проверяем флаг, а не время
+      // Проверяем флаг: первые 1000 мс клик просто игнорируется
       if (canClose) {
-        this.close();
+        closeScene();
       }
     });
 
@@ -84,7 +97,7 @@ export class LevelUpScene extends Phaser.Scene {
       emitting: false,
     });
 
-    // 6. Подсказка
+    // 6. Подсказка (сначала скрыта)
     const hintText = this.add
       .text(screenWidth / 2, screenHeight / 2 + 220, "Нажмите, чтобы продолжить", {
         fontSize: "24px",
@@ -96,7 +109,7 @@ export class LevelUpScene extends Phaser.Scene {
 
     // 🎯 Через 1 секунду: разрешаем закрытие + показываем подсказку
     this.time.delayedCall(CLOSE_DELAY, () => {
-      canClose = true; // 🔑 Вот здесь разрешаем клик
+      canClose = true;
 
       this.tweens.add({
         targets: hintText,
@@ -117,6 +130,7 @@ export class LevelUpScene extends Phaser.Scene {
 
     // --- АНИМАЦИИ ---
 
+    // Иконка ранга: pop-эффект
     this.tweens.add({
       targets: rankIcon,
       scale: { from: 0, to: iconScale * 1.25 },
@@ -132,6 +146,7 @@ export class LevelUpScene extends Phaser.Scene {
       },
     });
 
+    // Иконка ранга: лёгкое покачивание
     this.tweens.add({
       targets: rankIcon,
       angle: { from: -6, to: 6 },
@@ -142,6 +157,7 @@ export class LevelUpScene extends Phaser.Scene {
       delay: 500,
     });
 
+    // Текст ранга: появление снизу
     this.tweens.add({
       targets: rankText,
       alpha: 1,
@@ -151,6 +167,7 @@ export class LevelUpScene extends Phaser.Scene {
       delay: 200,
     });
 
+    // Сквиш: pop-эффект
     const targetSize = Math.min(screenWidth, screenHeight) * 0.35;
     const targetScale = targetSize / Math.max(squish.width, squish.height);
 
@@ -171,6 +188,7 @@ export class LevelUpScene extends Phaser.Scene {
       },
     });
 
+    // Сквиш: idle покачивание
     this.tweens.add({
       targets: squish,
       angle: { from: -3, to: 3 },
@@ -179,13 +197,6 @@ export class LevelUpScene extends Phaser.Scene {
       repeat: -1,
       ease: "Sine.easeInOut",
       delay: 900,
-    });
-  }
-
-  private close(): void {
-    this.cameras.main.fadeOut(200, 0, 0, 0);
-    this.cameras.main.once("camerafadeoutcomplete", () => {
-      this.scene.stop();
     });
   }
 }
