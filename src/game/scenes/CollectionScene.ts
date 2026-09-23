@@ -7,7 +7,6 @@ export class CollectionScene extends Phaser.Scene {
 
   private gridContainer!: Phaser.GameObjects.Container;
 
-  // 🎯 НОВЫЕ РАЗМЕРЫ КАРТОЧЕК
   private readonly CARD_W = 140;
   private readonly CARD_H = 170;
   private readonly CARD_GAP = 12;
@@ -33,22 +32,24 @@ export class CollectionScene extends Phaser.Scene {
     this.scene.pause("GameScene");
     this.scene.pause("UIScene");
 
-    // 1. Фон-блокер
     this.add
       .rectangle(0, 0, screenWidth, screenHeight, 0x1a1a2e)
       .setOrigin(0)
       .setInteractive()
       .setDepth(0);
 
-    // 2. Контейнер сетки (скроллится)
     this.gridContainer = this.add.container(0, 0).setDepth(1);
     this.renderCollection();
     this.setupScrolling();
 
-    // 3. Фиксированная шапка ПОВЕРХ сетки
     this.createHeader();
   }
 
+  // 🎯 ИСПРАВЛЕННАЯ ЛОГИКА РАНГА
+  // Раунд 1: открыты только до level, ранг = 1
+  // Раунд 2+: все открыты
+  //   - level <= gameState.level → ранг = round      (достигнуты в этом раунде)
+  //   - level > gameState.level  → ранг = round - 1  (достигнуты в прошлых раундах)
   private getCellState(level: number): { discovered: boolean; rank: number } {
     const isRound1 = this.gameState.round === 1;
 
@@ -57,7 +58,8 @@ export class CollectionScene extends Phaser.Scene {
       return { discovered, rank: discovered ? 1 : 0 };
     }
 
-    return { discovered: true, rank: this.gameState.round };
+    const rank = level <= this.gameState.level ? this.gameState.round : this.gameState.round - 1;
+    return { discovered: true, rank };
   }
 
   private renderCollection(): void {
@@ -65,8 +67,8 @@ export class CollectionScene extends Phaser.Scene {
 
     const maxLevel = ItemRegistry.getMaxLevel();
     const screenWidth = this.scale.width;
+    const screenHeight = this.scale.height;
 
-    // Колонки считаем под ширину экрана
     const cols = Math.max(3, Math.floor((screenWidth - 40) / (this.CARD_W + this.CARD_GAP)));
     const gridWidth = cols * (this.CARD_W + this.CARD_GAP) - this.CARD_GAP;
     const startX = (screenWidth - gridWidth) / 2 + this.CARD_W / 2;
@@ -84,7 +86,7 @@ export class CollectionScene extends Phaser.Scene {
 
     const rows = Math.ceil(maxLevel / cols);
     const contentHeight = rows * (this.CARD_H + this.CARD_GAP) + 40;
-    const viewHeight = screenHeightSafe(this.scale.height, this.headerHeight);
+    const viewHeight = screenHeight - this.headerHeight;
     this.minScroll = Math.min(0, viewHeight - contentHeight);
   }
 
@@ -97,12 +99,12 @@ export class CollectionScene extends Phaser.Scene {
     this.gridContainer.add(bg);
 
     if (discovered) {
-      // 🎯 1. Иконка ранга — над сквишем, по центру
+      // Иконка ранга над сквишем, по центру
       const icon = this.add.image(x, y - 55, "ranks", `rank${Math.min(rank, this.MAX_RANK_ICONS)}`);
       icon.setScale(40 / Math.max(icon.width, icon.height));
       this.gridContainer.add(icon);
 
-      // 🎯 2. Подпись "РАНГ №" чуть ниже иконки
+      // Подпись "РАНГ №"
       const rankText = this.add
         .text(x, y - 25, `РАНГ ${rank}`, {
           fontSize: "15px",
@@ -113,12 +115,16 @@ export class CollectionScene extends Phaser.Scene {
         .setOrigin(0.5);
       this.gridContainer.add(rankText);
 
-      // 🎯 3. Сквиш ниже
+      // 🎯 НОВОЕ: овальная тень под сквишем (добавляем ДО сквиша!)
+      const shadow = this.add.ellipse(x, y + 66, 80, 18, 0x000000, 0.3);
+      this.gridContainer.add(shadow);
+
+      // Сквиш ниже (поверх тени)
       const squish = this.add.image(x, y + 28, "squishes", ItemRegistry.getFrameName(level));
       squish.setScale(85 / Math.max(squish.width, squish.height));
       this.gridContainer.add(squish);
     } else {
-      // 🎯 ЗАГЛУШКА вместо силуэта: просто знак вопроса
+      // Заглушка вместо силуэта
       const placeholder = this.add
         .text(x, y - 5, "?", {
           fontSize: "64px",
@@ -129,35 +135,21 @@ export class CollectionScene extends Phaser.Scene {
         .setOrigin(0.5);
       this.gridContainer.add(placeholder);
     }
-
-    // Номер уровня внизу карточки
-    const lvlText = this.add
-      .text(x, y + this.CARD_H / 2 - 14, `${level}`, {
-        fontSize: "13px",
-        color: discovered ? "#aaaacc" : "#555577",
-        fontFamily: "Arial",
-        fontStyle: "bold",
-      })
-      .setOrigin(0.5);
-    this.gridContainer.add(lvlText);
   }
 
   private setupScrolling(): void {
     const screenWidth = this.scale.width;
     const screenHeight = this.scale.height;
 
-    // Маска: сетка видна только ниже шапки
     const shape = this.make.graphics();
     shape.fillStyle(0xffffff);
     shape.fillRect(0, this.headerHeight, screenWidth, screenHeight - this.headerHeight);
     this.gridContainer.setMask(shape.createGeometryMask());
 
-    // Колесо мыши
     this.input.on("wheel", (_p: any, _x: any, _y: any, deltaY: number) => {
       this.setScrollY(this.scrollY - deltaY * 0.5);
     });
 
-    // Drag-скролл (мышь + тач)
     this.input.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
       this.lastPointerY = pointer.y;
     });
@@ -179,10 +171,8 @@ export class CollectionScene extends Phaser.Scene {
     const maxLevel = ItemRegistry.getMaxLevel();
     const isRound1 = this.gameState.round === 1;
 
-    // Фон шапки
     this.add.rectangle(0, 0, screenWidth, this.headerHeight, 0x22223a).setOrigin(0).setDepth(5);
 
-    // Кнопка "Назад"
     const backBtn = this.add
       .rectangle(80, 60, 120, 50, 0x4a4a6e)
       .setInteractive({ useHandCursor: true })
@@ -203,7 +193,6 @@ export class CollectionScene extends Phaser.Scene {
     backBtn.on("pointerover", () => backBtn.setFillStyle(0x5a5a7e));
     backBtn.on("pointerout", () => backBtn.setFillStyle(0x4a4a6e));
 
-    // Заголовок
     this.add
       .text(screenWidth / 2, 45, "📚 КОЛЛЕКЦИЯ", {
         fontSize: "32px",
@@ -239,9 +228,4 @@ export class CollectionScene extends Phaser.Scene {
       this.scene.stop();
     });
   }
-}
-
-// Вспомогательная функция для расчёта высоты видимой области
-function screenHeightSafe(screenHeight: number, headerHeight: number): number {
-  return screenHeight - headerHeight;
 }
