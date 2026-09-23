@@ -11,9 +11,9 @@ export class CollectionScene extends Phaser.Scene {
   private readonly CARD_H = 170;
   private readonly CARD_GAP = 12;
   private readonly headerHeight = 120;
+  private readonly COLUMN_HEADER_HEIGHT = 80;
   private readonly MAX_RANK_ICONS = 37;
-
-  private readonly RARE_SQUISH_COUNT = 64; // 🎯 Количество редких сквишей
+  private readonly RARE_SQUISH_COUNT = 64;
 
   private scrollY = 0;
   private minScroll = 0;
@@ -34,6 +34,7 @@ export class CollectionScene extends Phaser.Scene {
     this.scene.pause("GameScene");
     this.scene.pause("UIScene");
 
+    // Фон
     this.add
       .rectangle(0, 0, screenWidth, screenHeight, 0x1a1a2e)
       .setOrigin(0)
@@ -64,56 +65,136 @@ export class CollectionScene extends Phaser.Scene {
   private renderCollection(): void {
     this.gridContainer.removeAll(true);
 
-    const maxLevel = ItemRegistry.getMaxLevel();
     const screenWidth = this.scale.width;
     const screenHeight = this.scale.height;
+    const halfWidth = screenWidth / 2;
 
-    const cols = Math.max(3, Math.floor((screenWidth - 40) / (this.CARD_W + this.CARD_GAP)));
+    const cols = Math.max(2, Math.floor((halfWidth - 40) / (this.CARD_W + this.CARD_GAP)));
     const gridWidth = cols * (this.CARD_W + this.CARD_GAP) - this.CARD_GAP;
-    const startX = (screenWidth - gridWidth) / 2 + this.CARD_W / 2;
 
-    // 🎯 1. Обычные сквиши
+    const leftCenterX = halfWidth / 2;
+    const rightCenterX = halfWidth + halfWidth / 2;
+
+    const startXLeft = leftCenterX - gridWidth / 2 + this.CARD_W / 2;
+    const startXRight = rightCenterX - gridWidth / 2 + this.CARD_W / 2;
+
+    const contentTopY = this.headerHeight + 20;
+
+    // 🎯 СНАЧАЛА считаем реальную высоту контента
+    const maxLevel = ItemRegistry.getMaxLevel();
+    const normalRows = Math.ceil(maxLevel / cols);
+    const rareRows = Math.ceil(this.RARE_SQUISH_COUNT / cols);
+    const maxRows = Math.max(normalRows, rareRows);
+
+    // 🎯 Высота подложки = высота всего прокручиваемого контента + запас
+    const bgHeight = this.COLUMN_HEADER_HEIGHT + maxRows * (this.CARD_H + this.CARD_GAP) + 200;
+    const bgTopY = contentTopY - 100; // Начинаем чуть выше заголовков
+
+    // 🎯 Фон обычных сквишей (покрывает ВЕСЬ контент)
+    const normalBg = this.add.rectangle(
+      leftCenterX,
+      bgTopY + bgHeight / 2,
+      halfWidth,
+      bgHeight,
+      0x1e1e34,
+      0.6,
+    );
+    this.gridContainer.add(normalBg);
+
+    // 🎯 Фон редких сквишей
+    const rareBg = this.add.rectangle(
+      rightCenterX,
+      bgTopY + bgHeight / 2,
+      halfWidth,
+      bgHeight,
+      0x241a36,
+      0.6,
+    );
+    this.gridContainer.add(rareBg);
+
+    // Заголовки колонок
+    this.renderColumnHeader(leftCenterX, contentTopY, "📦 ОБЫЧНЫЕ", this.getNormalSubtitle());
+    this.renderColumnHeader(rightCenterX, contentTopY, "✨ РЕДКИЕ", this.getRareSubtitle());
+
+    // Вертикальная разделительная линия (такой же высоты, как подложки)
+    const separatorLine = this.add.rectangle(
+      halfWidth,
+      bgTopY + bgHeight / 2,
+      2,
+      bgHeight,
+      0xffffff,
+      0.08,
+    );
+    this.gridContainer.add(separatorLine);
+
+    const gridTopY = contentTopY + this.COLUMN_HEADER_HEIGHT;
+
+    // Обычные сквиши
     for (let lvl = 1; lvl <= maxLevel; lvl++) {
       const index = lvl - 1;
       const col = index % cols;
       const row = Math.floor(index / cols);
 
-      const x = startX + col * (this.CARD_W + this.CARD_GAP);
-      const y = this.headerHeight + 20 + row * (this.CARD_H + this.CARD_GAP) + this.CARD_H / 2;
+      const x = startXLeft + col * (this.CARD_W + this.CARD_GAP);
+      const y = gridTopY + row * (this.CARD_H + this.CARD_GAP) + this.CARD_H / 2;
 
-      this.createCell(lvl, x, y, false);
+      this.createCell(lvl, x, y);
     }
 
-    const normalRows = Math.ceil(maxLevel / cols);
-    const normalSectionEnd = this.headerHeight + 20 + normalRows * (this.CARD_H + this.CARD_GAP);
-
-    // 🎯 2. Разделитель и заголовок для редких сквишей
-    const rareHeaderY = normalSectionEnd + 20;
-    this.renderRareSectionHeader(startX - this.CARD_W / 2, rareHeaderY, gridWidth);
-
-    // 🎯 3. Редкие сквиши (премиальные карточки)
-    const rareStartY = rareHeaderY + 80;
+    // Редкие сквиши
     const rareFrames = this.getRareSquishFrames();
-
     for (let i = 0; i < this.RARE_SQUISH_COUNT; i++) {
       const col = i % cols;
       const row = Math.floor(i / cols);
 
-      const x = startX + col * (this.CARD_W + this.CARD_GAP);
-      const y = rareStartY + row * (this.CARD_H + this.CARD_GAP) + this.CARD_H / 2;
+      const x = startXRight + col * (this.CARD_W + this.CARD_GAP);
+      const y = gridTopY + row * (this.CARD_H + this.CARD_GAP) + this.CARD_H / 2;
 
       this.createRareCell(i, rareFrames[i], x, y);
     }
 
-    const rareRows = Math.ceil(this.RARE_SQUISH_COUNT / cols);
-    const totalContentHeight =
-      rareStartY + rareRows * (this.CARD_H + this.CARD_GAP) + 40 - this.headerHeight;
+    // minScroll для скролла
+    const contentHeight = this.COLUMN_HEADER_HEIGHT + maxRows * (this.CARD_H + this.CARD_GAP) + 40;
     const viewHeight = screenHeight - this.headerHeight;
-    this.minScroll = Math.min(0, viewHeight - totalContentHeight);
+    this.minScroll = Math.min(0, viewHeight - contentHeight);
   }
 
-  // 🎯 Получаем имена кадров из атласа редких сквишей и сортируем по числам
-  // 🎯 Получаем имена кадров из атласа редких сквишей и сортируем по числам
+  // 🎯 Заголовок одной колонки
+  private renderColumnHeader(centerX: number, y: number, title: string, subtitle: string): void {
+    const titleText = this.add
+      .text(centerX, y + 20, title, {
+        fontSize: "22px",
+        color: "#ffd700",
+        fontFamily: "Arial",
+        fontStyle: "bold",
+        stroke: "#000000",
+        strokeThickness: 3,
+      })
+      .setOrigin(0.5);
+    this.gridContainer.add(titleText);
+
+    const subtitleText = this.add
+      .text(centerX, y + 48, subtitle, {
+        fontSize: "14px",
+        color: "#a8e6ff",
+        fontFamily: "Arial",
+      })
+      .setOrigin(0.5);
+    this.gridContainer.add(subtitleText);
+  }
+
+  private getNormalSubtitle(): string {
+    const maxLevel = ItemRegistry.getMaxLevel();
+    const isRound1 = this.gameState.round === 1;
+    const discovered = isRound1 ? this.gameState.level : maxLevel;
+    return `Открыто: ${discovered} / ${maxLevel}`;
+  }
+
+  private getRareSubtitle(): string {
+    const discovered = this.gameState.getDiscoveredRareSquishCount();
+    return `Открыто: ${discovered} / ${this.RARE_SQUISH_COUNT}`;
+  }
+
   private getRareSquishFrames(): string[] {
     const texture = this.textures.get("rare-squishes");
     if (!texture) {
@@ -121,12 +202,9 @@ export class CollectionScene extends Phaser.Scene {
       return [];
     }
 
-    // 🎯 Альтернативные способы получения ключей кадров
     let keys: string[] = [];
-
     keys = texture.getFrameNames();
 
-    // Фильтруем служебные ключи и сортируем по числам
     return keys
       .filter((k) => k !== "__BASE" && k !== "__DEFAULT" && k !== "__default")
       .sort((a, b) => {
@@ -136,39 +214,6 @@ export class CollectionScene extends Phaser.Scene {
       });
   }
 
-  // 🎯 Заголовок секции редких сквишей
-  private renderRareSectionHeader(leftX: number, y: number, gridWidth: number): void {
-    const centerX = leftX + gridWidth / 2;
-
-    // Горизонтальная линия-разделитель
-    const line = this.add.rectangle(centerX, y, gridWidth, 2, 0xffd700, 0.5);
-    this.gridContainer.add(line);
-
-    // Заголовок "✨ РЕДКИЕ СКВИШИ"
-    const title = this.add
-      .text(centerX, y + 30, "✨ РЕДКИЕ СКВИШИ", {
-        fontSize: "26px",
-        color: "#ffd700",
-        fontFamily: "Arial",
-        fontStyle: "bold",
-        stroke: "#000000",
-        strokeThickness: 3,
-      })
-      .setOrigin(0.5);
-    this.gridContainer.add(title);
-
-    // Подзаголовок с прогрессом
-    const discovered = this.gameState.getDiscoveredRareSquishCount();
-    const subtitle = this.add
-      .text(centerX, y + 58, `Открыто: ${discovered} / ${this.RARE_SQUISH_COUNT}`, {
-        fontSize: "16px",
-        color: "#e0b0ff",
-        fontFamily: "Arial",
-      })
-      .setOrigin(0.5);
-    this.gridContainer.add(subtitle);
-  }
-
   private createCardTextures(): void {
     if (this.textures.exists("card_fill")) return;
 
@@ -176,7 +221,6 @@ export class CollectionScene extends Phaser.Scene {
     const h = this.CARD_H;
     const r = 18;
 
-    // Обычная текстура
     const fillGraphics = this.make.graphics({ x: 0, y: 0 }, false);
     fillGraphics.fillStyle(0xffffff);
     fillGraphics.fillRoundedRect(0, 0, w, h, r);
@@ -190,7 +234,7 @@ export class CollectionScene extends Phaser.Scene {
     borderGraphics.destroy();
   }
 
-  private createCell(level: number, x: number, y: number, isRare: boolean): void {
+  private createCell(level: number, x: number, y: number): void {
     const { discovered, rank } = this.getCellState(level);
 
     const fill = this.add.image(x, y, "card_fill");
@@ -236,28 +280,24 @@ export class CollectionScene extends Phaser.Scene {
     }
   }
 
-  // 🎯 НОВЫЙ МЕТОД: создание премиальной карточки редкого сквиша
   private createRareCell(index: number, frameName: string, x: number, y: number): void {
     const rank = this.gameState.getRareSquishRank(index);
     const discovered = rank > 0;
 
-    // 🎯 Премиальная подложка: тёмно-фиолетовая с золотой обводкой
     const fill = this.add.image(x, y, "card_fill");
     fill.setTint(discovered ? 0x4a2c6a : 0x2d1b4e);
     this.gridContainer.add(fill);
 
     const border = this.add.image(x, y, "card_border");
-    border.setTint(discovered ? 0xffd700 : 0x6a4a8a); // Золотая или тускло-фиолетовая
+    border.setTint(discovered ? 0xffd700 : 0x6a4a8a);
     border.setAlpha(discovered ? 0.75 : 0.3);
     this.gridContainer.add(border);
 
     if (discovered) {
-      // Иконка ранга
       const icon = this.add.image(x, y - 55, "ranks", `rank${Math.min(rank, this.MAX_RANK_ICONS)}`);
       icon.setScale(40 / Math.max(icon.width, icon.height));
       this.gridContainer.add(icon);
 
-      // Подпись ранга (чуть ярче — розоватая)
       const rankText = this.add
         .text(x, y - 25, `РАНГ ${rank}`, {
           fontSize: "15px",
@@ -268,16 +308,13 @@ export class CollectionScene extends Phaser.Scene {
         .setOrigin(0.5);
       this.gridContainer.add(rankText);
 
-      // Тень под сквишем
       const shadow = this.add.ellipse(x, y + 66, 80, 18, 0x000000, 0.4);
       this.gridContainer.add(shadow);
 
-      // 🎯 Редкий сквиш из отдельного атласа
       const squish = this.add.image(x, y + 28, "rare-squishes", frameName);
       squish.setScale(85 / Math.max(squish.width, squish.height));
       this.gridContainer.add(squish);
     } else {
-      // 🎯 Премиальная заглушка: золотой знак вопроса
       const placeholder = this.add
         .text(x, y - 5, "?", {
           fontSize: "64px",
@@ -322,7 +359,6 @@ export class CollectionScene extends Phaser.Scene {
   private createHeader(): void {
     const screenWidth = this.scale.width;
     const maxLevel = ItemRegistry.getMaxLevel();
-    const isRound1 = this.gameState.round === 1;
 
     this.add.rectangle(0, 0, screenWidth, this.headerHeight, 0x22223a).setOrigin(0).setDepth(5);
 
@@ -358,14 +394,15 @@ export class CollectionScene extends Phaser.Scene {
       .setOrigin(0.5)
       .setDepth(6);
 
-    // 🎯 Учёт и обычных, и редких сквишей
+    // Общий счётчик открытий
+    const isRound1 = this.gameState.round === 1;
     const rareDiscovered = this.gameState.getDiscoveredRareSquishCount();
     const normalDiscovered = isRound1 ? this.gameState.level : maxLevel;
     const totalDiscovered = normalDiscovered + rareDiscovered;
     const totalItems = maxLevel + this.RARE_SQUISH_COUNT;
 
     this.add
-      .text(screenWidth / 2, 85, `Открыто: ${totalDiscovered} / ${totalItems}`, {
+      .text(screenWidth / 2, 85, `Всего открыто: ${totalDiscovered} / ${totalItems}`, {
         fontSize: "18px",
         color: "#a8e6ff",
         fontFamily: "Arial",
