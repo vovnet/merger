@@ -66,14 +66,8 @@ export class GridVFXManager {
     const startX = px + randomXOffset; // 🎯 точка старта смещена
 
     const popup = this.scene.add
-      .text(startX, py - 30, `+${amount}`, {
-        fontSize: amount >= 1000 ? "38px" : "30px",
-        fontFamily: "Arial",
-        fontStyle: "bold",
-        color: "#ffd700",
-        stroke: "#000000",
-        strokeThickness: 5,
-      })
+      .bitmapText(startX, py - 30, "russo", `+${amount}`, Phaser.Math.Between(22, 32))
+      .setTint(0xecc900)
       .setOrigin(0.5, 1)
       .setDepth(1000)
       .setAlpha(0)

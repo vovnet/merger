@@ -10,7 +10,7 @@ export class ActionButtons {
   private economy: Economy;
 
   private spawnButtonBg: Phaser.GameObjects.Rectangle;
-  private spawnButtonText: Phaser.GameObjects.Text;
+  private spawnButtonText: Phaser.GameObjects.BitmapText;
   private fillButtonBg: Phaser.GameObjects.Rectangle;
   private fillButtonText: Phaser.GameObjects.BitmapText;
   private debugButtonBg: Phaser.GameObjects.Rectangle;
@@ -44,12 +44,7 @@ export class ActionButtons {
     this.spawnButtonBg.setStrokeStyle(2, 0xffffff);
 
     this.spawnButtonText = this.scene.add
-      .text(width / 2, height - 80, `СПАУН (Ур. ${this.gameState.level})`, {
-        fontSize: "20px",
-        color: "#ffffff",
-        fontFamily: "Arial",
-        fontStyle: "bold",
-      })
+      .bitmapText(width / 2, height - 80, "russo", `СПАУН (Ур. ${this.gameState.level})`, 24)
       .setOrigin(0.5)
       .setDepth(101);
 

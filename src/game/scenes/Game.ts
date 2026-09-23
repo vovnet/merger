@@ -36,7 +36,7 @@ export class Game extends Phaser.Scene {
 
     this.load.audio("merge_pop", "assets/sound/bubble_1.mp3");
 
-    this.load.bitmapFont("russo", "assets/fonts/russo.png", "assets/fonts/russo.xml");
+    this.load.bitmapFont("russo", "assets/fonts/days.png", "assets/fonts/days.xml");
 
     // 1. Создаем временный Graphics объект
     const graphics = this.add.graphics({ x: 0, y: 0 });
