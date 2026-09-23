@@ -2,7 +2,6 @@ import * as Phaser from "phaser";
 import { HUD } from "../ui/HUD";
 import { ActionButtons } from "../ui/ActionButtons";
 import { Economy } from "../core/Economy";
-import { ComboScale } from "../ui/ComboScale";
 import { ContractPanel } from "../ui/ContractPanel";
 import { ContractService } from "../core/ContractService";
 import { ModalManager } from "../ui/modals/ModalManager";

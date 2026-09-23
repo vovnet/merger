@@ -13,8 +13,6 @@ export class ActionButtons {
   private spawnButtonText: Phaser.GameObjects.Text;
   private fillButtonBg: Phaser.GameObjects.Rectangle;
   private fillButtonText: Phaser.GameObjects.BitmapText;
-  private undoButtonBg: Phaser.GameObjects.Rectangle;
-  private undoButtonText: Phaser.GameObjects.Text;
   private debugButtonBg: Phaser.GameObjects.Rectangle;
   private debugButtonText: Phaser.GameObjects.Text;
   private spinButtonBg: Phaser.GameObjects.Rectangle;
@@ -79,45 +77,6 @@ export class ActionButtons {
     });
     this.fillButtonBg.on("pointerover", () => this.fillButtonBg.setFillStyle(0xa96ac6));
     this.fillButtonBg.on("pointerout", () => this.fillButtonBg.setFillStyle(0x9b59b6));
-
-    //  Кнопка отмены (слева внизу)
-    this.undoButtonBg = this.scene.add
-      .rectangle(
-        100,
-        height - 160,
-        140,
-        50,
-        0x7f8c8d, // Изначально серая (неактивная)
-      )
-      .setDepth(100);
-
-    this.undoButtonBg.setStrokeStyle(2, 0xffffff);
-    this.undoButtonBg.disableInteractive();
-
-    this.undoButtonText = this.scene.add
-      .text(100, height - 160, "ОТМЕНА", {
-        fontSize: "18px",
-        color: "#ffffff",
-        fontFamily: "Arial",
-        fontStyle: "bold",
-      })
-      .setOrigin(0.5)
-      .setDepth(101);
-
-    this.undoButtonBg.on("pointerdown", () => {
-      EventBus.emit(UIEvents.UNDO_REQUESTED);
-    });
-    this.undoButtonBg.on("pointerover", () => {
-      if (this.undoButtonBg.input) this.undoButtonBg.setFillStyle(0xd35400);
-    });
-    this.undoButtonBg.on("pointerout", () => {
-      if (this.undoButtonBg.input) this.undoButtonBg.setFillStyle(0xe67e22);
-    });
-
-    //  Слушаем изменение истории для обновления кнопки отмены
-    EventBus.on(GameEvents.HISTORY_CHANGED, (canUndo: boolean) => {
-      this.updateUndoButtonState(canUndo);
-    });
 
     const debugBtnX = width - 100;
     const debugBtnY = 100;
@@ -230,17 +189,6 @@ export class ActionButtons {
     this.debugButtonText.setText(`+${cost} 💰`);
   }
 
-  private updateUndoButtonState(canUndo: boolean): void {
-    const color = canUndo ? 0xe67e22 : 0x7f8c8d;
-    this.undoButtonBg.setFillStyle(color);
-
-    if (canUndo) {
-      this.undoButtonBg.setInteractive({ useHandCursor: true });
-    } else {
-      this.undoButtonBg.disableInteractive();
-    }
-  }
-
   private setupListeners(): void {
     EventBus.on(GameEvents.LEVEL_CHANGED, (level: number) => {
       this.updateSpawnButtonText();
@@ -267,8 +215,6 @@ export class ActionButtons {
     this.spawnButtonText.destroy();
     this.fillButtonBg.destroy();
     this.fillButtonText.destroy();
-    this.undoButtonBg.destroy();
-    this.undoButtonText.destroy();
     this.debugButtonBg.destroy();
     this.debugButtonText.destroy();
     this.spinButtonBg.destroy();
