@@ -58,10 +58,15 @@ export class GridVFXManager {
     this.scene.time.delayedCall(600, () => particles.destroy());
   }
 
-  // 🎯 Всплывающие деньги: pop-появление → полёт вверх → исчезновение
   public spawnMoneyPopup(px: number, py: number, amount: number): void {
+    // 🎯 Рандомные параметры для точки старта
+    const randomXOffset = Phaser.Math.Between(-30, 30); // смещение startX: ±30px
+    const randomAngle = Phaser.Math.FloatBetween(-15, 15); // фиксированный наклон: ±15°
+
+    const startX = px + randomXOffset; // 🎯 точка старта смещена
+
     const popup = this.scene.add
-      .text(px, py - 30, `+${amount}`, {
+      .text(startX, py - 30, `+${amount}`, {
         fontSize: amount >= 1000 ? "38px" : "30px",
         fontFamily: "Arial",
         fontStyle: "bold",
@@ -71,41 +76,43 @@ export class GridVFXManager {
       })
       .setOrigin(0.5, 1)
       .setDepth(1000)
-      .setAlpha(0);
+      .setAlpha(0)
+      .setAngle(randomAngle); // 🎯 фиксированный наклон
 
-    // 1. Лёгкое появление (без сильного отскока)
+    // 1. Лёгкое появление
     popup.setScale(0.5);
     this.scene.tweens.add({
       targets: popup,
-      scale: 1.05, // 🎯 было 1.15 → уменьшил отскок
+      scale: 1.05,
       alpha: 1,
-      duration: 120, // 🎯 было 180 → быстрее
+      duration: 120,
       ease: "Back.easeOut",
       onComplete: () => {
         this.scene.tweens.add({
           targets: popup,
           scale: 1,
-          duration: 80, // 🎯 было 120 → быстрая усадка
+          duration: 80,
           ease: "Power2.out",
         });
       },
     });
 
-    // 2. Полёт вверх — значительно быстрее
+    // 2. Полёт строго вверх (X не меняется!)
     this.scene.tweens.add({
       targets: popup,
-      y: py - 120, // 🎯 было -150 → не так высоко
-      duration: 600, // 🎯 было 1000 → почти в 2 раза быстрее
-      delay: 80, // 🎯 было 120
+      y: py - 120,
+      // 🎯 НЕТ изменения x — летит строго вертикально от своей стартовой точки
+      duration: 600,
+      delay: 80,
       ease: "Cubic.out",
     });
 
-    // 3. Растворение синхронно с концом полёта
+    // 3. Растворение
     this.scene.tweens.add({
       targets: popup,
       alpha: 0,
-      duration: 200, // 🎯 было 300
-      delay: 400, // 🎯 было 820 → исчезает пока ещё летит (более естественно)
+      duration: 200,
+      delay: 400,
       ease: "Power2.in",
       onComplete: () => popup.destroy(),
     });
