@@ -8,6 +8,7 @@ export interface GameStateData {
   round: number; // 🎯 НОВОЕ: текущий раунд
   totalMerges: number; // 🎯 НОВОЕ: общее количество слияний (для статистики)
   highestLevel: number; // 🎯 НОВОЕ: максимальный достигнутый уровень за всё время
+  rareSquishRanks: number[];
 }
 
 export class GameState {
@@ -15,6 +16,7 @@ export class GameState {
 
   // 🎯 Константы для престижа
   private readonly MAX_LEVEL = 72; // Максимальный уровень
+  private readonly RARE_SQUISH_COUNT = 64;
 
   constructor() {
     this.data = {
@@ -24,6 +26,7 @@ export class GameState {
       round: 1,
       totalMerges: 200,
       highestLevel: 6,
+      rareSquishRanks: new Array(this.RARE_SQUISH_COUNT).fill(1),
     };
   }
 
@@ -81,12 +84,26 @@ export class GameState {
     }
   }
 
-  // 🎯 НОВОЕ: Увеличиваем счётчик слияний
+  public getRareSquishRank(index: number): number {
+    if (index < 0 || index >= this.RARE_SQUISH_COUNT) {
+      console.warn(`Invalid rare squish index: ${index}`);
+      return 0;
+    }
+    return this.data.rareSquishRanks[index];
+  }
+
+  public isRareSquishDiscovered(index: number): boolean {
+    return this.getRareSquishRank(index) > 0;
+  }
+
+  public getDiscoveredRareSquishCount(): number {
+    return this.data.rareSquishRanks.filter((rank) => rank > 0).length;
+  }
+
   public incrementMerges(): void {
     this.data.totalMerges++;
   }
 
-  // 🎯 НОВОЕ: Проверка, достигнут ли максимальный уровень
   public hasReachedMaxLevel(): boolean {
     return this.data.level >= this.MAX_LEVEL;
   }
@@ -95,8 +112,6 @@ export class GameState {
     const previousRound = this.data.round;
     const bonus = 100 * this.data.round;
 
-    // 🎯 ИСПРАВЛЕНО: используем setLevel() вместо прямого присваивания
-    // Это эмитит событие LEVEL_CHANGED, и все подписчики обновятся
     this.setLevel(1);
 
     this.data.round++;
@@ -113,13 +128,46 @@ export class GameState {
     });
   }
 
+  public setRareSquishRank(index: number, rank: number): void {
+    if (index < 0 || index >= this.RARE_SQUISH_COUNT) {
+      console.warn(`Invalid rare squish index: ${index}`);
+      return;
+    }
+
+    const previousRank = this.data.rareSquishRanks[index];
+    if (previousRank !== rank) {
+      this.data.rareSquishRanks[index] = rank;
+
+      EventBus.emit(GameEvents.RARE_SQUISH_RANK_CHANGED, {
+        index,
+        rank,
+        previousRank,
+      });
+
+      console.log(`💎 Редкий сквиш #${index + 1}: ранг ${previousRank} → ${rank}`);
+    }
+  }
+
+  public discoverRareSquish(index: number): void {
+    this.setRareSquishRank(index, this.data.round);
+  }
+
   // --- СОХРАНЕНИЕ И ЗАГРУЗКА ---
   public serialize(): GameStateData {
-    return { ...this.data };
+    return {
+      ...this.data,
+      rareSquishRanks: [...this.data.rareSquishRanks], // Копия массива
+    };
   }
 
   public deserialize(savedData: Partial<GameStateData>): void {
-    this.data = { ...this.data, ...savedData };
+    this.data = {
+      ...this.data,
+      ...savedData,
+      rareSquishRanks: savedData.rareSquishRanks
+        ? [...savedData.rareSquishRanks]
+        : new Array(this.RARE_SQUISH_COUNT).fill(0),
+    };
 
     EventBus.emit(GameEvents.COINS_CHANGED, { value: this.data.coins, previousValue: 0 });
     EventBus.emit(GameEvents.LEVEL_CHANGED, { value: this.data.level, previousValue: 0 });
