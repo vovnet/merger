@@ -9,6 +9,7 @@ import { IDLE_ANIMATIONS } from "../config/ItemAnimations";
 import { GridDragController } from "./GridDragController";
 import { GridVFXManager } from "./GridVFXManager";
 import { Economy } from "./Economy";
+import { TapDestroyController } from "./TapDestroyController";
 
 export class GridRenderer {
   private sprites: Map<string, Phaser.GameObjects.Container> = new Map();
@@ -20,6 +21,8 @@ export class GridRenderer {
 
   private dragController: GridDragController;
   private vfxManager: GridVFXManager;
+
+  private tapDestroy: TapDestroyController;
 
   constructor(
     private scene: Phaser.Scene,
@@ -38,6 +41,7 @@ export class GridRenderer {
       this.pixelToGrid.bind(this),
     );
     this.vfxManager = new GridVFXManager(scene);
+    this.tapDestroy = new TapDestroyController(scene);
 
     this.drawGridBackground();
     this.bindGridEvents();
@@ -125,6 +129,7 @@ export class GridRenderer {
     container.setData("mainSprite", squish);
 
     this.dragController.makeDraggable(container);
+    this.tapDestroy.attach(container, item.id);
     this.sprites.set(item.id, container);
 
     // Анимация появления
@@ -155,9 +160,11 @@ export class GridRenderer {
   private removeItemSprite(pos: GridPosition): void {
     for (const [id, sprite] of this.sprites.entries()) {
       const spritePos = sprite.getData("gridPos");
+      const itemId = sprite.getData("itemId");
       if (spritePos?.x === pos.x && spritePos?.y === pos.y) {
         sprite.destroy();
-        this.sprites.delete(id);
+        this.sprites.delete(itemId);
+        this.tapDestroy.detach(itemId);
         break;
       }
     }

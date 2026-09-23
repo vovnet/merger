@@ -22,6 +22,8 @@ export const GameEvents = {
   HISTORY_CHECKPOINT: "historyCheckpoint",
   GRID_PRESTIGE_MERGED: "grid_prestige_merged",
 
+  ITEM_TAP_DESTROYED: "item_tap_setroyed",
+
   // События ComboService
   COMBO_UPDATED: "combo_updated",
   COMBO_RESET: "combo_reset",

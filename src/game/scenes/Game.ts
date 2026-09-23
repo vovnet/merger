@@ -12,6 +12,7 @@ import { ContractUpdateData } from "../types/Contract";
 import { AudioService } from "../core/AudioService";
 import { GameState } from "../core/GameState";
 import { ItemRegistry } from "../core/ItemRegistry";
+import { GridPosition } from "../types/Item";
 
 export class Game extends Phaser.Scene {
   private gameState: GameState;
@@ -187,6 +188,18 @@ export class Game extends Phaser.Scene {
       console.log(`💰 Начислена награда за контракт!`);
       this.gameState.addSpins(1);
     });
+
+    EventBus.on(
+      GameEvents.ITEM_TAP_DESTROYED,
+      (data: { itemId: string; position: GridPosition; level: number }) => {
+        EventBus.emit(GameEvents.HISTORY_CHECKPOINT); // чтобы undo работал корректно
+
+        const removed = this.grid.removeItem(data.position);
+        if (!removed) return;
+
+        // this.gridRenderer.removeSprite(data.itemId);
+      },
+    );
   }
 
   private handlePrestige(): void {
