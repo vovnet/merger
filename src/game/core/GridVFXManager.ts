@@ -57,4 +57,57 @@ export class GridVFXManager {
     particles.explode(20);
     this.scene.time.delayedCall(600, () => particles.destroy());
   }
+
+  // 🎯 Всплывающие деньги: pop-появление → полёт вверх → исчезновение
+  public spawnMoneyPopup(px: number, py: number, amount: number): void {
+    const popup = this.scene.add
+      .text(px, py - 30, `+${amount}`, {
+        fontSize: amount >= 1000 ? "38px" : "30px",
+        fontFamily: "Arial",
+        fontStyle: "bold",
+        color: "#ffd700",
+        stroke: "#000000",
+        strokeThickness: 5,
+      })
+      .setOrigin(0.5, 1)
+      .setDepth(1000)
+      .setAlpha(0);
+
+    // 1. Лёгкое появление (без сильного отскока)
+    popup.setScale(0.5);
+    this.scene.tweens.add({
+      targets: popup,
+      scale: 1.05, // 🎯 было 1.15 → уменьшил отскок
+      alpha: 1,
+      duration: 120, // 🎯 было 180 → быстрее
+      ease: "Back.easeOut",
+      onComplete: () => {
+        this.scene.tweens.add({
+          targets: popup,
+          scale: 1,
+          duration: 80, // 🎯 было 120 → быстрая усадка
+          ease: "Power2.out",
+        });
+      },
+    });
+
+    // 2. Полёт вверх — значительно быстрее
+    this.scene.tweens.add({
+      targets: popup,
+      y: py - 120, // 🎯 было -150 → не так высоко
+      duration: 600, // 🎯 было 1000 → почти в 2 раза быстрее
+      delay: 80, // 🎯 было 120
+      ease: "Cubic.out",
+    });
+
+    // 3. Растворение синхронно с концом полёта
+    this.scene.tweens.add({
+      targets: popup,
+      alpha: 0,
+      duration: 200, // 🎯 было 300
+      delay: 400, // 🎯 было 820 → исчезает пока ещё летит (более естественно)
+      ease: "Power2.in",
+      onComplete: () => popup.destroy(),
+    });
+  }
 }

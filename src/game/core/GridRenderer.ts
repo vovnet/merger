@@ -8,6 +8,7 @@ import { ContractUpdateData } from "../types/Contract";
 import { IDLE_ANIMATIONS } from "../config/ItemAnimations";
 import { GridDragController } from "./GridDragController";
 import { GridVFXManager } from "./GridVFXManager";
+import { Economy } from "./Economy";
 
 export class GridRenderer {
   private sprites: Map<string, Phaser.GameObjects.Container> = new Map();
@@ -71,6 +72,9 @@ export class GridRenderer {
     EventBus.on(GameEvents.GRID_ITEM_MERGED, (data: any) => {
       const { px, py } = this.gridToPixel(data.item.pos);
       this.vfxManager.spawnMergeParticles(px, py, data.newLevel);
+      const economy = this.scene.registry.get("economy") as Economy;
+      const reward = economy.getMergeReward(data.newLevel);
+      this.showMergeReward(data.item.pos, reward);
     });
 
     EventBus.on(GameEvents.CONTRACT_UPDATED, (data: ContractUpdateData) => {
@@ -79,6 +83,11 @@ export class GridRenderer {
     });
 
     EventBus.on(GameEvents.GRID_RESTORED, (snapshot: GridSnapshot) => this.handleRestore(snapshot));
+  }
+
+  public showMergeReward(pos: GridPosition, amount: number): void {
+    const { px, py } = this.gridToPixel(pos);
+    this.vfxManager.spawnMoneyPopup(px, py, amount);
   }
 
   // 🎯 Математика координат
