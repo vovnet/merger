@@ -3,20 +3,24 @@ import { ItemRegistry } from "../core/ItemRegistry";
 
 export class LevelUpScene extends Phaser.Scene {
   private level: number = 1;
+  private rank: number = 1;
+
+  // 🎯 Максимальное количество иконок рангов в атласе
+  private readonly MAX_RANK_ICONS = 37;
 
   constructor() {
     super({ key: "LevelUpScene" });
   }
 
-  init(data: { level: number }): void {
+  init(data: { level: number; rank: number }): void {
     this.level = data.level;
+    this.rank = data.rank;
   }
 
   create(): void {
     const screenWidth = this.scale.width;
     const screenHeight = this.scale.height;
 
-    // Плавное появление
     this.cameras.main.fadeIn(300, 0, 0, 0);
 
     // 1. Затемнение фона (перехватывает все клики)
@@ -26,10 +30,20 @@ export class LevelUpScene extends Phaser.Scene {
       .setInteractive();
     overlay.on("pointerdown", () => this.close());
 
-    // 2. Текст "НОВЫЙ УРОВЕНЬ!"
-    const titleText = this.add
-      .text(screenWidth / 2, screenHeight / 2 - 150, `УРОВЕНЬ ${this.level}!`, {
-        fontSize: "48px",
+    // 2. 🎯 ИКОНКА РАНГА (с ограничением: если ранг > 37, берём последнюю иконку)
+    const iconFrame = `rank${Math.min(this.rank, this.MAX_RANK_ICONS)}`;
+    const rankIcon = this.add.image(screenWidth / 2, screenHeight / 2 - 240, "ranks", iconFrame);
+    rankIcon.setOrigin(0.5);
+
+    const iconTargetSize = 100;
+    const iconMaxDim = Math.max(rankIcon.width, rankIcon.height);
+    const iconScale = iconTargetSize / iconMaxDim;
+    rankIcon.setScale(0);
+
+    // 3. 🎯 ТЕКСТ РАНГА
+    const rankText = this.add
+      .text(screenWidth / 2, screenHeight / 2 - 165, `${this.rank} Ранг`, {
+        fontSize: "42px",
         color: "#ffd700",
         fontFamily: "Arial",
         fontStyle: "bold",
@@ -39,18 +53,18 @@ export class LevelUpScene extends Phaser.Scene {
       .setOrigin(0.5)
       .setAlpha(0);
 
-    // 3. Сквиш
+    // 4. Сквиш
     const squish = this.add.image(
       screenWidth / 2,
-      screenHeight / 2,
+      screenHeight / 2 + 20,
       "squishes",
       ItemRegistry.getFrameName(this.level),
     );
     squish.setOrigin(0.5);
     squish.setScale(0);
 
-    // 4. Частицы
-    const particles = this.add.particles(screenWidth / 2, screenHeight / 2, "particle_blob", {
+    // 5. Частицы
+    const particles = this.add.particles(screenWidth / 2, screenHeight / 2 + 20, "particle_blob", {
       speed: { min: 200, max: 400 },
       angle: { min: 0, max: 360 },
       scale: { start: 0.8, end: 0 },
@@ -60,9 +74,9 @@ export class LevelUpScene extends Phaser.Scene {
       emitting: false,
     });
 
-    // 5. Подсказка
+    // 6. Подсказка
     const hintText = this.add
-      .text(screenWidth / 2, screenHeight / 2 + 200, "Нажмите, чтобы продолжить", {
+      .text(screenWidth / 2, screenHeight / 2 + 220, "Нажмите, чтобы продолжить", {
         fontSize: "24px",
         color: "#ffffff",
         fontFamily: "Arial",
@@ -70,16 +84,47 @@ export class LevelUpScene extends Phaser.Scene {
       .setOrigin(0.5)
       .setAlpha(0);
 
-    // 6. Анимации появления
+    // --- АНИМАЦИИ ---
+
+    // Иконка ранга: pop-эффект
     this.tweens.add({
-      targets: titleText,
-      alpha: 1,
-      y: screenHeight / 2 - 180,
+      targets: rankIcon,
+      scale: { from: 0, to: iconScale * 1.25 },
       duration: 400,
-      ease: "Power2.out",
+      ease: "Back.easeOut",
+      onComplete: () => {
+        this.tweens.add({
+          targets: rankIcon,
+          scale: iconScale,
+          duration: 150,
+          ease: "Power2.out",
+        });
+      },
     });
 
-    const targetSize = Math.min(screenWidth, screenHeight) * 0.4;
+    // Иконка ранга: лёгкое покачивание
+    this.tweens.add({
+      targets: rankIcon,
+      angle: { from: -6, to: 6 },
+      duration: 1200,
+      yoyo: true,
+      repeat: -1,
+      ease: "Sine.easeInOut",
+      delay: 500,
+    });
+
+    // Текст ранга: появление снизу
+    this.tweens.add({
+      targets: rankText,
+      alpha: 1,
+      y: screenHeight / 2 - 175,
+      duration: 400,
+      ease: "Power2.out",
+      delay: 200,
+    });
+
+    // Сквиш: pop-эффект
+    const targetSize = Math.min(screenWidth, screenHeight) * 0.35;
     const targetScale = targetSize / Math.max(squish.width, squish.height);
 
     this.tweens.add({
@@ -87,6 +132,7 @@ export class LevelUpScene extends Phaser.Scene {
       scale: { from: 0, to: targetScale * 1.2 },
       duration: 500,
       ease: "Back.easeOut",
+      delay: 300,
       onComplete: () => {
         this.tweens.add({
           targets: squish,
@@ -98,7 +144,7 @@ export class LevelUpScene extends Phaser.Scene {
       },
     });
 
-    // Idle анимация сквиша
+    // Сквиш: idle покачивание
     this.tweens.add({
       targets: squish,
       angle: { from: -3, to: 3 },
@@ -106,7 +152,7 @@ export class LevelUpScene extends Phaser.Scene {
       yoyo: true,
       repeat: -1,
       ease: "Sine.easeInOut",
-      delay: 700,
+      delay: 900,
     });
 
     // Подсказка с пульсацией
@@ -114,7 +160,7 @@ export class LevelUpScene extends Phaser.Scene {
       targets: hintText,
       alpha: 1,
       duration: 400,
-      delay: 600,
+      delay: 800,
       onComplete: () => {
         this.tweens.add({
           targets: hintText,
@@ -129,7 +175,6 @@ export class LevelUpScene extends Phaser.Scene {
   }
 
   private close(): void {
-    // Плавное исчезновение, затем остановка сцены
     this.cameras.main.fadeOut(200, 0, 0, 0);
     this.cameras.main.once("camerafadeoutcomplete", () => {
       this.scene.stop();
