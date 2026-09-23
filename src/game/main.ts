@@ -2,6 +2,7 @@ import { Game as MainGame } from "./scenes/Game";
 import { AUTO, Game, Scale, Types } from "phaser";
 import { UIScene } from "./scenes/UIScene";
 import { LevelUpScene } from "./scenes/LevelUpScene";
+import { CollectionScene } from "./scenes/CollectionScene";
 
 // Find out more information about the Game Config at:
 // https://docs.phaser.io/api-documentation/typedef/types-core#gameconfig
@@ -16,7 +17,7 @@ const config: Types.Core.GameConfig = {
     autoCenter: Scale.CENTER_BOTH,
   },
   disableContextMenu: true,
-  scene: [MainGame, UIScene, LevelUpScene],
+  scene: [MainGame, UIScene, LevelUpScene, CollectionScene],
   banner: { hidePhaser: true },
 };
 
