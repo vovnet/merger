@@ -20,17 +20,27 @@ export class LevelUpScene extends Phaser.Scene {
   create(): void {
     const screenWidth = this.scale.width;
     const screenHeight = this.scale.height;
+    const CLOSE_DELAY = 1000;
 
     this.cameras.main.fadeIn(300, 0, 0, 0);
 
-    // 1. Затемнение фона (перехватывает все клики)
+    // 🎯 Флаг: можно ли закрывать сцену
+    let canClose = false;
+
+    // 1. Затемнение блокирует клики СРАЗУ
     const overlay = this.add
       .rectangle(0, 0, screenWidth, screenHeight, 0x000000, 0.7)
       .setOrigin(0)
       .setInteractive();
-    overlay.on("pointerdown", () => this.close());
 
-    // 2. 🎯 ИКОНКА РАНГА (с ограничением: если ранг > 37, берём последнюю иконку)
+    overlay.on("pointerdown", () => {
+      // 🎯 Проверяем флаг, а не время
+      if (canClose) {
+        this.close();
+      }
+    });
+
+    // 2. Иконка ранга
     const iconFrame = `rank${Math.min(this.rank, this.MAX_RANK_ICONS)}`;
     const rankIcon = this.add.image(screenWidth / 2, screenHeight / 2 - 240, "ranks", iconFrame);
     rankIcon.setOrigin(0.5);
@@ -40,7 +50,7 @@ export class LevelUpScene extends Phaser.Scene {
     const iconScale = iconTargetSize / iconMaxDim;
     rankIcon.setScale(0);
 
-    // 3. 🎯 ТЕКСТ РАНГА
+    // 3. Текст ранга
     const rankText = this.add
       .text(screenWidth / 2, screenHeight / 2 - 165, `РАНГ ${this.rank}`, {
         fontSize: "42px",
@@ -84,9 +94,29 @@ export class LevelUpScene extends Phaser.Scene {
       .setOrigin(0.5)
       .setAlpha(0);
 
+    // 🎯 Через 1 секунду: разрешаем закрытие + показываем подсказку
+    this.time.delayedCall(CLOSE_DELAY, () => {
+      canClose = true; // 🔑 Вот здесь разрешаем клик
+
+      this.tweens.add({
+        targets: hintText,
+        alpha: 1,
+        duration: 400,
+        onComplete: () => {
+          this.tweens.add({
+            targets: hintText,
+            alpha: { from: 1, to: 0.5 },
+            duration: 1000,
+            yoyo: true,
+            repeat: -1,
+            ease: "Sine.easeInOut",
+          });
+        },
+      });
+    });
+
     // --- АНИМАЦИИ ---
 
-    // Иконка ранга: pop-эффект
     this.tweens.add({
       targets: rankIcon,
       scale: { from: 0, to: iconScale * 1.25 },
@@ -102,7 +132,6 @@ export class LevelUpScene extends Phaser.Scene {
       },
     });
 
-    // Иконка ранга: лёгкое покачивание
     this.tweens.add({
       targets: rankIcon,
       angle: { from: -6, to: 6 },
@@ -113,7 +142,6 @@ export class LevelUpScene extends Phaser.Scene {
       delay: 500,
     });
 
-    // Текст ранга: появление снизу
     this.tweens.add({
       targets: rankText,
       alpha: 1,
@@ -123,7 +151,6 @@ export class LevelUpScene extends Phaser.Scene {
       delay: 200,
     });
 
-    // Сквиш: pop-эффект
     const targetSize = Math.min(screenWidth, screenHeight) * 0.35;
     const targetScale = targetSize / Math.max(squish.width, squish.height);
 
@@ -144,7 +171,6 @@ export class LevelUpScene extends Phaser.Scene {
       },
     });
 
-    // Сквиш: idle покачивание
     this.tweens.add({
       targets: squish,
       angle: { from: -3, to: 3 },
@@ -153,24 +179,6 @@ export class LevelUpScene extends Phaser.Scene {
       repeat: -1,
       ease: "Sine.easeInOut",
       delay: 900,
-    });
-
-    // Подсказка с пульсацией
-    this.tweens.add({
-      targets: hintText,
-      alpha: 1,
-      duration: 400,
-      delay: 800,
-      onComplete: () => {
-        this.tweens.add({
-          targets: hintText,
-          alpha: { from: 1, to: 0.5 },
-          duration: 1000,
-          yoyo: true,
-          repeat: -1,
-          ease: "Sine.easeInOut",
-        });
-      },
     });
   }
 
