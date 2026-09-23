@@ -21,9 +21,9 @@ export class GameState {
       coins: 500,
       level: 1,
       spins: 10,
-      round: 39,
+      round: 1,
       totalMerges: 200,
-      highestLevel: 72,
+      highestLevel: 6,
     };
   }
 
