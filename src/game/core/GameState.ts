@@ -1,3 +1,4 @@
+import * as Phaser from "phaser";
 import { EventBus } from "./EventBus";
 import { GameEvents } from "../types/GameEvents";
 
@@ -26,7 +27,9 @@ export class GameState {
       round: 1,
       totalMerges: 200,
       highestLevel: 6,
-      rareSquishRanks: new Array(this.RARE_SQUISH_COUNT).fill(1),
+      rareSquishRanks: new Array(this.RARE_SQUISH_COUNT)
+        .fill(0)
+        .map(() => Phaser.Math.Between(0, 37)),
     };
   }
 

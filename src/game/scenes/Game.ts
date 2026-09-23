@@ -29,6 +29,7 @@ export class Game extends Phaser.Scene {
   }
 
   preload() {
+    this.load.image("bg_main", "assets/bg.png");
     this.load.atlas("squishes", "assets/spritesheet.png", "assets/spritesheet.json");
     this.load.atlas("ranks", "assets/rank_sprites.png", "assets/rank_sprites.json");
     this.load.atlas("rare-squishes", "assets/rare_texture.png", "assets/rare_texture.json");
@@ -70,6 +71,10 @@ export class Game extends Phaser.Scene {
     this.scene.get("UIScene") as UIScene;
 
     this.setupEventListeners();
+
+    const bg = this.add.image(this.scale.width / 2, this.scale.height / 2, "bg_main").setDepth(-10);
+    const coverScale = Math.max(this.scale.width / bg.width, this.scale.height / bg.height);
+    bg.setScale(coverScale);
 
     // this.loadGameProgress();
   }
