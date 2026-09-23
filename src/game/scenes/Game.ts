@@ -30,6 +30,7 @@ export class Game extends Phaser.Scene {
 
   preload() {
     this.load.atlas("squishes", "assets/spritesheet.png", "assets/spritesheet.json");
+    this.load.atlas("ranks", "assets/rank_sprites.png", "assets/rank_sprites.json");
 
     this.load.audio("merge_pop", "assets/sound/bubble_1.mp3");
 
