@@ -14,7 +14,6 @@ export class UIScene extends Phaser.Scene {
   private hud: HUD;
   private actionButtons: ActionButtons;
   private economy: Economy;
-  private comboScale: ComboScale;
   private contractService: ContractService;
   private contractPanel: ContractPanel;
   private modalManager: ModalManager;
@@ -28,7 +27,6 @@ export class UIScene extends Phaser.Scene {
     this.contractService = data.contractService;
     this.hud = new HUD(this);
     this.actionButtons = new ActionButtons(this, this.economy);
-    this.comboScale = new ComboScale(this, this.scale.width - 60, this.scale.height / 2);
     this.contractPanel = new ContractPanel(this, this.contractService);
 
     this.modalManager = new ModalManager(this);
@@ -73,7 +71,6 @@ export class UIScene extends Phaser.Scene {
   destroy(): void {
     this.hud.destroy();
     this.actionButtons.destroy();
-    this.comboScale.destroy();
     this.modalManager.destroy();
   }
 }
