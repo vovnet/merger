@@ -42,7 +42,7 @@ export class LevelUpScene extends Phaser.Scene {
 
     // 3. 🎯 ТЕКСТ РАНГА
     const rankText = this.add
-      .text(screenWidth / 2, screenHeight / 2 - 165, `${this.rank} Ранг`, {
+      .text(screenWidth / 2, screenHeight / 2 - 165, `РАНГ ${this.rank}`, {
         fontSize: "42px",
         color: "#ffd700",
         fontFamily: "Arial",

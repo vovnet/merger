@@ -19,9 +19,9 @@ export class GameState {
   constructor() {
     this.data = {
       coins: 500,
-      level: 76,
+      level: 1,
       spins: 10,
-      round: 10,
+      round: 26,
       totalMerges: 200,
       highestLevel: 72,
     };
