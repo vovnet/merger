@@ -69,7 +69,7 @@ export class Game extends Phaser.Scene {
 
     this.setupEventListeners();
 
-    this.loadGameProgress();
+    // this.loadGameProgress();
   }
 
   private loadGameProgress(): void {
