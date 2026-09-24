@@ -6,8 +6,6 @@ export class RouletteScene extends Phaser.Scene {
   private gameState!: GameState;
   private rouletteLogic!: RouletteLogic;
 
-  // UI элементы
-  private reelContainer!: Phaser.GameObjects.Container;
   private spinBtn!: Phaser.GameObjects.Rectangle;
   private spinText!: Phaser.GameObjects.Text;
   private closeBtn!: Phaser.GameObjects.Rectangle;
@@ -18,7 +16,6 @@ export class RouletteScene extends Phaser.Scene {
   }
 
   init(): void {
-    // Сброс при каждом открытии
     if (this.rouletteLogic) {
       this.rouletteLogic.reset();
     }
@@ -35,15 +32,13 @@ export class RouletteScene extends Phaser.Scene {
     this.scene.pause("GameScene");
     this.scene.pause("UIScene");
 
-    // 1. Инициализация логики
     this.rouletteLogic = new RouletteLogic(this, this.gameState, {
-      totalItems: 50,
+      totalItems: 60,
       cardW: 120,
       cardH: 150,
       cardGap: 10,
     });
 
-    // 2. Отрисовка фона и статики
     this.add.rectangle(0, 0, screenWidth, screenHeight, 0x000000, 0.85).setOrigin(0).setDepth(0);
     this.add
       .text(screenWidth / 2, 80, "🎰 РУЛЕТКА", {
@@ -62,12 +57,7 @@ export class RouletteScene extends Phaser.Scene {
       .setDepth(20);
     this.add.rectangle(screenWidth / 2, screenHeight / 2, 4, 180, 0xffd700, 0.6).setDepth(15);
 
-    // 3. Контейнер и генерация ленты через логику
-    this.reelContainer = this.add.container(0, screenHeight / 2).setDepth(10);
-    this.rouletteLogic.reelContainer = this.reelContainer;
-    this.rouletteLogic.generateReel(this.reelContainer);
-
-    // 4. UI Кнопок
+    this.rouletteLogic.initReel(screenWidth, screenHeight);
     this.setupUI(screenWidth, screenHeight);
     this.updateUIState();
   }
@@ -116,32 +106,25 @@ export class RouletteScene extends Phaser.Scene {
     if (this.rouletteLogic.currentState !== RouletteState.IDLE) return;
     if (this.gameState.spins <= 0) return;
 
-    // Списываем спин
     // this.gameState.spins -= 1;
-
-    // Запускаем спин через логику
     this.rouletteLogic.startSpin((winData) => this.onSpinComplete(winData));
     this.updateUIState();
   }
 
+  // 🎯 ОБНОВЛЁННАЯ ЛОГИКА ОБРАБОТКИ ВЫИГРЫША
   private onSpinComplete(winData: RouletteWinData): void {
-    // 1. Визуал выигрыша через логику
-    this.rouletteLogic.highlightWinner(winData);
-
-    // 2. Начисление награды
-    if (winData.isRare) {
-      this.gameState.discoverRareSquish(winData.level - 1);
-      console.log(`💎 Выигран редкий сквиш #${winData.level}!`);
+    if (winData.type === "RARE_SQUISH") {
+      const index = winData.rareIndex!;
+      this.gameState.discoverRareSquish(index);
+      console.log(`💎 Выигран редкий сквиш #${index + 1}!`);
     } else {
-      console.log(`🎉 Выигран обычный сквиш уровня ${winData.level}!`);
+      this.gameState.addCoins(winData.value);
+      console.log(`🎉 Выиграно ${winData.value} монет!`);
     }
 
-    // 🎯 3. НОВОЕ: Если есть спины, готовим рулетку к следующему запуску
     if (this.gameState.spins > 0) {
-      this.rouletteLogic.resetForNextSpin();
+      // this.rouletteLogic.resetForNextSpin();
     }
-
-    // 4. Обновление UI (теперь состояние будет IDLE, и кнопка корректно разблокируется)
     this.updateUIState();
   }
 
@@ -156,7 +139,6 @@ export class RouletteScene extends Phaser.Scene {
     });
   }
 
-  // 🎯 Централизованное обновление UI на основе состояния логики
   private updateUIState(): void {
     const state = this.rouletteLogic.currentState;
     const spins = this.gameState.spins;
