@@ -1,5 +1,12 @@
 import * as Phaser from "phaser";
 import { GameState } from "./GameState";
+import { Economy } from "./Economy"; // 🎯 Добавляем импорт Economy
+
+const BASE_MULTIPLYERS = {
+  LOW: 10,
+  MIDDLE: 20,
+  HIGHT: 40,
+};
 
 export enum RouletteState {
   IDLE = "IDLE",
@@ -25,6 +32,7 @@ export interface RouletteWinData {
 export class RouletteLogic {
   private scene: Phaser.Scene;
   private gameState: GameState;
+  private economy: Economy; // 🎯 Ссылка на экономику
   private config: Required<RouletteConfig>;
 
   public reelContainer!: Phaser.GameObjects.Container;
@@ -37,6 +45,9 @@ export class RouletteLogic {
   constructor(scene: Phaser.Scene, gameState: GameState, config: RouletteConfig = {}) {
     this.scene = scene;
     this.gameState = gameState;
+    // 🎯 Получаем Economy из реестра (как мы делали ранее)
+    this.economy = scene.registry.get("economy") as Economy;
+
     this.config = {
       totalItems: config.totalItems ?? 50,
       cardW: config.cardW ?? 120,
@@ -57,6 +68,14 @@ export class RouletteLogic {
     this.particlesCleanupTimer?.destroy();
   }
 
+  // 🎯 НОВАЯ ФУНКЦИЯ: Округление до "красивых" чисел (всегда в большую сторону для щедрости)
+  private roundToBeautiful(value: number): number {
+    if (value <= 0) return 0;
+    if (value < 500) return Math.ceil(value / 50) * 50; // 100, 150, 200... 450, 500
+    if (value < 5000) return Math.ceil(value / 500) * 500; // 1000, 1500, 2000... 4500, 5000
+    return Math.ceil(value / 1000) * 1000; // 6000, 7000, 10000...
+  }
+
   public generateReel(): void {
     this.reelContainer.removeAll(true);
     this.reelItems = [];
@@ -64,14 +83,12 @@ export class RouletteLogic {
     const startX = -this.config.cardW / 2;
     const total = this.config.totalItems;
 
-    // 🎯 1. ВИЗУАЛЬНАЯ ПРОПОРЦИЯ (То, что видит игрок)
-    // 50% редкие, остальные 50% делятся поровну между тремя типами монет (~16.6% каждый)
-    const rareCount = Math.floor(total * 0.5); // 25 из 50
-    const othersCount = total - rareCount; // 25 из 50
+    const rareCount = Math.floor(total * 0.5);
+    const othersCount = total - rareCount;
 
     const smallCount = Math.floor(othersCount / 3);
     const mediumCount = Math.floor(othersCount / 3);
-    const largeCount = othersCount - smallCount - mediumCount; // Остаток (9)
+    const largeCount = othersCount - smallCount - mediumCount;
 
     const pool: RouletteWinData["type"][] = [];
     for (let i = 0; i < rareCount; i++) pool.push("RARE_SQUISH");
@@ -79,13 +96,11 @@ export class RouletteLogic {
     for (let i = 0; i < mediumCount; i++) pool.push("COINS_MEDIUM");
     for (let i = 0; i < largeCount; i++) pool.push("COINS_LARGE");
 
-    // Перемешиваем пул (Алгоритм Фишера-Йетса)
     for (let i = pool.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       [pool[i], pool[j]] = [pool[j], pool[i]];
     }
 
-    // Генерируем ленту
     for (let i = 0; i < total; i++) {
       const x = startX + i * (this.config.cardW + this.config.cardGap);
       const item = this.createReelItem(i, x, 0, pool[i]);
@@ -108,22 +123,35 @@ export class RouletteLogic {
     let subtitle = "";
     const isRare = type === "RARE_SQUISH";
 
+    // 🎯 ДИНАМИЧЕСКИЙ РАСЧЁТ НАГРАД
+    const spawnCost = this.economy.getSpawnCost(this.gameState.level);
+
+    // Базовые множители
+    const rawSmall = spawnCost * BASE_MULTIPLYERS.LOW;
+    const rawMedium = spawnCost * BASE_MULTIPLYERS.MIDDLE;
+    const rawLarge = spawnCost * BASE_MULTIPLYERS.HIGHT;
+
+    // Округляем до красивых значений
+    const beautifulSmall = this.roundToBeautiful(rawSmall);
+    const beautifulMedium = this.roundToBeautiful(rawMedium);
+    const beautifulLarge = this.roundToBeautiful(rawLarge);
+
     switch (type) {
       case "COINS_SMALL":
-        value = 50;
-        displayText = "50 💰";
+        value = beautifulSmall;
+        displayText = `${value} 💰`;
         displayColor = "#a8e6cf";
         subtitle = "Мало";
         break;
       case "COINS_MEDIUM":
-        value = 250;
-        displayText = "250 💰";
+        value = beautifulMedium;
+        displayText = `${value} 💰`;
         displayColor = "#ffd93d";
         subtitle = "Средне";
         break;
       case "COINS_LARGE":
-        value = 1000;
-        displayText = "1000 💰";
+        value = beautifulLarge;
+        displayText = `${value} 💰`;
         displayColor = "#ff8c42";
         subtitle = "Много";
         break;
@@ -177,8 +205,6 @@ export class RouletteLogic {
 
     const screenWidth = this.scene.scale.width;
 
-    // 🎯 2. РЕАЛЬНАЯ МАТЕМАТИКА ВЫИГРЫША (То, что получает игрок)
-    // 10% Редкий, 30% Мало, 30% Средне, 30% Много
     const winRand = Math.random();
     let actualWinType: RouletteWinData["type"];
 
@@ -192,9 +218,6 @@ export class RouletteLogic {
       actualWinType = "COINS_LARGE";
     }
 
-    // 🎯 3. ПОИСК ПОБЕДИТЕЛЯ НА ЛЕНТЕ
-    // Мы смотрим только на последние 15 позиций ленты (индексы 35-49),
-    // чтобы прокрутка была долгой и драматичной.
     const minIndex = 35;
     const maxIndex = minIndex + 10;
 
@@ -205,18 +228,15 @@ export class RouletteLogic {
       }
     }
 
-    // Выбираем случайный подходящий индекс из кандидатов.
-    // (При 50% заполнении редкими, там гарантированно будет много кандидатов).
     const winnerIndex =
       candidateIndices.length > 0
         ? candidateIndices[Math.floor(Math.random() * candidateIndices.length)]
-        : maxIndex; // Фолбэк на всякий случай
+        : maxIndex;
 
     const winnerItem = this.reelItems[winnerIndex];
 
-    // 🎯 4. АНИМАЦИЯ ОСТАНОВКИ
     const targetX = -(winnerItem.x - screenWidth / 2 + this.config.cardW / 2);
-    const finalX = targetX + Phaser.Math.Between(-20, 20); // Небольшой рандом для реализма
+    const finalX = targetX + Phaser.Math.Between(-20, 20);
 
     this.spinTween = this.scene.tweens.add({
       targets: this.reelContainer,
@@ -227,7 +247,7 @@ export class RouletteLogic {
         this.currentState = RouletteState.RESULT;
         onComplete({
           type: winnerItem.getData("type"),
-          value: winnerItem.getData("value"),
+          value: winnerItem.getData("value"), // 🎯 Теперь здесь динамическое красивое число
           container: winnerItem,
         });
       },

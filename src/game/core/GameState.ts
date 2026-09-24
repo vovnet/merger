@@ -21,12 +21,12 @@ export class GameState {
 
   constructor() {
     this.data = {
-      coins: 500,
+      coins: 10000,
       level: 1,
-      spins: 3000,
+      spins: 0,
       round: 1,
-      totalMerges: 200,
-      highestLevel: 6,
+      totalMerges: 0,
+      highestLevel: 1,
       rareSquishRanks: new Array(this.RARE_SQUISH_COUNT).fill(0),
     };
   }
