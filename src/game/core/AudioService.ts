@@ -25,6 +25,12 @@ export class AudioService {
     });
   }
 
+  public playUnlockSquish(): void {
+    this.scene.sound.play("unlock", {
+      volume: 0.4,
+    });
+  }
+
   /**
    * Воспроизводит звук ошибки (невалидное слияние) - опционально
    */

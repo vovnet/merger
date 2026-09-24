@@ -55,7 +55,6 @@ export class GrassWind extends Phaser.GameObjects.Shader {
     const shaderConfig: Phaser.Types.GameObjects.Shader.ShaderQuadConfig = {
       name: "GrassWindShader",
       fragmentSource,
-      // 🎯 УБРАЛИ setupUniforms отсюда, чтобы он не мешал ручному обновлению
     };
 
     super(scene, shaderConfig, x, y, width, height, [textureKey]);

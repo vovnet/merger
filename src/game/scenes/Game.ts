@@ -44,6 +44,7 @@ export class Game extends Phaser.Scene {
     this.load.image("grass", "assets/bush.png");
 
     this.load.audio("merge_pop", "assets/sound/bubble_1.mp3");
+    this.load.audio("unlock", "assets/sound/unlock.mp3");
 
     this.load.bitmapFont("russo", "assets/fonts/days.png", "assets/fonts/days.xml");
 
@@ -64,6 +65,7 @@ export class Game extends Phaser.Scene {
     this.registry.set("gameState", this.gameState);
 
     this.audioService = new AudioService(this);
+    this.registry.set("audioService", this.audioService);
     this.grid = new Grid({ cols: 7, rows: 5 });
 
     this.historyService = new HistoryService();

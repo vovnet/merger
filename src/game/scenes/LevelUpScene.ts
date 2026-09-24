@@ -1,5 +1,6 @@
 import * as Phaser from "phaser";
 import { ItemRegistry } from "../core/ItemRegistry";
+import { AudioService } from "../core/AudioService";
 
 export class LevelUpScene extends Phaser.Scene {
   private level: number = 1;
@@ -21,6 +22,8 @@ export class LevelUpScene extends Phaser.Scene {
     const screenWidth = this.scale.width;
     const screenHeight = this.scale.height;
     const CLOSE_DELAY = 1000;
+
+    const audioService = this.registry.get("audioService") as AudioService;
 
     // 🎯 ЛОКАЛЬНЫЕ флаги: создаются заново при каждом открытии сцены
     // Это решает проблему с переиспользованием экземпляра сцены Phaser'ом
@@ -169,6 +172,9 @@ export class LevelUpScene extends Phaser.Scene {
       duration: 500,
       ease: "Back.easeOut",
       delay: 300,
+      onStart: () => {
+        audioService.playUnlockSquish();
+      },
       onComplete: () => {
         this.tweens.add({
           targets: squish,
