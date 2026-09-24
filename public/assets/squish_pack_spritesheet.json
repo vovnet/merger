@@ -1,0 +1,90 @@
+{
+  "frames": [
+    {
+      "filename": "right_pack",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "w": 190,
+        "h": 255
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 1,
+        "w": 190,
+        "h": 255
+      },
+      "sourceSize": {
+        "w": 190,
+        "h": 256
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      }
+    },
+    {
+      "filename": "left_pack",
+      "frame": {
+        "x": 0,
+        "y": 255,
+        "w": 187,
+        "h": 254
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 1,
+        "y": 2,
+        "w": 187,
+        "h": 254
+      },
+      "sourceSize": {
+        "w": 188,
+        "h": 256
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      }
+    },
+    {
+      "filename": "squish_pack",
+      "frame": {
+        "x": 0,
+        "y": 509,
+        "w": 128,
+        "h": 164
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 1,
+        "w": 128,
+        "h": 164
+      },
+      "sourceSize": {
+        "w": 128,
+        "h": 165
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      }
+    }
+  ],
+  "meta": {
+    "app": "https://free-tex-packer.org",
+    "version": "0.6.7",
+    "image": "squish_pack_spritesheet.png",
+    "format": "RGBA8888",
+    "size": {
+      "w": 190,
+      "h": 673
+    },
+    "scale": 1
+  }
+}

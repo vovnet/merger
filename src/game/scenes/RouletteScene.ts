@@ -1,6 +1,7 @@
 import * as Phaser from "phaser";
 import { GameState } from "../core/GameState";
 import { RouletteLogic, RouletteState, RouletteWinData } from "../core/RouleteLogic";
+import { AudioService } from "../core/AudioService";
 
 export class RouletteScene extends Phaser.Scene {
   private gameState!: GameState;
@@ -13,6 +14,7 @@ export class RouletteScene extends Phaser.Scene {
   private spinText!: Phaser.GameObjects.Text;
   private closeBtn!: Phaser.GameObjects.Rectangle;
   private closeText!: Phaser.GameObjects.Text;
+  private audioService: AudioService;
 
   constructor() {
     super({ key: "RouletteScene" });
@@ -27,6 +29,7 @@ export class RouletteScene extends Phaser.Scene {
   create(): void {
     this.gameState = this.registry.get("gameState") as GameState;
     this.events.once("shutdown", () => this.rouletteLogic.destroy());
+    this.audioService = this.registry.get("audioService") as AudioService;
 
     const screenWidth = this.scale.width;
     const screenHeight = this.scale.height;
@@ -231,42 +234,50 @@ export class RouletteScene extends Phaser.Scene {
     squishFrameName: string,
     rank: number,
   ): void {
-    // 1. Создаём элементы упаковки и эффектов
-    const pkgLeft = this.add.graphics().setDepth(90);
-    pkgLeft.fillStyle(0x8b4513);
-    pkgLeft.fillRoundedRect(x - 105, y - 80, 100, 160, 10);
-    pkgLeft.fillStyle(0xa0522d);
-    pkgLeft.fillRect(x - 105, y - 10, 100, 20);
+    // 🎯 1. СОЗДАЁМ УПАКОВКУ ИЗНАЧАЛЬНО НЕВИДИМОЙ И ЧУТЬ МЕНЬШЕ (для эффекта "pop")
+    const pkgLeft = this.add
+      .image(x, y, "squish-pack", "left_pack")
+      .setDepth(90)
+      .setAlpha(0)
+      .setScale(0.8);
 
-    const pkgRight = this.add.graphics().setDepth(90);
-    pkgRight.fillStyle(0x8b4513);
-    pkgRight.fillRoundedRect(x + 5, y - 80, 100, 160, 10);
-    pkgRight.fillStyle(0xa0522d);
-    pkgRight.fillRect(x + 5, y - 10, 100, 20);
+    const pkgRight = this.add
+      .image(x + 10, y, "squish-pack", "right_pack")
+      .setDepth(90)
+      .setAlpha(0)
+      .setScale(0.8);
+
+    // 🎯 2. ЭФФЕКТ РАЗРЕЗА (твои координаты для масштаба 1.6)
+    const startX = x + 265;
+    const startY = y - 275;
 
     const slash = this.add.graphics().setDepth(95).setAlpha(0).setScale(0);
-    slash.lineStyle(8, 0xffffff, 1);
-    slash.lineBetween(x - 60, y - 60, x + 60, y + 60);
-    slash.lineStyle(4, 0xffd700, 1);
-    slash.lineBetween(x - 60, y - 60, x + 60, y + 60);
+    slash.setPosition(startX, startY);
 
+    slash.lineStyle(8, 0xffffff, 1);
+    slash.lineBetween(0, 0, -640, 640);
+
+    slash.lineStyle(4, 0xffd700, 1);
+    slash.lineBetween(0, 0, -640, 640);
+
+    // Вспышка
     const flash = this.add.rectangle(x, y, 1500, 1500, 0xffffff).setAlpha(0).setDepth(98);
 
     // Сам сквиш (изначально невидим)
     const squish = this.add
-      .image(x, y, "rare-squishes", squishFrameName)
+      .image(x, y + 40, "rare-squishes", squishFrameName)
       .setAlpha(0)
       .setScale(0)
       .setDepth(100);
 
-    // 🎯 НОВОЕ: Иконка ранга (изначально невидима, чуть выше сквиша)
+    // 🎯 Иконка ранга
     const rankIcon = this.add
-      .image(x, y - 160, "ranks", `rank${Math.min(rank, 37)}`) // 37 - MAX_RANK_ICONS из твоего кода
+      .image(x, y - 160, "ranks", `rank${Math.min(rank, 37)}`)
       .setAlpha(0)
       .setScale(0)
       .setDepth(101);
 
-    // 🎯 НОВОЕ: Текст ранга (изначально невидим, между иконкой и сквишем)
+    // 🎯 Текст ранга
     const rankText = this.add
       .text(x, y - 95, `РАНГ ${rank}`, {
         fontSize: "28px",
@@ -281,112 +292,122 @@ export class RouletteScene extends Phaser.Scene {
       .setScale(0)
       .setDepth(101);
 
-    // --- 🎬 ЦЕПОЧКА АНИМАЦИИ ---
+    // --- 🎬 НОВАЯ ЦЕПОЧКА АНИМАЦИИ ---
 
-    // Шаг 1: Удар/разрез
+    // ШАГ 0: Плавное появление упаковки (создаём ожидание)
     this.tweens.add({
-      targets: slash,
+      targets: [pkgLeft, pkgRight], // Анимируем обе половинки одновременно
       alpha: 1,
-      scale: 1.5,
-      duration: 150,
-      ease: "Power2.out",
+      scale: 1.6, // Возвращаем к твоему целевому размеру
+      duration: 400, // 0.4 секунды на плавное появление
+      ease: "Back.easeOut", // Лёгкий эффект "пружинки" при появлении
       onComplete: () => {
-        // Шаг 2: Разделение коробки + Вспышка
+        // ШАГ 1: Удар/разрез (запускается ТОЛЬКО после появления упаковки)
         this.tweens.add({
-          targets: pkgLeft,
-          x: "-=150",
-          angle: -20,
-          alpha: 0,
-          duration: 500,
-          ease: "Back.easeIn",
-        });
-        this.tweens.add({
-          targets: pkgRight,
-          x: "+=150",
-          angle: 20,
-          alpha: 0,
-          duration: 500,
-          ease: "Back.easeIn",
-        });
-        this.tweens.add({ targets: slash, alpha: 0, duration: 100 });
-
-        this.tweens.add({
-          targets: flash,
-          alpha: { from: 0, to: 1 },
-          duration: 100,
-          yoyo: true,
-          hold: 100,
-        });
-
-        // 🎯 Шаг 3: Появление сквиша, иконки и текста с эффектом "pop"
-        // Сквиш появляется чуть крупнее, иконка и текст — в свой размер
-        this.tweens.add({
-          targets: squish,
+          targets: slash,
           alpha: 1,
-          scale: 2.3,
-          duration: 500,
-          delay: 100,
-          ease: "Back.easeOut",
-        });
-
-        this.tweens.add({
-          targets: [rankIcon, rankText], // 🎯 Анимируем их вместе
-          alpha: 1,
-          scale: 0.8,
-          duration: 500,
-          delay: 150, // Чуть позже сквиша для красивого эффекта "слоёв"
-          ease: "Back.easeOut",
+          scale: 1.2,
+          duration: 150,
+          ease: "Power2.out",
           onComplete: () => {
-            // Финальная стабилизация размеров
+            this.audioService.playSword();
+            this.audioService.playUnlockSquish();
+            // ШАГ 2: Разделение коробки + Вспышка
+            this.tweens.add({
+              targets: pkgLeft,
+              x: "-=150",
+              angle: -20,
+              alpha: 0,
+              duration: 500,
+              ease: "Back.easeIn",
+            });
+            this.tweens.add({
+              targets: pkgRight,
+              x: "+=150",
+              angle: 20,
+              alpha: 0,
+              duration: 500,
+              ease: "Back.easeIn",
+            });
+            this.tweens.add({ targets: slash, alpha: 0, duration: 100 });
+
+            this.tweens.add({
+              targets: flash,
+              alpha: { from: 0, to: 1 },
+              duration: 100,
+              yoyo: true,
+              hold: 100,
+            });
+
+            // ШАГ 3: Появление сквиша, иконки и текста с эффектом "pop"
             this.tweens.add({
               targets: squish,
-              scale: 2.0,
-              duration: 300,
-              ease: "Sine.easeInOut",
+              alpha: 1,
+              scale: 2.3,
+              duration: 500,
+              delay: 100, // Небольшая пауза после вспышки
+              ease: "Back.easeOut",
             });
 
             this.tweens.add({
-              targets: [rankIcon, rankText], // 🎯 Стабилизируем и их
-              scale: 0.6,
-              duration: 300,
-              ease: "Sine.easeInOut",
+              targets: [rankIcon, rankText],
+              alpha: 1,
+              scale: 0.8,
+              duration: 500,
+              delay: 150,
+              ease: "Back.easeOut",
               onComplete: () => {
-                // Запускаем салют вокруг сквиша
-                this.spawnCenterFireworks(x, y, true);
-
-                // Добавляем сквишу лёгкое покачивание (idle)
+                // Финальная стабилизация размеров
                 this.tweens.add({
                   targets: squish,
-                  angle: { from: -3, to: 3 },
-                  duration: 1500,
-                  yoyo: true,
-                  repeat: -1,
+                  scale: 2.0,
+                  duration: 300,
                   ease: "Sine.easeInOut",
                 });
 
-                // Очистка мусора (половинки коробки и молния)
-                pkgLeft.destroy();
-                pkgRight.destroy();
-                slash.destroy();
-                flash.destroy();
+                this.tweens.add({
+                  targets: [rankIcon, rankText],
+                  scale: 0.6,
+                  duration: 300,
+                  ease: "Sine.easeInOut",
+                  onComplete: () => {
+                    // Запускаем салют вокруг сквиша
+                    this.spawnCenterFireworks(x, y, true);
 
-                // 🎯 Шаг 4: Возврат к логике завершения (исчезновение всего приза)
-                this.time.delayedCall(2000, () => {
-                  this.tweens.add({
-                    // 🎯 Исчезают все три элемента вместе, сдвигаясь вверх на 50px
-                    targets: [squish, rankIcon, rankText],
-                    alpha: 0,
-                    y: "-=50",
-                    scale: 0.2,
-                    duration: 400,
-                    ease: "Power2.in",
-                    onComplete: () => {
-                      squish.destroy();
-                      rankIcon.destroy(); // 🎯 Не забываем очистить память
-                      rankText.destroy(); // 🎯 Не забываем очистить память
-                      this.onPrizeAnimationComplete();
-                    },
-                  });
+                    // Добавляем сквишу лёгкое покачивание (idle)
+                    this.tweens.add({
+                      targets: squish,
+                      angle: { from: -3, to: 3 },
+                      duration: 1500,
+                      yoyo: true,
+                      repeat: -1,
+                      ease: "Sine.easeInOut",
+                    });
+
+                    // 🎯 Очистка мусора
+                    pkgLeft.destroy();
+                    pkgRight.destroy();
+                    slash.destroy();
+                    flash.destroy();
+
+                    // ШАГ 4: Возврат к логике завершения
+                    this.time.delayedCall(2000, () => {
+                      this.tweens.add({
+                        targets: [squish, rankIcon, rankText],
+                        alpha: 0,
+                        y: "-=50",
+                        scale: 0.2,
+                        duration: 400,
+                        ease: "Power2.in",
+                        onComplete: () => {
+                          squish.destroy();
+                          rankIcon.destroy();
+                          rankText.destroy();
+                          this.onPrizeAnimationComplete();
+                        },
+                      });
+                    });
+                  },
                 });
               },
             });

@@ -31,6 +31,10 @@ export class AudioService {
     });
   }
 
+  public playSword(): void {
+    this.scene.sound.play("sword", { volume: 0.6 });
+  }
+
   /**
    * Воспроизводит звук ошибки (невалидное слияние) - опционально
    */

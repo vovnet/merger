@@ -157,7 +157,8 @@ export class RouletteLogic {
         break;
       case "RARE_SQUISH":
         value = 0;
-        displayText = "?";
+        // displayText больше не нужен для картинки, но оставим для логики
+        displayText = "RARE";
         displayColor = "#ff9edb";
         subtitle = "РЕДКИЙ!";
         break;
@@ -169,22 +170,38 @@ export class RouletteLogic {
     const borderColor = isRare ? 0xffd700 : 0xffffff;
     const borderAlpha = isRare ? 0.9 : 0.4;
 
+    // Фон карточки
     const bg = this.scene.add.rectangle(0, 0, this.config.cardW, this.config.cardH, bgColor);
     bg.setStrokeStyle(2, borderColor, borderAlpha);
     container.add(bg);
 
-    const mockIcon = this.scene.add
-      .text(0, -10, displayText, {
-        fontSize: isRare ? "72px" : "28px",
-        color: displayColor,
-        fontFamily: "Arial",
-        fontStyle: "bold",
-        stroke: "#000000",
-        strokeThickness: isRare ? 6 : 2,
-      })
-      .setOrigin(0.5);
-    container.add(mockIcon);
+    // 🎯 УСЛОВНОЕ ОТОБРАЖЕНИЕ: Картинка для редкого, Текст для монет
+    if (isRare) {
+      // Создаём изображение из атласа "squish-pack" с фреймом "squish_pack"
+      const rareIcon = this.scene.add.image(0, -10, "squish-pack", "squish_pack");
 
+      // 🎯 Масштабируем картинку, чтобы она красиво вписывалась в карточку 120x150.
+      // Подбери коэффициент (0.5 - 0.8) под реальный размер твоего спрайта в атласе.
+      rareIcon.setScale(0.6);
+
+      container.add(rareIcon);
+    } else {
+      // Для монет оставляем текстовое отображение
+      const coinText = this.scene.add
+        .text(0, -10, displayText, {
+          fontSize: "28px",
+          color: displayColor,
+          fontFamily: "Arial",
+          fontStyle: "bold",
+          stroke: "#000000",
+          strokeThickness: 2,
+        })
+        .setOrigin(0.5);
+
+      container.add(coinText);
+    }
+
+    // Подпись типа награды (одинакова для всех)
     container.add(
       this.scene.add
         .text(0, 45, subtitle, {
