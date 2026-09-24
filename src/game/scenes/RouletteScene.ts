@@ -134,7 +134,8 @@ export class RouletteScene extends Phaser.Scene {
 
   private onSpinComplete(winData: RouletteWinData): void {
     if (winData.type === "RARE_SQUISH") {
-      this.gameState.upgradeRandomRareSquish();
+      const rare = this.gameState.upgradeRandomRareSquish();
+      winData.rareIndex = rare.index;
     } else {
       this.gameState.addCoins(winData.value);
     }
@@ -165,67 +166,237 @@ export class RouletteScene extends Phaser.Scene {
     const screenWidth = this.scale.width;
     const screenHeight = this.scale.height;
 
-    // Определяем текст и цвет в зависимости от приза
-    let prizeTextStr = "";
-    let prizeColor = "#ffffff";
-    let isSuperPrize = false;
-
     if (winData.type === "RARE_SQUISH") {
-      prizeTextStr = "🎉 РЕДКИЙ СКВИШ! 🎉";
-      prizeColor = "#ff9edb";
-      isSuperPrize = true;
+      if (winData.rareIndex !== undefined) {
+        const currentRank = this.gameState.getRareSquishRank(winData.rareIndex);
+        this.playRareUnboxingAnimation(
+          screenWidth / 2,
+          screenHeight / 2,
+          (winData.rareIndex + 1).toString(),
+          currentRank,
+        );
+      }
     } else {
-      prizeTextStr = `+${winData.value} 💰`;
-      prizeColor = winData.value >= 1000 ? "#ff8c42" : winData.value >= 250 ? "#ffd93d" : "#a8e6cf";
-      isSuperPrize = winData.value >= 1000;
-    }
+      // 🎯 ДЛЯ МОНЕТ: Оставляем простую и быструю текстовую анимацию
+      let prizeTextStr = `+${winData.value} 💰`;
+      let prizeColor =
+        winData.value >= 1000 ? "#ff8c42" : winData.value >= 250 ? "#ffd93d" : "#a8e6cf";
+      let isSuperPrize = winData.value >= 1000;
 
-    // Создаём текст приза (изначально скрыт и уменьшен)
-    const prizeText = this.add
-      .text(screenWidth / 2, screenHeight / 2, prizeTextStr, {
-        fontSize: isSuperPrize ? "72px" : "56px",
-        color: prizeColor,
+      const prizeText = this.add
+        .text(screenWidth / 2, screenHeight / 2, prizeTextStr, {
+          fontSize: isSuperPrize ? "72px" : "56px",
+          color: prizeColor,
+          fontFamily: "Arial",
+          fontStyle: "bold",
+          stroke: "#000000",
+          strokeThickness: 6,
+        })
+        .setOrigin(0.5)
+        .setAlpha(0)
+        .setScale(0.5)
+        .setDepth(100);
+
+      this.tweens.add({
+        targets: prizeText,
+        alpha: 1,
+        scale: isSuperPrize ? 1.2 : 1.0,
+        duration: 600,
+        ease: "Back.easeOut",
+        onComplete: () => {
+          this.time.delayedCall(1500, () => {
+            this.tweens.add({
+              targets: prizeText,
+              alpha: 0,
+              scale: 1.5,
+              y: screenHeight / 2 - 50,
+              duration: 400,
+              ease: "Power2.in",
+              onComplete: () => {
+                prizeText.destroy();
+                this.onPrizeAnimationComplete();
+              },
+            });
+          });
+        },
+      });
+
+      this.spawnCenterFireworks(screenWidth / 2, screenHeight / 2, isSuperPrize);
+    }
+  }
+
+  private playRareUnboxingAnimation(
+    x: number,
+    y: number,
+    squishFrameName: string,
+    rank: number,
+  ): void {
+    // 1. Создаём элементы упаковки и эффектов
+    const pkgLeft = this.add.graphics().setDepth(90);
+    pkgLeft.fillStyle(0x8b4513);
+    pkgLeft.fillRoundedRect(x - 105, y - 80, 100, 160, 10);
+    pkgLeft.fillStyle(0xa0522d);
+    pkgLeft.fillRect(x - 105, y - 10, 100, 20);
+
+    const pkgRight = this.add.graphics().setDepth(90);
+    pkgRight.fillStyle(0x8b4513);
+    pkgRight.fillRoundedRect(x + 5, y - 80, 100, 160, 10);
+    pkgRight.fillStyle(0xa0522d);
+    pkgRight.fillRect(x + 5, y - 10, 100, 20);
+
+    const slash = this.add.graphics().setDepth(95).setAlpha(0).setScale(0);
+    slash.lineStyle(8, 0xffffff, 1);
+    slash.lineBetween(x - 60, y - 60, x + 60, y + 60);
+    slash.lineStyle(4, 0xffd700, 1);
+    slash.lineBetween(x - 60, y - 60, x + 60, y + 60);
+
+    const flash = this.add.rectangle(x, y, 1500, 1500, 0xffffff).setAlpha(0).setDepth(98);
+
+    // Сам сквиш (изначально невидим)
+    const squish = this.add
+      .image(x, y, "rare-squishes", squishFrameName)
+      .setAlpha(0)
+      .setScale(0)
+      .setDepth(100);
+
+    // 🎯 НОВОЕ: Иконка ранга (изначально невидима, чуть выше сквиша)
+    const rankIcon = this.add
+      .image(x, y - 160, "ranks", `rank${Math.min(rank, 37)}`) // 37 - MAX_RANK_ICONS из твоего кода
+      .setAlpha(0)
+      .setScale(0)
+      .setDepth(101);
+
+    // 🎯 НОВОЕ: Текст ранга (изначально невидим, между иконкой и сквишем)
+    const rankText = this.add
+      .text(x, y - 95, `РАНГ ${rank}`, {
+        fontSize: "28px",
+        color: "#ffd700",
         fontFamily: "Arial",
         fontStyle: "bold",
         stroke: "#000000",
-        strokeThickness: 6,
+        strokeThickness: 4,
       })
       .setOrigin(0.5)
       .setAlpha(0)
-      .setScale(0.5)
-      .setDepth(100);
+      .setScale(0)
+      .setDepth(101);
 
-    // 🎬 Анимация появления приза (Pop-up с отскоком)
+    // --- 🎬 ЦЕПОЧКА АНИМАЦИИ ---
+
+    // Шаг 1: Удар/разрез
     this.tweens.add({
-      targets: prizeText,
+      targets: slash,
       alpha: 1,
-      scale: isSuperPrize ? 1.2 : 1.0,
-      duration: 600,
-      ease: "Back.easeOut",
+      scale: 1.5,
+      duration: 150,
+      ease: "Power2.out",
       onComplete: () => {
-        // Держим на экране 1.5 секунды, затем убираем
-        this.time.delayedCall(1500, () => {
-          this.tweens.add({
-            targets: prizeText,
-            alpha: 0,
-            scale: 1.5,
-            y: screenHeight / 2 - 50, // Чуть улетает вверх при исчезновении
-            duration: 400,
-            ease: "Power2.in",
-            onComplete: () => {
-              prizeText.destroy();
-              this.onPrizeAnimationComplete(winData);
-            },
-          });
+        // Шаг 2: Разделение коробки + Вспышка
+        this.tweens.add({
+          targets: pkgLeft,
+          x: "-=150",
+          angle: -20,
+          alpha: 0,
+          duration: 500,
+          ease: "Back.easeIn",
+        });
+        this.tweens.add({
+          targets: pkgRight,
+          x: "+=150",
+          angle: 20,
+          alpha: 0,
+          duration: 500,
+          ease: "Back.easeIn",
+        });
+        this.tweens.add({ targets: slash, alpha: 0, duration: 100 });
+
+        this.tweens.add({
+          targets: flash,
+          alpha: { from: 0, to: 1 },
+          duration: 100,
+          yoyo: true,
+          hold: 100,
+        });
+
+        // 🎯 Шаг 3: Появление сквиша, иконки и текста с эффектом "pop"
+        // Сквиш появляется чуть крупнее, иконка и текст — в свой размер
+        this.tweens.add({
+          targets: squish,
+          alpha: 1,
+          scale: 2.3,
+          duration: 500,
+          delay: 100,
+          ease: "Back.easeOut",
+        });
+
+        this.tweens.add({
+          targets: [rankIcon, rankText], // 🎯 Анимируем их вместе
+          alpha: 1,
+          scale: 0.8,
+          duration: 500,
+          delay: 150, // Чуть позже сквиша для красивого эффекта "слоёв"
+          ease: "Back.easeOut",
+          onComplete: () => {
+            // Финальная стабилизация размеров
+            this.tweens.add({
+              targets: squish,
+              scale: 2.0,
+              duration: 300,
+              ease: "Sine.easeInOut",
+            });
+
+            this.tweens.add({
+              targets: [rankIcon, rankText], // 🎯 Стабилизируем и их
+              scale: 0.6,
+              duration: 300,
+              ease: "Sine.easeInOut",
+              onComplete: () => {
+                // Запускаем салют вокруг сквиша
+                this.spawnCenterFireworks(x, y, true);
+
+                // Добавляем сквишу лёгкое покачивание (idle)
+                this.tweens.add({
+                  targets: squish,
+                  angle: { from: -3, to: 3 },
+                  duration: 1500,
+                  yoyo: true,
+                  repeat: -1,
+                  ease: "Sine.easeInOut",
+                });
+
+                // Очистка мусора (половинки коробки и молния)
+                pkgLeft.destroy();
+                pkgRight.destroy();
+                slash.destroy();
+                flash.destroy();
+
+                // 🎯 Шаг 4: Возврат к логике завершения (исчезновение всего приза)
+                this.time.delayedCall(2000, () => {
+                  this.tweens.add({
+                    // 🎯 Исчезают все три элемента вместе, сдвигаясь вверх на 50px
+                    targets: [squish, rankIcon, rankText],
+                    alpha: 0,
+                    y: "-=50",
+                    scale: 0.2,
+                    duration: 400,
+                    ease: "Power2.in",
+                    onComplete: () => {
+                      squish.destroy();
+                      rankIcon.destroy(); // 🎯 Не забываем очистить память
+                      rankText.destroy(); // 🎯 Не забываем очистить память
+                      this.onPrizeAnimationComplete();
+                    },
+                  });
+                });
+              },
+            });
+          },
         });
       },
     });
-
-    // 🎆 Салют прямо по центру экрана для эффекта!
-    this.spawnCenterFireworks(screenWidth / 2, screenHeight / 2, isSuperPrize);
   }
 
-  private onPrizeAnimationComplete(winData: RouletteWinData): void {
+  private onPrizeAnimationComplete(): void {
     // 🎯 ЯВНО УПРАВЛЯЕМ СОСТОЯНИЕМ В ЗАВИСИМОСТИ ОТ ОСТАТКА СПИНОВ
     if (this.gameState.spins > 0) {
       // Есть спины: сбрасываем ленту, состояние внутри станет IDLE

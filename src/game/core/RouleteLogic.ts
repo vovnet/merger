@@ -19,6 +19,7 @@ export interface RouletteWinData {
   type: "COINS_SMALL" | "COINS_MEDIUM" | "COINS_LARGE" | "RARE_SQUISH";
   value: number;
   container: Phaser.GameObjects.Container;
+  rareIndex?: number;
 }
 
 export class RouletteLogic {
