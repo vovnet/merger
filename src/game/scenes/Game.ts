@@ -13,6 +13,7 @@ import { AudioService } from "../core/AudioService";
 import { GameState } from "../core/GameState";
 import { ItemRegistry } from "../core/ItemRegistry";
 import { GridPosition } from "../types/Item";
+import { GrassWind } from "../core/GrassWind";
 
 export class Game extends Phaser.Scene {
   private gameState: GameState;
@@ -24,6 +25,7 @@ export class Game extends Phaser.Scene {
   private comboService: ComboService;
   private contractService: ContractService;
   private audioService: AudioService;
+  private grassWind: GrassWind;
 
   constructor() {
     super({ key: "GameScene" });
@@ -39,6 +41,7 @@ export class Game extends Phaser.Scene {
       "assets/fireworks_spritesheet.png",
       "assets/fireworks_spritesheet.json",
     );
+    this.load.image("grass", "assets/bush.png");
 
     this.load.audio("merge_pop", "assets/sound/bubble_1.mp3");
 
@@ -81,6 +84,22 @@ export class Game extends Phaser.Scene {
     const bg = this.add.image(this.scale.width / 2, this.scale.height / 2, "bg_main").setDepth(-10);
     const coverScale = Math.max(this.scale.width / bg.width, this.scale.height / bg.height);
     bg.setScale(coverScale);
+
+    this.grassWind = new GrassWind(
+      this,
+      this.scale.width / 2,
+      this.scale.height / 2 + 260,
+      this.scale.width,
+      this.scale.height,
+      "grass",
+      {
+        speed: 1.2,
+        strength: 0.018,
+        frequency: 2.5,
+      },
+    );
+
+    this.grassWind.setDepth(-9);
 
     // this.loadGameProgress();
   }
@@ -205,6 +224,12 @@ export class Game extends Phaser.Scene {
         // this.gridRenderer.removeSprite(data.itemId);
       },
     );
+  }
+
+  update(time: number, delta: number): void {
+    if (this.grassWind) {
+      this.grassWind.update(time, delta);
+    }
   }
 
   private handlePrestige(): void {
