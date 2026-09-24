@@ -80,17 +80,47 @@ export class CollectionScene extends Phaser.Scene {
 
     const contentTopY = this.headerHeight + 20;
 
-    // 🎯 СНАЧАЛА считаем реальную высоту контента
     const maxLevel = ItemRegistry.getMaxLevel();
-    const normalRows = Math.ceil(maxLevel / cols);
-    const rareRows = Math.ceil(this.RARE_SQUISH_COUNT / cols);
+    const rareFrames = this.getRareSquishFrames();
+
+    // 🎯 1. СОБИРАЕМ ДАННЫЕ ОБ ОБЫЧНЫХ СКВИШАХ
+    const normalItems: { level: number; discovered: boolean; rank: number }[] = [];
+    for (let lvl = 1; lvl <= maxLevel; lvl++) {
+      const { discovered, rank } = this.getCellState(lvl);
+      normalItems.push({ level: lvl, discovered, rank });
+    }
+
+    // 🎯 2. СОБИРАЕМ ДАННЫЕ О РЕДКИХ СКВИШАХ
+    const rareItems: { index: number; frameName: string; discovered: boolean; rank: number }[] = [];
+    for (let i = 0; i < this.RARE_SQUISH_COUNT; i++) {
+      const rank = this.gameState.getRareSquishRank(i);
+      const discovered = rank > 0;
+      rareItems.push({ index: i, frameName: rareFrames[i], discovered, rank });
+    }
+
+    // 🎯 3. СОРТИРОВКА: открытые по убыванию ранга → закрытые в конец
+    const sortByRankDesc = <T extends { discovered: boolean; rank: number }>(
+      a: T,
+      b: T,
+    ): number => {
+      if (a.discovered && !b.discovered) return -1; // a идёт раньше
+      if (!a.discovered && b.discovered) return 1; // b идёт раньше
+      if (a.discovered && b.discovered) return b.rank - a.rank; // убывание ранга
+      return 0; // оба закрыты — порядок не важен
+    };
+
+    normalItems.sort(sortByRankDesc);
+    rareItems.sort(sortByRankDesc);
+
+    // 🎯 4. СЧИТАЕМ ВЫСОТУ КОНТЕНТА ПО ОТРИСОВАННЫМ РЯДАМ
+    const normalRows = Math.ceil(normalItems.length / cols);
+    const rareRows = Math.ceil(rareItems.length / cols);
     const maxRows = Math.max(normalRows, rareRows);
 
-    // 🎯 Высота подложки = высота всего прокручиваемого контента + запас
     const bgHeight = this.COLUMN_HEADER_HEIGHT + maxRows * (this.CARD_H + this.CARD_GAP) + 200;
-    const bgTopY = contentTopY - 100; // Начинаем чуть выше заголовков
+    const bgTopY = contentTopY - 100;
 
-    // 🎯 Фон обычных сквишей (покрывает ВЕСЬ контент)
+    // 🎯 5. ФОН КОЛОНОК
     const normalBg = this.add.rectangle(
       leftCenterX,
       bgTopY + bgHeight / 2,
@@ -101,7 +131,6 @@ export class CollectionScene extends Phaser.Scene {
     );
     this.gridContainer.add(normalBg);
 
-    // 🎯 Фон редких сквишей
     const rareBg = this.add.rectangle(
       rightCenterX,
       bgTopY + bgHeight / 2,
@@ -116,7 +145,7 @@ export class CollectionScene extends Phaser.Scene {
     this.renderColumnHeader(leftCenterX, contentTopY, "📦 ОБЫЧНЫЕ", this.getNormalSubtitle());
     this.renderColumnHeader(rightCenterX, contentTopY, "✨ РЕДКИЕ", this.getRareSubtitle());
 
-    // Вертикальная разделительная линия (такой же высоты, как подложки)
+    // Вертикальная разделительная линия
     const separatorLine = this.add.rectangle(
       halfWidth,
       bgTopY + bgHeight / 2,
@@ -129,31 +158,30 @@ export class CollectionScene extends Phaser.Scene {
 
     const gridTopY = contentTopY + this.COLUMN_HEADER_HEIGHT;
 
+    //  6. ОТРИСОВКА В ОТСОРТИРОВАННОМ ПОРЯДКЕ
     // Обычные сквиши
-    for (let lvl = 1; lvl <= maxLevel; lvl++) {
-      const index = lvl - 1;
-      const col = index % cols;
-      const row = Math.floor(index / cols);
+    normalItems.forEach((item, idx) => {
+      const col = idx % cols;
+      const row = Math.floor(idx / cols);
 
       const x = startXLeft + col * (this.CARD_W + this.CARD_GAP);
       const y = gridTopY + row * (this.CARD_H + this.CARD_GAP) + this.CARD_H / 2;
 
-      this.createCell(lvl, x, y);
-    }
+      this.createCell(item.level, x, y);
+    });
 
     // Редкие сквиши
-    const rareFrames = this.getRareSquishFrames();
-    for (let i = 0; i < this.RARE_SQUISH_COUNT; i++) {
-      const col = i % cols;
-      const row = Math.floor(i / cols);
+    rareItems.forEach((item, idx) => {
+      const col = idx % cols;
+      const row = Math.floor(idx / cols);
 
       const x = startXRight + col * (this.CARD_W + this.CARD_GAP);
       const y = gridTopY + row * (this.CARD_H + this.CARD_GAP) + this.CARD_H / 2;
 
-      this.createRareCell(i, rareFrames[i], x, y);
-    }
+      this.createRareCell(item.index, item.frameName, x, y);
+    });
 
-    // minScroll для скролла
+    // 🎯 7. СКРОЛЛ
     const contentHeight = this.COLUMN_HEADER_HEIGHT + maxRows * (this.CARD_H + this.CARD_GAP) + 40;
     const viewHeight = screenHeight - this.headerHeight;
     this.minScroll = Math.min(0, viewHeight - contentHeight);
