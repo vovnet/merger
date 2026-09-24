@@ -5,6 +5,7 @@ export enum RouletteState {
   IDLE = "IDLE",
   SPINNING = "SPINNING",
   RESULT = "RESULT",
+  SHOWING_PRIZE = "SHOWING_PRIZE",
 }
 
 export interface RouletteConfig {
