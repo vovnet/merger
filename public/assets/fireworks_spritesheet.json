@@ -1,0 +1,240 @@
+{
+  "frames": [
+    {
+      "filename": "star_3",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "w": 172,
+        "h": 166
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 172,
+        "h": 166
+      },
+      "sourceSize": {
+        "w": 172,
+        "h": 166
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      }
+    },
+    {
+      "filename": "star_2",
+      "frame": {
+        "x": 0,
+        "y": 166,
+        "w": 166,
+        "h": 167
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 166,
+        "h": 167
+      },
+      "sourceSize": {
+        "w": 166,
+        "h": 167
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      }
+    },
+    {
+      "filename": "star_5",
+      "frame": {
+        "x": 166,
+        "y": 166,
+        "w": 161,
+        "h": 162
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 161,
+        "h": 162
+      },
+      "sourceSize": {
+        "w": 161,
+        "h": 162
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      }
+    },
+    {
+      "filename": "confetti_3",
+      "frame": {
+        "x": 327,
+        "y": 0,
+        "w": 114,
+        "h": 193
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 114,
+        "h": 193
+      },
+      "sourceSize": {
+        "w": 114,
+        "h": 193
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      }
+    },
+    {
+      "filename": "star_4",
+      "frame": {
+        "x": 327,
+        "y": 193,
+        "w": 116,
+        "h": 119
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 116,
+        "h": 119
+      },
+      "sourceSize": {
+        "w": 116,
+        "h": 119
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      }
+    },
+    {
+      "filename": "star_1",
+      "frame": {
+        "x": 172,
+        "y": 0,
+        "w": 114,
+        "h": 116
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 114,
+        "h": 116
+      },
+      "sourceSize": {
+        "w": 114,
+        "h": 116
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      }
+    },
+    {
+      "filename": "confetti_1",
+      "frame": {
+        "x": 327,
+        "y": 312,
+        "w": 98,
+        "h": 126
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 98,
+        "h": 126
+      },
+      "sourceSize": {
+        "w": 98,
+        "h": 126
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      }
+    },
+    {
+      "filename": "confetti_4",
+      "frame": {
+        "x": 166,
+        "y": 328,
+        "w": 98,
+        "h": 83
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 98,
+        "h": 83
+      },
+      "sourceSize": {
+        "w": 98,
+        "h": 83
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      }
+    },
+    {
+      "filename": "confetti_2",
+      "frame": {
+        "x": 264,
+        "y": 328,
+        "w": 51,
+        "h": 52
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 51,
+        "h": 52
+      },
+      "sourceSize": {
+        "w": 51,
+        "h": 52
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      }
+    }
+  ],
+  "meta": {
+    "app": "https://free-tex-packer.org",
+    "version": "0.6.7",
+    "image": "fireworks_spritesheet.png",
+    "format": "RGBA8888",
+    "size": {
+      "w": 443,
+      "h": 438
+    },
+    "scale": 1
+  }
+}

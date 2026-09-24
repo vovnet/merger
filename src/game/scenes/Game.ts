@@ -34,6 +34,11 @@ export class Game extends Phaser.Scene {
     this.load.atlas("squishes", "assets/spritesheet.png", "assets/spritesheet.json");
     this.load.atlas("ranks", "assets/rank_sprites.png", "assets/rank_sprites.json");
     this.load.atlas("rare-squishes", "assets/rare_texture.png", "assets/rare_texture.json");
+    this.load.atlas(
+      "fireworks",
+      "assets/fireworks_spritesheet.png",
+      "assets/fireworks_spritesheet.json",
+    );
 
     this.load.audio("merge_pop", "assets/sound/bubble_1.mp3");
 
