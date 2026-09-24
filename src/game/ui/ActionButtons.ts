@@ -133,7 +133,7 @@ export class ActionButtons {
     this.spinButtonBg.on("pointerdown", () => {
       if (this.gameState.spins > 0) {
         // 🎯 Эмитим событие для открытия рулетки
-        EventBus.emit(UIEvents.ROULETTE_OPEN_REQUESTED);
+        this.scene.scene.launch("RouletteScene");
       } else {
         // Визуальный фидбек: легкая тряска, если спинов нет
         this.scene.tweens.add({
