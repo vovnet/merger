@@ -18,7 +18,6 @@ export interface RouletteConfig {
 export interface RouletteWinData {
   type: "COINS_SMALL" | "COINS_MEDIUM" | "COINS_LARGE" | "RARE_SQUISH";
   value: number;
-  rareIndex?: number;
   container: Phaser.GameObjects.Container;
 }
 
@@ -106,7 +105,6 @@ export class RouletteLogic {
     let displayText = "";
     let displayColor = "#ffffff";
     let subtitle = "";
-    let rareIndex = -1;
     const isRare = type === "RARE_SQUISH";
 
     switch (type) {
@@ -133,11 +131,10 @@ export class RouletteLogic {
         displayText = "?";
         displayColor = "#ff9edb";
         subtitle = "РЕДКИЙ!";
-        rareIndex = Phaser.Math.Between(0, 63);
         break;
     }
 
-    container.setData({ type, value, rareIndex });
+    container.setData({ type, value });
 
     const bgColor = isRare ? 0x4a2c6a : 0x3a3a5e;
     const borderColor = isRare ? 0xffd700 : 0xffffff;
@@ -230,7 +227,6 @@ export class RouletteLogic {
         onComplete({
           type: winnerItem.getData("type"),
           value: winnerItem.getData("value"),
-          rareIndex: winnerItem.getData("rareIndex"),
           container: winnerItem,
         });
       },

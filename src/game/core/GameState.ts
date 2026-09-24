@@ -23,13 +23,11 @@ export class GameState {
     this.data = {
       coins: 500,
       level: 1,
-      spins: 10,
+      spins: 3,
       round: 1,
       totalMerges: 200,
       highestLevel: 6,
-      rareSquishRanks: new Array(this.RARE_SQUISH_COUNT)
-        .fill(0)
-        .map(() => Phaser.Math.Between(0, 37)),
+      rareSquishRanks: new Array(this.RARE_SQUISH_COUNT).fill(0),
     };
   }
 
@@ -83,6 +81,13 @@ export class GameState {
   public addSpins(amount: number): void {
     if (amount > 0) {
       this.data.spins += amount;
+      EventBus.emit(GameEvents.SPINS_CHANGED, this.data.spins);
+    }
+  }
+
+  public spendSpin(): void {
+    if (this.data.spins > 0) {
+      this.data.spins--;
       EventBus.emit(GameEvents.SPINS_CHANGED, this.data.spins);
     }
   }
@@ -149,6 +154,12 @@ export class GameState {
 
       console.log(`💎 Редкий сквиш #${index + 1}: ранг ${previousRank} → ${rank}`);
     }
+  }
+
+  public upgradeRandomRareSquish(): { index: number } {
+    const index = Phaser.Math.Between(0, this.RARE_SQUISH_COUNT - 1);
+    this.discoverRareSquish(index);
+    return { index };
   }
 
   public discoverRareSquish(index: number): void {

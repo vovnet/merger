@@ -105,8 +105,8 @@ export class RouletteScene extends Phaser.Scene {
 
     this.closeBtn = this.add
       .rectangle(screenWidth - 80, 80, 50, 50, 0xff4444)
-      .setInteractive({ useHandCursor: true })
-      .setVisible(false);
+      .setInteractive({ useHandCursor: true });
+
     this.closeBtn.setStrokeStyle(2, 0xffffff, 0.8);
     this.rouletteView.add(this.closeBtn);
 
@@ -117,8 +117,7 @@ export class RouletteScene extends Phaser.Scene {
         fontFamily: "Arial",
         fontStyle: "bold",
       })
-      .setOrigin(0.5)
-      .setVisible(false);
+      .setOrigin(0.5);
     this.rouletteView.add(this.closeText);
 
     this.closeBtn.on("pointerdown", () => this.handleCloseClick());
@@ -128,14 +127,14 @@ export class RouletteScene extends Phaser.Scene {
     if (this.rouletteLogic.currentState !== RouletteState.IDLE) return;
     if (this.gameState.spins <= 0) return;
 
-    // this.gameState.spins -= 1;
+    this.gameState.spendSpin();
     this.rouletteLogic.startSpin((winData) => this.onSpinComplete(winData));
     this.updateUIState();
   }
 
   private onSpinComplete(winData: RouletteWinData): void {
     if (winData.type === "RARE_SQUISH") {
-      this.gameState.discoverRareSquish(winData.rareIndex!);
+      this.gameState.upgradeRandomRareSquish();
     } else {
       this.gameState.addCoins(winData.value);
     }
@@ -227,12 +226,17 @@ export class RouletteScene extends Phaser.Scene {
   }
 
   private onPrizeAnimationComplete(winData: RouletteWinData): void {
-    // Если есть спины, сбрасываем ленту для следующего раза
+    // 🎯 ЯВНО УПРАВЛЯЕМ СОСТОЯНИЕМ В ЗАВИСИМОСТИ ОТ ОСТАТКА СПИНОВ
     if (this.gameState.spins > 0) {
+      // Есть спины: сбрасываем ленту, состояние внутри станет IDLE
       this.rouletteLogic.resetForNextSpin();
+    } else {
+      // Спины закончились: принудительно ставим состояние RESULT,
+      // чтобы UI показал кнопку закрытия и надпись "НЕТ СПИНОВ"
+      this.rouletteLogic.currentState = RouletteState.RESULT;
     }
 
-    // Возвращаем альфу в 1 перед анимацией появления
+    // Возвращаем альфу в 0 перед анимацией появления
     this.rouletteView.setAlpha(0);
 
     // 🎬 Плавное появление рулетки обратно
@@ -242,7 +246,7 @@ export class RouletteScene extends Phaser.Scene {
       duration: 400,
       ease: "Power2.out",
       onComplete: () => {
-        this.updateUIState();
+        this.updateUIState(); // Теперь здесь корректно отработает ветка RESULT
       },
     });
   }
@@ -282,23 +286,17 @@ export class RouletteScene extends Phaser.Scene {
   private updateUIState(): void {
     const state = this.rouletteLogic.currentState;
     const spins = this.gameState.spins;
+    console.log("update ui", { state, spins });
 
     if (state === RouletteState.IDLE) {
       this.spinBtn.setInteractive({ useHandCursor: true });
       this.spinBtn.setFillStyle(0x4ecdc4);
       this.spinText.setText(`КРУТИТЬ (${spins} 🎟️)`);
-      this.closeBtn.setVisible(true);
-      this.closeText.setVisible(true);
     } else if (state === RouletteState.SPINNING || state === RouletteState.SHOWING_PRIZE) {
       this.spinBtn.disableInteractive();
       this.spinBtn.setFillStyle(0x7f8c8d);
       this.spinText.setText(state === RouletteState.SPINNING ? "КРУТИМ..." : "...");
-      this.closeBtn.setVisible(false);
-      this.closeText.setVisible(false);
     } else if (state === RouletteState.RESULT) {
-      // Этот стейт теперь очень кратковременный, но на всякий случай
-      this.closeBtn.setVisible(true);
-      this.closeText.setVisible(true);
       if (spins <= 0) {
         this.spinBtn.disableInteractive();
         this.spinBtn.setFillStyle(0x7f8c8d);
