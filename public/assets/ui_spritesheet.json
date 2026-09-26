@@ -1,0 +1,190 @@
+{
+  "frames": [
+    {
+      "filename": "create_squish_btn",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "w": 194,
+        "h": 128
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 194,
+        "h": 128
+      },
+      "sourceSize": {
+        "w": 194,
+        "h": 128
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      }
+    },
+    {
+      "filename": "close_btn",
+      "frame": {
+        "x": 0,
+        "y": 128,
+        "w": 94,
+        "h": 92
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 94,
+        "h": 92
+      },
+      "sourceSize": {
+        "w": 94,
+        "h": 92
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      }
+    },
+    {
+      "filename": "music_off_btn",
+      "frame": {
+        "x": 94,
+        "y": 128,
+        "w": 94,
+        "h": 92
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 94,
+        "h": 92
+      },
+      "sourceSize": {
+        "w": 94,
+        "h": 92
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      }
+    },
+    {
+      "filename": "music_on_btn",
+      "frame": {
+        "x": 188,
+        "y": 128,
+        "w": 94,
+        "h": 92
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 94,
+        "h": 92
+      },
+      "sourceSize": {
+        "w": 94,
+        "h": 92
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      }
+    },
+    {
+      "filename": "settings_btn",
+      "frame": {
+        "x": 194,
+        "y": 0,
+        "w": 94,
+        "h": 91
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 94,
+        "h": 91
+      },
+      "sourceSize": {
+        "w": 94,
+        "h": 91
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      }
+    },
+    {
+      "filename": "sound_off_btn",
+      "frame": {
+        "x": 0,
+        "y": 220,
+        "w": 94,
+        "h": 91
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 94,
+        "h": 91
+      },
+      "sourceSize": {
+        "w": 94,
+        "h": 91
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      }
+    },
+    {
+      "filename": "sound_on_btn",
+      "frame": {
+        "x": 94,
+        "y": 220,
+        "w": 94,
+        "h": 91
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 94,
+        "h": 91
+      },
+      "sourceSize": {
+        "w": 94,
+        "h": 91
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      }
+    }
+  ],
+  "meta": {
+    "app": "https://free-tex-packer.org",
+    "version": "0.6.7",
+    "image": "ui_spritesheet.png",
+    "format": "RGBA8888",
+    "size": {
+      "w": 288,
+      "h": 311
+    },
+    "scale": 1
+  }
+}

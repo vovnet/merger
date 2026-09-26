@@ -35,6 +35,7 @@ export class Game extends Phaser.Scene {
     this.load.image("bg_main", "assets/bg.png");
     this.load.atlas("squishes", "assets/spritesheet.png", "assets/spritesheet.json");
     this.load.atlas("ranks", "assets/rank_sprites.png", "assets/rank_sprites.json");
+    this.load.atlas("ui", "assets/ui_spritesheet.png", "assets/ui_spritesheet.json");
     this.load.atlas("rare-squishes", "assets/rare_texture.png", "assets/rare_texture.json");
     this.load.atlas(
       "squish-pack",

@@ -24,10 +24,10 @@ export class GameState {
       coins: 10000,
       level: 1,
       spins: 100,
-      round: 1,
+      round: 10000000002,
       totalMerges: 0,
       highestLevel: 1,
-      rareSquishRanks: new Array(this.RARE_SQUISH_COUNT).fill(0),
+      rareSquishRanks: new Array(this.RARE_SQUISH_COUNT).fill(0).map(() => 50),
     };
   }
 
