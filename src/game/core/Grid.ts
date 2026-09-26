@@ -94,6 +94,7 @@ export class Grid extends Phaser.Events.EventEmitter {
     }
     this.cells[pos.y][pos.x] = item;
     EventBus.emit(GameEvents.GRID_ITEM_ADDED, { position: pos, item });
+    EventBus.emit(GameEvents.GRID_ITEM_CHANGED);
     return true;
   }
 
@@ -104,6 +105,7 @@ export class Grid extends Phaser.Events.EventEmitter {
     if (item) {
       this.cells[pos.y][pos.x] = null;
       EventBus.emit(GameEvents.GRID_ITEM_REMOVED, { position: pos, item });
+      EventBus.emit(GameEvents.GRID_ITEM_CHANGED);
     }
     return item;
   }
@@ -172,6 +174,8 @@ export class Grid extends Phaser.Events.EventEmitter {
         itemTo: { ...itemTo, pos: to },
       });
     }
+
+    EventBus.emit(GameEvents.GRID_ITEM_CHANGED);
 
     return {
       result: isPrestige ? MergeResult.PRESTIGE : MergeResult.MERGED,
@@ -242,6 +246,8 @@ export class Grid extends Phaser.Events.EventEmitter {
     }
 
     EventBus.emit(GameEvents.GRID_FILLED, { count: filledCount });
+    EventBus.emit(GameEvents.GRID_ITEM_CHANGED);
+
     return filledCount;
   }
 
@@ -276,6 +282,7 @@ export class Grid extends Phaser.Events.EventEmitter {
         count: removedItems.length,
         items: removedItems,
       });
+      EventBus.emit(GameEvents.GRID_ITEM_CHANGED);
     }
 
     return removedItems;
@@ -300,6 +307,7 @@ export class Grid extends Phaser.Events.EventEmitter {
       }
     }
     EventBus.emit(GameEvents.GRID_CLEARED);
+    EventBus.emit(GameEvents.GRID_ITEM_CHANGED);
   }
 
   getSnapshot(): GridSnapshot {
@@ -319,6 +327,7 @@ export class Grid extends Phaser.Events.EventEmitter {
 
     // 🎯 3. Сообщаем рендереру, что нужно перерисовать поле
     EventBus.emit(GameEvents.GRID_RESTORED, snapshot);
+    EventBus.emit(GameEvents.GRID_ITEM_CHANGED);
   }
 
   serialize(): string {

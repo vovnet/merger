@@ -97,7 +97,8 @@ export class ActionButtons {
       }
     });
 
-    EventBus.on(GameEvents.GRID_ITEM_CHANGED, this.updateSpawnButtonText);
+    EventBus.on(GameEvents.GRID_ITEM_CHANGED, () => this.updateSpawnButtonText());
+    EventBus.on(GameEvents.COINS_CHANGED, () => this.updateSpawnButtonText());
 
     this.spinButtonBg.on("pointerover", () => {
       if (this.gameState.spins > 0) this.spinButtonBg.setFillStyle(0xffe44d);
@@ -109,7 +110,8 @@ export class ActionButtons {
   }
 
   private updateSpawnButtonText() {
-    console.log("grid changed");
+    const spawnCount = Math.min(this.gameState.coins, this.grid.getEmptyCells().length);
+    this.fillButtonText.setText(`x${spawnCount}`);
   }
 
   private updateSpinButtonText(): void {
