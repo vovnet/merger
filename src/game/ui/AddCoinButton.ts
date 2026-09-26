@@ -1,5 +1,6 @@
 import * as Phaser from "phaser";
 import { GameState } from "../core/GameState";
+import { AudioService } from "../core/AudioService";
 
 export enum ButtonState {
   IDLE = "IDLE",
@@ -22,6 +23,8 @@ export class AddCoinButton {
   private realWidth: number = 0;
   private realHeight: number = 0;
 
+  private audioService: AudioService;
+
   // 🎯 Константы для ограничения зоны заполнения (16% - 76%)
   private readonly START_PERCENT = 0.16;
   private readonly END_PERCENT = 0.76;
@@ -29,6 +32,7 @@ export class AddCoinButton {
   constructor(scene: Phaser.Scene, x: number, y: number, gameState: GameState) {
     this.scene = scene;
     this.gameState = gameState;
+    this.audioService = this.scene.registry.get("audioService") as AudioService;
     this.create(x, y);
     this.setState(ButtonState.IDLE);
   }
@@ -83,6 +87,8 @@ export class AddCoinButton {
       },
     });
 
+    this.audioService.playWaterBubblingSound();
+
     // 3. Запускаем игровую логику
     this.startCooldown();
   }
@@ -135,6 +141,7 @@ export class AddCoinButton {
     this.scene.time.delayedCall(this.COOLDOWN_MS, () => {
       this.gameState.addCoins(1);
       this.showPlusOneAnimation();
+      this.audioService.playUiPopSound();
     });
   }
 

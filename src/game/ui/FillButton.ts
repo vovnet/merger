@@ -35,7 +35,7 @@ export class FillButton {
     this.bg = this.scene.add.image(0, 0, "ui", "spawn_btn").setOrigin(0.5);
 
     this.text = this.scene.add
-      .bitmapText(0, 40, "russo", "x0", 62)
+      .bitmapText(0, 40, "russo", "+0", 62)
       .setOrigin(0.5)
       .setTint(this.ACTIVE_TEXT_TINT);
 
@@ -83,7 +83,7 @@ export class FillButton {
     const emptyCells = this.grid.getEmptyCells().length;
     const spawnCount = Math.min(coins, emptyCells);
 
-    this.text.setText(`x${spawnCount}`);
+    this.text.setText(`+${spawnCount}`);
     this.setDisabled(spawnCount === 0);
 
     // 2. 🎯 ОБНОВЛЯЕМ КАРТИНКУ СКВИША (на случай, если уровень игрока изменился)

@@ -44,4 +44,18 @@ export class AudioService {
       rate: 0.8, // Более низкий тон
     });
   }
+
+  public playWaterBubblingSound(): void {
+    this.scene.sound.play("water_bubbling", {
+      volume: 0.3,
+      rate: 0.8, // Более низкий тон
+    });
+  }
+
+  public playUiPopSound(): void {
+    this.scene.sound.play("ui_pop", {
+      volume: 0.3,
+      rate: 0.8, // Более низкий тон
+    });
+  }
 }

@@ -51,6 +51,8 @@ export class Game extends Phaser.Scene {
     this.load.audio("merge_pop", "assets/sound/bubble_1.mp3");
     this.load.audio("unlock", "assets/sound/unlock.mp3");
     this.load.audio("sword", "assets/sound/sword.mp3");
+    this.load.audio("water_bubbling", "assets/sound/water_bubbling.mp3");
+    this.load.audio("ui_pop", "assets/sound/ui_pop.mp3");
 
     this.load.bitmapFont("russo", "assets/fonts/days.png", "assets/fonts/days.xml");
 
