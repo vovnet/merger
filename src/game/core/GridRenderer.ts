@@ -82,6 +82,13 @@ export class GridRenderer {
     });
 
     EventBus.on(GameEvents.CONTRACT_UPDATED, (data: ContractUpdateData) => {
+      console.log("contract updated: ", data);
+      this.vfxManager.setContractLevel(data.activeTargetLevel);
+      this.vfxManager.updateHighlights(this.sprites);
+    });
+
+    EventBus.on(GameEvents.CONTRACT_CREATED, (data: ContractUpdateData) => {
+      console.log("contract created: ", data);
       this.vfxManager.setContractLevel(data.activeTargetLevel);
       this.vfxManager.updateHighlights(this.sprites);
     });
