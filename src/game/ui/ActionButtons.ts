@@ -1,34 +1,33 @@
 import * as Phaser from "phaser";
 import { EventBus } from "../core/EventBus";
-import { GameEvents, UIEvents } from "../types/GameEvents";
+import { GameEvents } from "../types/GameEvents";
 import { Economy } from "../core/Economy";
 import { GameState } from "../core/GameState";
-import { AddCoinButton } from "./AddCoinButton";
 import { Grid } from "../core/Grid";
+import { AddCoinButton } from "./AddCoinButton";
+import { FillButton } from "./FillButton"; // 🎯 Новый импорт
 
 export class ActionButtons {
   private scene: Phaser.Scene;
-
   private economy: Economy;
-
-  private fillButtonBg: Phaser.GameObjects.Rectangle;
-  private fillButtonText: Phaser.GameObjects.BitmapText;
-
-  private spinButtonBg: Phaser.GameObjects.Rectangle;
-  private spinButtonText: Phaser.GameObjects.Text;
-  private addCoinButton: AddCoinButton;
-
   private gameState: GameState;
   private grid: Grid;
+
+  // 🎯 Заменяем отдельные переменные на экземпляр класса
+  private fillButton!: FillButton;
+
+  private spinButtonBg!: Phaser.GameObjects.Rectangle;
+  private spinButtonText!: Phaser.GameObjects.Text;
+  private addCoinButton!: AddCoinButton;
 
   constructor(scene: Phaser.Scene, economy: Economy) {
     this.scene = scene;
     this.gameState = scene.registry.get("gameState") as GameState;
     this.grid = scene.registry.get("grid") as Grid;
     this.economy = economy;
+
     this.create();
     this.setupListeners();
-    this.updateSpawnButtonText();
     this.updateSpinButtonText();
   }
 
@@ -36,33 +35,26 @@ export class ActionButtons {
     const width = this.scene.scale.width;
     const height = this.scene.scale.height;
 
-    // 🎯 Кнопка заполнения (справа внизу)
-    this.fillButtonBg = this.scene.add
-      .rectangle(width - 100, height - 160, 140, 50, 0x9b59b6)
-      .setInteractive({ useHandCursor: true })
-      .setDepth(100);
+    // 🎯 1. Создаем кнопку заполнения через новый класс
+    this.fillButton = new FillButton(
+      this.scene,
+      width - 140,
+      height - 160,
+      this.gameState,
+      this.grid,
+    );
 
-    this.fillButtonBg.setStrokeStyle(2, 0xffffff);
-
-    this.fillButtonText = this.scene.add
-      .bitmapText(width - 100, height - 160, "russo", "х", 20)
-      .setOrigin(0.5)
-      .setDepth(101);
-
-    this.fillButtonBg.on("pointerdown", () => {
-      EventBus.emit(UIEvents.FILL_REQUESTED);
-    });
-
+    // 🎯 2. Кнопка добавления монет (твоя отладочная/основная кнопка)
     const debugBtnX = width - 160;
     const debugBtnY = 180;
-
     this.addCoinButton = new AddCoinButton(this.scene, debugBtnX, debugBtnY, this.gameState);
 
+    // 🎯 3. Кнопка рулетки (Спины)
     const spinBtnX = 100;
     const spinBtnY = height - 40;
 
     this.spinButtonBg = this.scene.add
-      .rectangle(spinBtnX, spinBtnY, 160, 50, 0xffd700) // Золотой цвет для награды
+      .rectangle(spinBtnX, spinBtnY, 160, 50, 0xffd700)
       .setInteractive({ useHandCursor: true })
       .setDepth(100);
 
@@ -71,7 +63,7 @@ export class ActionButtons {
     this.spinButtonText = this.scene.add
       .text(spinBtnX, spinBtnY, `🎟️ 0`, {
         fontSize: "20px",
-        color: "#000000", // Черный текст лучше читается на золотом
+        color: "#000000",
         fontFamily: "Arial",
         fontStyle: "bold",
         stroke: "#ffffff",
@@ -82,10 +74,8 @@ export class ActionButtons {
 
     this.spinButtonBg.on("pointerdown", () => {
       if (this.gameState.spins > 0) {
-        // 🎯 Эмитим событие для открытия рулетки
         this.scene.scene.launch("RouletteScene");
       } else {
-        // Визуальный фидбек: легкая тряска, если спинов нет
         this.scene.tweens.add({
           targets: this.spinButtonBg,
           x: { from: spinBtnX, to: spinBtnX - 5 },
@@ -97,9 +87,6 @@ export class ActionButtons {
       }
     });
 
-    EventBus.on(GameEvents.GRID_ITEM_CHANGED, () => this.updateSpawnButtonText());
-    EventBus.on(GameEvents.COINS_CHANGED, () => this.updateSpawnButtonText());
-
     this.spinButtonBg.on("pointerover", () => {
       if (this.gameState.spins > 0) this.spinButtonBg.setFillStyle(0xffe44d);
     });
@@ -109,23 +96,15 @@ export class ActionButtons {
     });
   }
 
-  private updateSpawnButtonText() {
-    const spawnCount = Math.min(this.gameState.coins, this.grid.getEmptyCells().length);
-    this.fillButtonText.setText(`x${spawnCount}`);
-  }
-
   private updateSpinButtonText(): void {
     const spins = this.gameState.spins;
     this.spinButtonText.setText(`🎟️ ${spins}`);
 
-    // Если спинов 0, делаем кнопку серой и неактивной
     if (spins === 0) {
       this.spinButtonBg.setFillStyle(0x7f8c8d);
       this.spinButtonText.setColor("#ffffff");
       this.spinButtonBg.disableInteractive();
-    }
-    // Если есть спины, возвращаем золотой цвет и активность
-    else {
+    } else {
       this.spinButtonBg.setFillStyle(0xffd700);
       this.spinButtonText.setColor("#000000");
       this.spinButtonBg.setInteractive({ useHandCursor: true });
@@ -133,14 +112,14 @@ export class ActionButtons {
   }
 
   private setupListeners(): void {
-    EventBus.on(GameEvents.LEVEL_CHANGED, (level: number) => {
-      this.updateSpawnButtonText();
+    // 🎯 При смене уровня тоже обновляем текст кнопки заполнения (на случай изменения стоимости)
+    EventBus.on(GameEvents.LEVEL_CHANGED, () => {
+      this.fillButton.updateText();
     });
 
     EventBus.on(GameEvents.SPINS_CHANGED, () => {
       this.updateSpinButtonText();
 
-      // Небольшая анимация "пульса" при получении нового спина
       if (this.gameState.spins > 0) {
         this.scene.tweens.add({
           targets: this.spinButtonBg,
@@ -153,10 +132,11 @@ export class ActionButtons {
   }
 
   destroy(): void {
-    this.fillButtonBg.destroy();
-    this.fillButtonText.destroy();
+    // 🎯 Вызываем destroy у вложенных компонентов
+    this.fillButton.destroy();
+    this.addCoinButton.destroy();
+
     this.spinButtonBg.destroy();
     this.spinButtonText.destroy();
-    this.addCoinButton.destroy();
   }
 }

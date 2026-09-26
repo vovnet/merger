@@ -53,7 +53,7 @@ export class AddCoinButton {
 
     // 3. Текст "+1"
     this.plusOneText = this.scene.add
-      .text(0, -this.realHeight / 2 - 20, "+1", {
+      .text(0, 0, "+1", {
         fontSize: "32px",
         color: "#ffd700",
         fontFamily: "Arial",
