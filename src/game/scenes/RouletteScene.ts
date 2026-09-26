@@ -44,7 +44,7 @@ export class RouletteScene extends Phaser.Scene {
     this.rouletteView = this.add.container(0, 0).setDepth(10);
 
     // 2. Инициализируем логику (она создаст reelContainer внутри себя)
-    this.rouletteLogic = new RouletteLogic(this, this.gameState, {
+    this.rouletteLogic = new RouletteLogic(this, {
       totalItems: 60,
       cardW: 120,
       cardH: 150,
