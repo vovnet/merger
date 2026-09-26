@@ -22,7 +22,7 @@ export class GameState {
   constructor() {
     this.data = {
       coins: 5000,
-      level: 25,
+      level: 29,
       spins: 100,
       round: 1,
       totalMerges: 0,

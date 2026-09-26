@@ -2,6 +2,8 @@ import * as Phaser from "phaser";
 
 export class GridVFXManager {
   private activeContractLevel: number | null = null;
+  // Храним ссылки на все созданные эммитеры для безопасной очистки
+  private activeEmitters: Phaser.GameObjects.Particles.ParticleEmitter[] = [];
 
   constructor(private scene: Phaser.Scene) {}
 
@@ -15,29 +17,57 @@ export class GridVFXManager {
       const mainSprite = container.getData("mainSprite") as Phaser.GameObjects.Image;
       if (!mainSprite) return;
 
-      let glowGraphics = container.getData("glowGraphics") as Phaser.GameObjects.Graphics;
-      if (!glowGraphics) {
-        glowGraphics = this.scene.add.graphics();
-        glowGraphics.setDepth(-1);
-        container.add(glowGraphics);
-        container.setData("glowGraphics", glowGraphics);
-      }
+      const isTarget = this.activeContractLevel !== null && level === this.activeContractLevel;
 
-      glowGraphics.clear();
+      if (isTarget) {
+        mainSprite.setTint(0x61faff);
 
-      if (this.activeContractLevel !== null && level === this.activeContractLevel) {
-        mainSprite.setTint(0xffff00);
-        const radius = 45;
-        glowGraphics.fillStyle(0xffd700, 0.3);
-        glowGraphics.fillCircle(0, 0, radius + 10);
-        glowGraphics.fillStyle(0xffff00, 0.5);
-        glowGraphics.fillCircle(0, 0, radius);
+        // Создаем или получаем glow-эффект
+        let glow = container.getData("glowEffect") as Phaser.GameObjects.Container;
+
+        if (!glow) {
+          glow = this.scene.add.container(0, 0);
+
+          // Мягкий внешний ореол
+          const outerGlow = this.scene.add.graphics();
+          outerGlow.fillStyle(0xffd700, 0.1);
+          outerGlow.fillCircle(0, 0, 55);
+          glow.add(outerGlow);
+
+          // Более яркий внутренний ореол
+          const innerGlow = this.scene.add.graphics();
+          innerGlow.fillStyle(0xffff00, 0.3);
+          innerGlow.fillCircle(0, 0, 45);
+          glow.add(innerGlow);
+
+          // Вставляем glow ПОД основной спрайт
+          container.addAt(glow, 0);
+          container.setData("glowEffect", glow);
+
+          // 🎯 Анимация пульсации
+          this.scene.tweens.add({
+            targets: glow,
+            alpha: { from: 0.6, to: 1 },
+            scale: { from: 0.95, to: 1.05 },
+            duration: 1200,
+            ease: "Sine.easeInOut",
+            yoyo: true,
+            repeat: -1,
+          });
+        }
       } else {
         mainSprite.clearTint();
+
+        const glow = container.getData("glowEffect") as Phaser.GameObjects.Container;
+        if (glow) {
+          glow.destroy();
+          container.setData("glowEffect", null);
+        }
       }
     });
   }
 
+  // ... (методы spawnMergeParticles и spawnMoneyPopup остаются без изменений) ...
   public spawnMergeParticles(px: number, py: number, level: number): void {
     const colors = [0xff6b9d, 0x4ecdc4, 0xffd93d, 0xff8c42, 0x9b59b6, 0xe74c3c, 0xffd700];
     const color = colors[Math.min(level - 1, colors.length - 1)];
@@ -59,11 +89,9 @@ export class GridVFXManager {
   }
 
   public spawnMoneyPopup(px: number, py: number, amount: number): void {
-    // 🎯 Рандомные параметры для точки старта
-    const randomXOffset = Phaser.Math.Between(-30, 30); // смещение startX: ±30px
-    const randomAngle = Phaser.Math.FloatBetween(-15, 15); // фиксированный наклон: ±15°
-
-    const startX = px + randomXOffset; // 🎯 точка старта смещена
+    const randomXOffset = Phaser.Math.Between(-30, 30);
+    const randomAngle = Phaser.Math.FloatBetween(-15, 15);
+    const startX = px + randomXOffset;
 
     const popup = this.scene.add
       .bitmapText(startX, py - 30, "russo", `+${amount}`, Phaser.Math.Between(22, 32))
@@ -71,9 +99,8 @@ export class GridVFXManager {
       .setOrigin(0.5, 1)
       .setDepth(1000)
       .setAlpha(0)
-      .setAngle(randomAngle); // 🎯 фиксированный наклон
+      .setAngle(randomAngle);
 
-    // 1. Лёгкое появление
     popup.setScale(0.5);
     this.scene.tweens.add({
       targets: popup,
@@ -91,17 +118,14 @@ export class GridVFXManager {
       },
     });
 
-    // 2. Полёт строго вверх (X не меняется!)
     this.scene.tweens.add({
       targets: popup,
       y: py - 120,
-      // 🎯 НЕТ изменения x — летит строго вертикально от своей стартовой точки
       duration: 600,
       delay: 80,
       ease: "Cubic.out",
     });
 
-    // 3. Растворение
     this.scene.tweens.add({
       targets: popup,
       alpha: 0,
@@ -110,5 +134,13 @@ export class GridVFXManager {
       ease: "Power2.in",
       onComplete: () => popup.destroy(),
     });
+  }
+
+  // 🎯 НОВЫЙ МЕТОД: Для безопасной очистки всех частиц при уничтожении менеджера/сцены
+  public destroy(): void {
+    this.activeEmitters.forEach((emitter) => {
+      emitter.destroy();
+    });
+    this.activeEmitters = [];
   }
 }
