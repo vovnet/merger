@@ -1,12 +1,4 @@
 import * as Phaser from "phaser";
-import { GameState } from "./GameState";
-import { Economy } from "./Economy"; // 🎯 Добавляем импорт Economy
-
-const BASE_MULTIPLYERS = {
-  LOW: 10,
-  MIDDLE: 20,
-  HIGHT: 40,
-};
 
 export enum RouletteState {
   IDLE = "IDLE",
@@ -31,8 +23,6 @@ export interface RouletteWinData {
 
 export class RouletteLogic {
   private scene: Phaser.Scene;
-  private gameState: GameState;
-  private economy: Economy; // 🎯 Ссылка на экономику
   private config: Required<RouletteConfig>;
 
   public reelContainer!: Phaser.GameObjects.Container;
@@ -42,11 +32,9 @@ export class RouletteLogic {
   private spinTween?: Phaser.Tweens.Tween;
   private particlesCleanupTimer?: Phaser.Time.TimerEvent;
 
-  constructor(scene: Phaser.Scene, gameState: GameState, config: RouletteConfig = {}) {
+  // 🎯 Убрали gameState и economy из конструктора, так как они больше не нужны
+  constructor(scene: Phaser.Scene, config: RouletteConfig = {}) {
     this.scene = scene;
-    this.gameState = gameState;
-    // 🎯 Получаем Economy из реестра (как мы делали ранее)
-    this.economy = scene.registry.get("economy") as Economy;
 
     this.config = {
       totalItems: config.totalItems ?? 50,
@@ -68,14 +56,6 @@ export class RouletteLogic {
     this.particlesCleanupTimer?.destroy();
   }
 
-  // 🎯 НОВАЯ ФУНКЦИЯ: Округление до "красивых" чисел (всегда в большую сторону для щедрости)
-  private roundToBeautiful(value: number): number {
-    if (value <= 0) return 0;
-    if (value < 500) return Math.ceil(value / 50) * 50; // 100, 150, 200... 450, 500
-    if (value < 5000) return Math.ceil(value / 500) * 500; // 1000, 1500, 2000... 4500, 5000
-    return Math.ceil(value / 1000) * 1000; // 6000, 7000, 10000...
-  }
-
   public generateReel(): void {
     this.reelContainer.removeAll(true);
     this.reelItems = [];
@@ -83,7 +63,7 @@ export class RouletteLogic {
     const startX = -this.config.cardW / 2;
     const total = this.config.totalItems;
 
-    const rareCount = Math.floor(total * 0.5);
+    const rareCount = Math.floor(total * 0.5); // 50% редких
     const othersCount = total - rareCount;
 
     const smallCount = Math.floor(othersCount / 3);
@@ -96,6 +76,7 @@ export class RouletteLogic {
     for (let i = 0; i < mediumCount; i++) pool.push("COINS_MEDIUM");
     for (let i = 0; i < largeCount; i++) pool.push("COINS_LARGE");
 
+    // Перемешиваем пул
     for (let i = pool.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       [pool[i], pool[j]] = [pool[j], pool[i]];
@@ -123,41 +104,28 @@ export class RouletteLogic {
     let subtitle = "";
     const isRare = type === "RARE_SQUISH";
 
-    // 🎯 ДИНАМИЧЕСКИЙ РАСЧЁТ НАГРАД
-    const spawnCost = this.economy.getSpawnCost(this.gameState.level);
-
-    // Базовые множители
-    const rawSmall = spawnCost * BASE_MULTIPLYERS.LOW;
-    const rawMedium = spawnCost * BASE_MULTIPLYERS.MIDDLE;
-    const rawLarge = spawnCost * BASE_MULTIPLYERS.HIGHT;
-
-    // Округляем до красивых значений
-    const beautifulSmall = this.roundToBeautiful(rawSmall);
-    const beautifulMedium = this.roundToBeautiful(rawMedium);
-    const beautifulLarge = this.roundToBeautiful(rawLarge);
-
+    // 🎯 ФИКСИРОВАННЫЕ ЗНАЧЕНИЯ НАГРАД
     switch (type) {
       case "COINS_SMALL":
-        value = beautifulSmall;
+        value = 50;
         displayText = `${value} 💰`;
         displayColor = "#a8e6cf";
         subtitle = "Мало";
         break;
       case "COINS_MEDIUM":
-        value = beautifulMedium;
+        value = 100;
         displayText = `${value} 💰`;
         displayColor = "#ffd93d";
         subtitle = "Средне";
         break;
       case "COINS_LARGE":
-        value = beautifulLarge;
+        value = 250;
         displayText = `${value} 💰`;
         displayColor = "#ff8c42";
         subtitle = "Много";
         break;
       case "RARE_SQUISH":
         value = 0;
-        // displayText больше не нужен для картинки, но оставим для логики
         displayText = "RARE";
         displayColor = "#ff9edb";
         subtitle = "РЕДКИЙ!";
@@ -177,16 +145,10 @@ export class RouletteLogic {
 
     // 🎯 УСЛОВНОЕ ОТОБРАЖЕНИЕ: Картинка для редкого, Текст для монет
     if (isRare) {
-      // Создаём изображение из атласа "squish-pack" с фреймом "squish_pack"
       const rareIcon = this.scene.add.image(0, -10, "squish-pack", "squish_pack");
-
-      // 🎯 Масштабируем картинку, чтобы она красиво вписывалась в карточку 120x150.
-      // Подбери коэффициент (0.5 - 0.8) под реальный размер твоего спрайта в атласе.
-      rareIcon.setScale(0.6);
-
+      rareIcon.setScale(0.6); // Подгони под свой спрайт
       container.add(rareIcon);
     } else {
-      // Для монет оставляем текстовое отображение
       const coinText = this.scene.add
         .text(0, -10, displayText, {
           fontSize: "28px",
@@ -201,7 +163,7 @@ export class RouletteLogic {
       container.add(coinText);
     }
 
-    // Подпись типа награды (одинакова для всех)
+    // Подпись типа награды
     container.add(
       this.scene.add
         .text(0, 45, subtitle, {
@@ -225,6 +187,7 @@ export class RouletteLogic {
     const winRand = Math.random();
     let actualWinType: RouletteWinData["type"];
 
+    // Шансы выпадения (можно настроить под баланс)
     if (winRand < 0.1) {
       actualWinType = "RARE_SQUISH";
     } else if (winRand < 0.4) {
@@ -264,7 +227,7 @@ export class RouletteLogic {
         this.currentState = RouletteState.RESULT;
         onComplete({
           type: winnerItem.getData("type"),
-          value: winnerItem.getData("value"), // 🎯 Теперь здесь динамическое красивое число
+          value: winnerItem.getData("value"), // Теперь здесь всегда 50, 100, 250 или 0
           container: winnerItem,
         });
       },
