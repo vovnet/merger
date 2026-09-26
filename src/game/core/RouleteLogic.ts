@@ -1,4 +1,5 @@
 import * as Phaser from "phaser";
+import { AudioService } from "./AudioService";
 
 export enum RouletteState {
   IDLE = "IDLE",
@@ -31,6 +32,7 @@ export class RouletteLogic {
 
   private spinTween?: Phaser.Tweens.Tween;
   private particlesCleanupTimer?: Phaser.Time.TimerEvent;
+  private audioService: AudioService;
 
   // 🎯 Убрали gameState и economy из конструктора, так как они больше не нужны
   constructor(scene: Phaser.Scene, config: RouletteConfig = {}) {
@@ -42,6 +44,8 @@ export class RouletteLogic {
       cardH: config.cardH ?? 150,
       cardGap: config.cardGap ?? 10,
     };
+
+    this.audioService = this.scene.registry.get("audioService") as AudioService;
   }
 
   public initReel(screenWidth: number, screenHeight: number): void {
@@ -187,7 +191,6 @@ export class RouletteLogic {
     const winRand = Math.random();
     let actualWinType: RouletteWinData["type"];
 
-    // Шансы выпадения (можно настроить под баланс)
     if (winRand < 0.1) {
       actualWinType = "RARE_SQUISH";
     } else if (winRand < 0.4) {
@@ -214,20 +217,55 @@ export class RouletteLogic {
         : maxIndex;
 
     const winnerItem = this.reelItems[winnerIndex];
-
     const targetX = -(winnerItem.x - screenWidth / 2 + this.config.cardW / 2);
     const finalX = targetX + Phaser.Math.Between(-20, 20);
+
+    // 🎯 НАСТРОЙКА ДЛЯ ЗВУКА ЩЕЛЧКА
+    let lastX = this.reelContainer.x;
+    // Расстояние, которое нужно проехать, чтобы сработал следующий щелчок
+    const tickDistance = this.config.cardW + this.config.cardGap;
+    let accumulatedDistance = 0;
 
     this.spinTween = this.scene.tweens.add({
       targets: this.reelContainer,
       x: finalX,
       duration: 5000,
-      ease: "Cubic.easeOut",
+      ease: "Cubic.easeOut", // Звук будет идеально замедляться вместе с этой функцией!
+
+      onUpdate: () => {
+        const currentX = this.reelContainer.x;
+        const delta = Math.abs(currentX - lastX);
+        accumulatedDistance += delta;
+        lastX = currentX;
+
+        // 🎯 1. Вычисляем, сколько пикселей осталось до финальной точки
+        const remainingDistance = Math.abs(finalX - currentX);
+
+        // 🎯 2. Условие для щелчка:
+        // - накопили достаточно расстояния (с учетом компенсации задержки, если нужна)
+        // - И мы еще не на самой финишной прямой (осталось больше половины карточки)
+        const triggerOffset = 15; // Компенсация задержки звука (можно оставить 0, если файл чистый)
+
+        if (
+          accumulatedDistance >= tickDistance - triggerOffset &&
+          remainingDistance > tickDistance / 2
+        ) {
+          this.audioService?.playTickSound();
+
+          // Сбрасываем накопленное расстояние, сохраняя остаток
+          accumulatedDistance = accumulatedDistance - tickDistance;
+
+          if (accumulatedDistance < 0) {
+            accumulatedDistance = 0;
+          }
+        }
+      },
+
       onComplete: () => {
         this.currentState = RouletteState.RESULT;
         onComplete({
           type: winnerItem.getData("type"),
-          value: winnerItem.getData("value"), // Теперь здесь всегда 50, 100, 250 или 0
+          value: winnerItem.getData("value"),
           container: winnerItem,
         });
       },

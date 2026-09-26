@@ -58,4 +58,11 @@ export class AudioService {
       rate: 0.8, // Более низкий тон
     });
   }
+
+  public playTickSound(): void {
+    this.scene.sound.play("tick", {
+      volume: 0.8,
+      rate: 0.8, // Более низкий тон
+    });
+  }
 }

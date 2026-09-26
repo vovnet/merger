@@ -6,7 +6,6 @@ import { HistoryService } from "../core/HistoryService";
 import { EventBus } from "../core/EventBus";
 import { ComboData, GameEvents, UIEvents } from "../types/GameEvents";
 import { UIScene } from "./UIScene";
-import { ComboService } from "../core/ComboService";
 import { ContractService } from "../core/ContractService";
 import { ContractUpdateData } from "../types/Contract";
 import { AudioService } from "../core/AudioService";
@@ -53,6 +52,7 @@ export class Game extends Phaser.Scene {
     this.load.audio("sword", "assets/sound/sword.mp3");
     this.load.audio("water_bubbling", "assets/sound/water_bubbling.mp3");
     this.load.audio("ui_pop", "assets/sound/ui_pop.mp3");
+    this.load.audio("tick", "assets/sound/tick.mp3");
 
     this.load.bitmapFont("russo", "assets/fonts/days.png", "assets/fonts/days.xml");
 
