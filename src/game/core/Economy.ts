@@ -11,12 +11,12 @@ export class Economy {
 
   // 🎯 Формула стоимости спауна (чистая функция)
   public getSpawnCost(level: number): number {
-    return 50 + Math.pow(level, 2) * 15;
+    return 1;
   }
 
   // 🎯 Формула награды за слияние (чистая функция)
   public getMergeReward(newLevel: number): number {
-    return Math.pow(newLevel, 2) * 3;
+    return 0;
   }
 
   // 🎯 Проверка возможности покупки
@@ -35,8 +35,7 @@ export class Economy {
 
   // 🎯 Расчет возврата
   public getSpawnRefund(level: number): number {
-    const cost = this.getSpawnCost(level);
-    return Math.floor(cost * 0.05);
+    return 1;
   }
 
   // 🎯 Начисление возврата (делегирование в GameState)
@@ -49,9 +48,6 @@ export class Economy {
   }
 
   public getPrestigeReward(currentRound: number): number {
-    // Формула: базовая награда × множитель раунда
-    const baseReward = 1000;
-    const roundMultiplier = Math.pow(1.5, currentRound - 1); // Рост на 50% за каждый раунд
-    return Math.floor(baseReward * roundMultiplier);
+    return 100;
   }
 }

@@ -22,7 +22,6 @@ export class Game extends Phaser.Scene {
   private economy: Economy;
 
   private historyService: HistoryService;
-  private comboService: ComboService;
   private contractService: ContractService;
   private audioService: AudioService;
   private grassWind: GrassWind;
@@ -74,12 +73,13 @@ export class Game extends Phaser.Scene {
     this.audioService = new AudioService(this);
     this.registry.set("audioService", this.audioService);
     this.grid = new Grid({ cols: 7, rows: 5 });
+    this.registry.set("grid", this.grid);
 
     this.historyService = new HistoryService();
     this.historyService.bind(this.grid);
 
     this.gridRenderer = new GridRenderer(this, this.grid);
-    this.comboService = new ComboService();
+
     this.contractService = new ContractService(this.grid, this.gameState);
 
     this.economy = new Economy(this.gameState);
@@ -133,14 +133,16 @@ export class Game extends Phaser.Scene {
   private fillAllEmptyCells(): void {
     const levelToSpawn = this.getSpawnLevel();
     const emptyCount = this.grid.getEmptyCells().length;
+    const itemsCount = Math.min(this.gameState.coins, emptyCount);
 
     // 1. Проверка: есть ли пустые клетки
-    if (emptyCount === 0) {
+    if (itemsCount === 0) {
       return;
     }
 
     // 5. Заполняем сетку
-    this.grid.fillEmptyCells(levelToSpawn);
+    this.grid.fillEmptyCells(levelToSpawn, itemsCount);
+    this.economy.spendCoins(itemsCount);
   }
 
   private setupEventListeners(): void {
@@ -271,7 +273,7 @@ export class Game extends Phaser.Scene {
 
     // 💰 Компенсация: даём монеты за каждый удалённый предмет
     if (removedItems.length > 0) {
-      const compensation = removedItems.reduce((sum, item) => sum + item.level * 5, 0);
+      const compensation = removedItems.length;
       this.gameState.addCoins(compensation);
     }
 

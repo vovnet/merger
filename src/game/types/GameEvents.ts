@@ -14,6 +14,7 @@ export const GameEvents = {
   GRID_ITEM_ADDED: "itemAdded",
   GRID_ITEM_REMOVED: "itemRemoved",
   GRID_ITEM_MERGED: "itemMerged",
+  GRID_ITEM_CHANGED: "itemChanged",
   GRID_FULL: "gridFull",
   GRID_FILLED: "gridFilled",
   GRID_ITEMS_CLEANED: "itemsCleaned",

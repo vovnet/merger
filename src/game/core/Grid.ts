@@ -209,14 +209,33 @@ export class Grid extends Phaser.Events.EventEmitter {
     return items;
   }
 
-  fillEmptyCells(level: number): number {
+  fillEmptyCells(level: number, count: number): number {
     const emptyCells = this.getEmptyCells();
-    if (emptyCells.length === 0) return 0;
+
+    // Если пустых ячеек нет или запрошено 0 (или меньше) предметов — выходим
+    if (emptyCells.length === 0 || count <= 0) {
+      return 0;
+    }
+
+    // 🎯 Ограничиваем количество реально доступными пустыми ячейками
+    const itemsToSpawn = Math.min(count, emptyCells.length);
 
     EventBus.emit(GameEvents.HISTORY_CHECKPOINT);
 
     let filledCount = 0;
-    for (const cell of emptyCells) {
+
+    // Создаем копию массива доступных ячеек.
+    // (getEmptyCells и так возвращает новый массив, но [...emptyCells] делает намерение явным)
+    const availableCells = [...emptyCells];
+
+    for (let i = 0; i < itemsToSpawn; i++) {
+      // 🎯 Выбираем случайный индекс из оставшихся доступных ячеек
+      const randomIndex = Math.floor(Math.random() * availableCells.length);
+
+      // Извлекаем ячейку по этому индексу и УДАЛЯЕМ её из массива доступных.
+      // Это гарантирует, что мы никогда не выберем одну и ту же ячейку дважды.
+      const cell = availableCells.splice(randomIndex, 1)[0];
+
       const item = this.createItem(level);
       this.setItem(cell, item);
       filledCount++;

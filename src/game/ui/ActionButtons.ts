@@ -4,14 +4,13 @@ import { GameEvents, UIEvents } from "../types/GameEvents";
 import { Economy } from "../core/Economy";
 import { GameState } from "../core/GameState";
 import { AddCoinButton } from "./AddCoinButton";
+import { Grid } from "../core/Grid";
 
 export class ActionButtons {
   private scene: Phaser.Scene;
 
   private economy: Economy;
 
-  private spawnButtonBg: Phaser.GameObjects.Rectangle;
-  private spawnButtonText: Phaser.GameObjects.BitmapText;
   private fillButtonBg: Phaser.GameObjects.Rectangle;
   private fillButtonText: Phaser.GameObjects.BitmapText;
 
@@ -20,10 +19,12 @@ export class ActionButtons {
   private addCoinButton: AddCoinButton;
 
   private gameState: GameState;
+  private grid: Grid;
 
   constructor(scene: Phaser.Scene, economy: Economy) {
     this.scene = scene;
     this.gameState = scene.registry.get("gameState") as GameState;
+    this.grid = scene.registry.get("grid") as Grid;
     this.economy = economy;
     this.create();
     this.setupListeners();
@@ -35,25 +36,6 @@ export class ActionButtons {
     const width = this.scene.scale.width;
     const height = this.scene.scale.height;
 
-    // 🎯 Кнопка спауна (по центру внизу)
-    this.spawnButtonBg = this.scene.add
-      .rectangle(width / 2, height - 80, 200, 60, 0x4a90e2)
-      .setInteractive({ useHandCursor: true })
-      .setDepth(100);
-
-    this.spawnButtonBg.setStrokeStyle(2, 0xffffff);
-
-    this.spawnButtonText = this.scene.add
-      .bitmapText(width / 2, height - 80, "russo", `СПАУН (Ур. ${this.gameState.level})`, 24)
-      .setOrigin(0.5)
-      .setDepth(101);
-
-    this.spawnButtonBg.on("pointerdown", () => {
-      EventBus.emit(UIEvents.SPAWN_REQUESTED);
-    });
-    this.spawnButtonBg.on("pointerover", () => this.spawnButtonBg.setFillStyle(0x5aa0f2));
-    this.spawnButtonBg.on("pointerout", () => this.spawnButtonBg.setFillStyle(0x4a90e2));
-
     // 🎯 Кнопка заполнения (справа внизу)
     this.fillButtonBg = this.scene.add
       .rectangle(width - 100, height - 160, 140, 50, 0x9b59b6)
@@ -63,15 +45,13 @@ export class ActionButtons {
     this.fillButtonBg.setStrokeStyle(2, 0xffffff);
 
     this.fillButtonText = this.scene.add
-      .bitmapText(width - 100, height - 160, "russo", "ЗАПОЛНИТЬ", 20)
+      .bitmapText(width - 100, height - 160, "russo", "х", 20)
       .setOrigin(0.5)
       .setDepth(101);
 
     this.fillButtonBg.on("pointerdown", () => {
       EventBus.emit(UIEvents.FILL_REQUESTED);
     });
-
-    this.fillButtonBg.on("pointerout", () => this.fillButtonBg.setFillStyle(0x9b59b6));
 
     const debugBtnX = width - 160;
     const debugBtnY = 180;
@@ -117,6 +97,8 @@ export class ActionButtons {
       }
     });
 
+    EventBus.on(GameEvents.GRID_ITEM_CHANGED, this.updateSpawnButtonText);
+
     this.spinButtonBg.on("pointerover", () => {
       if (this.gameState.spins > 0) this.spinButtonBg.setFillStyle(0xffe44d);
     });
@@ -124,6 +106,10 @@ export class ActionButtons {
     this.spinButtonBg.on("pointerout", () => {
       if (this.gameState.spins > 0) this.spinButtonBg.setFillStyle(0xffd700);
     });
+  }
+
+  private updateSpawnButtonText() {
+    console.log("grid changed");
   }
 
   private updateSpinButtonText(): void {
@@ -142,11 +128,6 @@ export class ActionButtons {
       this.spinButtonText.setColor("#000000");
       this.spinButtonBg.setInteractive({ useHandCursor: true });
     }
-  }
-
-  private updateSpawnButtonText(): void {
-    const cost = this.economy.getSpawnCost(this.gameState.level);
-    this.spawnButtonText.setText(`СПАУН (${cost} 💰)`);
   }
 
   private setupListeners(): void {
@@ -170,8 +151,6 @@ export class ActionButtons {
   }
 
   destroy(): void {
-    this.spawnButtonBg.destroy();
-    this.spawnButtonText.destroy();
     this.fillButtonBg.destroy();
     this.fillButtonText.destroy();
     this.spinButtonBg.destroy();
