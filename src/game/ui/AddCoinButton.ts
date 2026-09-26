@@ -12,16 +12,19 @@ export class AddCoinButton {
   private gameState: GameState;
 
   private container!: Phaser.GameObjects.Container;
-  private btnBg!: Phaser.GameObjects.Image;
-  private progressOverlay!: Phaser.GameObjects.Image;
+  private btnBg!: Phaser.GameObjects.Image; // add_coin_back
+  private progressFill!: Phaser.GameObjects.Image; // add_coin_mask
   private plusOneText!: Phaser.GameObjects.Text;
 
   private currentState: ButtonState = ButtonState.IDLE;
   private readonly COOLDOWN_MS = 5000;
 
-  // Храним реальные размеры текстуры, чтобы не вычислять их каждый кадр
   private realWidth: number = 0;
   private realHeight: number = 0;
+
+  // 🎯 Новые константы для ограничения зоны заполнения
+  private readonly START_PERCENT = 0.16; // 20%
+  private readonly END_PERCENT = 0.76; // 80%
 
   constructor(scene: Phaser.Scene, x: number, y: number, gameState: GameState) {
     this.scene = scene;
@@ -33,29 +36,24 @@ export class AddCoinButton {
   private create(x: number, y: number): void {
     this.container = this.scene.add.container(x, y).setDepth(100);
 
-    // 1. Основная кнопка
-    this.btnBg = this.scene.add.image(0, 0, "ui", "create_squish_btn").setOrigin(0.5);
+    // 1. Фон кнопки (add_coin_back) - всегда виден
+    this.btnBg = this.scene.add.image(0, 0, "ui", "add_coin_back").setOrigin(0.5);
     this.container.add(this.btnBg);
 
-    // 2. Прогресс-бар (копия кнопки с тинтом)
-    this.progressOverlay = this.scene.add
-      .image(0, 0, "ui", "create_squish_btn")
+    // Получаем размеры
+    this.realWidth = this.btnBg.displayWidth;
+    this.realHeight = this.btnBg.displayHeight;
+
+    // 2. Прогресс-бар (add_coin_mask) - показывается поверх, обрезается
+    this.progressFill = this.scene.add
+      .image(0, 0, "ui", "add_coin_mask")
       .setOrigin(0.5)
-      .setTint(0xfacd04) // Мятный цвет заполнения
       .setVisible(false);
-
-    // Добавляем ПОВЕРХ основной кнопки
-    this.container.add(this.progressOverlay);
-
-    // 🎯 Получаем реальные размеры текстуры ОДИН РАЗ при создании
-    const frame = this.progressOverlay.frame;
-    this.realWidth = frame.cutWidth;
-    this.realHeight = frame.cutHeight;
+    this.container.add(this.progressFill);
 
     // 3. Текст "+1"
-    const btnHeight = this.btnBg.displayHeight;
     this.plusOneText = this.scene.add
-      .text(0, -btnHeight / 2 - 20, "+1", {
+      .text(0, -this.realHeight / 2 - 20, "+1", {
         fontSize: "32px",
         color: "#ffd700",
         fontFamily: "Arial",
@@ -71,47 +69,23 @@ export class AddCoinButton {
     // 4. Интерактивность
     this.btnBg.setInteractive({ useHandCursor: true });
     this.btnBg.on("pointerdown", () => this.handleClick());
-    this.btnBg.on("pointerover", () => {
-      if (this.currentState === ButtonState.IDLE) {
-        this.scene.tweens.add({
-          targets: this.btnBg,
-          scale: 1.1,
-          ease: "Back.easeOut",
-          duration: 200,
-        });
-      }
-    });
-    this.btnBg.on("pointerout", () => {
-      if (this.currentState === ButtonState.IDLE) {
-        this.scene.tweens.add({
-          targets: this.btnBg,
-          scale: 1,
-          ease: "Back.easeOut",
-          duration: 200,
-        });
-      }
-    });
   }
 
   private handleClick(): void {
     if (this.currentState !== ButtonState.IDLE) return;
 
-    this.btnBg.setScale(1);
     this.setState(ButtonState.COOLDOWN);
     this.startCooldown();
   }
 
   private setState(newState: ButtonState): void {
     this.currentState = newState;
-    console.log("set state: ", newState);
     switch (newState) {
       case ButtonState.IDLE:
-        this.btnBg.clearTint();
         this.btnBg.setInteractive({ useHandCursor: true });
         break;
 
       case ButtonState.COOLDOWN:
-        this.btnBg.setTint(0x5e5bff); // Затемняем основу
         this.btnBg.disableInteractive();
         break;
 
@@ -122,31 +96,36 @@ export class AddCoinButton {
   }
 
   private startCooldown(): void {
-    this.progressOverlay.setVisible(true);
+    this.progressFill.setVisible(true);
 
-    // 🎯 Изначально обрезаем всё (высота = 0, начинаем с самого низа текстуры)
-    this.progressOverlay.setCrop(0, this.realHeight, this.realWidth, 0);
+    // 🎯 Вычисляем границы в пикселях
+    const startHeight = this.realHeight * this.START_PERCENT; // 20% высоты
+    const endHeight = this.realHeight * this.END_PERCENT; // 80% высоты
+    const animRange = endHeight - startHeight; // Диапазон анимации (60%)
 
-    // Объект для анимации высоты обрезки
-    const cropState = { currentHeight: 0 };
+    // Устанавливаем начальное состояние (заполнено на 20%)
+    // setCrop(x, y, width, height) -> y отсчитывается сверху текстуры
+    const initialCropY = this.realHeight - startHeight;
+    this.progressFill.setCrop(0, initialCropY, this.realWidth, startHeight);
 
+    // Объект для анимации только диапазона (от 0 до 60%)
+    const cropState = { currentAnim: 0 };
+
+    // 🎯 АНИМАЦИЯ ЗАПОЛНЕНИЯ С 20% ДО 80%
     this.scene.tweens.add({
       targets: cropState,
-      currentHeight: this.realHeight, // Анимируем от 0 до полной высоты текстуры
+      currentAnim: animRange, // Анимируем от 0 до 60% высоты
       duration: this.COOLDOWN_MS,
       ease: "Linear",
       onUpdate: () => {
-        // 🎯 МАГИЯ ЗАПОЛНЕНИЯ СНИЗУ ВВЕРХ:
-        // Сдвигаем начальную точку выреза (Y) вверх по мере роста высоты
-        const cropY = this.realHeight - cropState.currentHeight;
+        // Текущая высота заполнения = базовые 20% + анимируемая часть
+        const currentCropHeight = startHeight + cropState.currentAnim;
 
-        // setCrop(x, y, width, height)
-        this.progressOverlay.setCrop(
-          0, // X: всегда от левого края
-          cropY, // Y: сдвигается вверх от низа
-          this.realWidth, // Width: полная ширина
-          cropState.currentHeight, // Height: растёт от 0 до максимума
-        );
+        // Y сдвигается вверх по мере роста высоты
+        const cropY = this.realHeight - currentCropHeight;
+
+        // Применяем кроп
+        this.progressFill.setCrop(0, cropY, this.realWidth, currentCropHeight);
       },
       onComplete: () => {
         this.onCooldownComplete();
@@ -160,62 +139,49 @@ export class AddCoinButton {
   }
 
   private onCooldownComplete(): void {
-    // 🎯 КРАСИВЫЙ ТВИН: Отскок кнопки в момент награды
+    // Твин отскока
     this.scene.tweens.add({
       targets: this.btnBg,
-      scale: { from: 1, to: 1.2 }, // Сначала увеличиваем
-      duration: 600,
+      scale: { from: 1, to: 1.15 },
+      duration: 300,
       ease: "Back.easeOut",
-      yoyo: true, // Возвращаем обратно
-      hold: 50, // Пауза в пиковой точке
+      yoyo: true,
       onComplete: () => {
-        // Возвращаем исходный масштаб
         this.btnBg.setScale(1);
       },
     });
 
-    // Вспышка (короткое осветление)
-    this.scene.tweens.add({
-      targets: this.btnBg,
-      alpha: { from: 1, to: 1.5 }, // "Пересвет" (alpha > 1 работает как яркость)
-      duration: 100,
-      yoyo: true,
-    });
+    // Скрываем маску
+    this.progressFill.setVisible(false);
 
-    // Скрываем прогресс-бар
-    this.progressOverlay.setVisible(false);
+    // 🎯 Сбрасываем кроп обратно к начальным 20% для следующего раза
+    const startHeight = this.realHeight * this.START_PERCENT;
+    this.progressFill.setCrop(0, this.realHeight - startHeight, this.realWidth, startHeight);
 
-    // Сбрасываем кроп
-    this.progressOverlay.setCrop(0, 0, this.realWidth, this.realHeight);
-
-    // Переходим в CLAIMING (анимация "+1")
     this.setState(ButtonState.CLAIMING);
   }
 
   private showPlusOneAnimation(): void {
-    const btnHeight = this.btnBg.displayHeight;
-
     this.plusOneText
       .setAlpha(0)
       .setScale(0.5)
-      .setPosition(0, -btnHeight / 2 - 20)
+      .setPosition(0, -this.realHeight / 2 - 20)
       .setVisible(true);
 
     this.scene.tweens.add({
       targets: this.plusOneText,
       alpha: { from: 0, to: 1 },
-      scale: { from: 0.5, to: 1.3 },
-      y: "-=40",
-      duration: 600,
+      scale: { from: 0.5, to: 1.2 },
+      y: "-=30",
+      duration: 500,
       ease: "Back.easeOut",
       onComplete: () => {
-        this.scene.time.delayedCall(400, () => {
+        this.scene.time.delayedCall(500, () => {
           this.scene.tweens.add({
             targets: this.plusOneText,
             alpha: 0,
-            scale: 1.5,
             y: "-=20",
-            duration: 400,
+            duration: 300,
             ease: "Power2.in",
             onComplete: () => {
               this.plusOneText.setVisible(false);
@@ -229,10 +195,13 @@ export class AddCoinButton {
 
   public reset(): void {
     this.currentState = ButtonState.IDLE;
-    this.btnBg.clearTint();
     this.btnBg.setInteractive({ useHandCursor: true });
-    this.progressOverlay.setVisible(false);
-    this.progressOverlay.setCrop(0, 0, this.realWidth, this.realHeight); // Safe reset
+    this.progressFill.setVisible(false);
+
+    // 🎯 Сброс к 20%
+    const startHeight = this.realHeight * this.START_PERCENT;
+    this.progressFill.setCrop(0, this.realHeight - startHeight, this.realWidth, startHeight);
+
     this.plusOneText.setVisible(false);
   }
 
