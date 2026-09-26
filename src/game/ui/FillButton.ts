@@ -26,7 +26,7 @@ export class FillButton {
 
     this.create(x, y);
     this.setupListeners();
-    this.updateText();
+    this.updateVisuals(); // 🎯 Переименовали для ясности: обновляет и текст, и картинку
   }
 
   private create(x: number, y: number): void {
@@ -39,39 +39,31 @@ export class FillButton {
       .setOrigin(0.5)
       .setTint(this.ACTIVE_TEXT_TINT);
 
-    this.item = this.scene.add.image(
-      0,
-      -36,
-      "squishes",
-      ItemRegistry.getFrameName(this.gameState.level),
-    );
+    const targetSquishLevel = Math.max(1, this.gameState.level - 6);
+
+    this.item = this.scene.add
+      .image(0, -46, "squishes", ItemRegistry.getFrameName(targetSquishLevel))
+      .setScale(0.9);
 
     this.container.add([this.bg, this.text, this.item]);
-
-    // Исходный масштаб кнопки
     this.container.setScale(0.8);
 
-    // 🎯 Делаем интерактивным ТОЛЬКО фон (зону клика)
     this.bg.setInteractive({ useHandCursor: true });
 
-    // 🎯 ОБЪЕДИНЕННЫЙ обработчик нажатия на фон
     this.bg.on("pointerdown", () => {
       if (this.isDisabled) return;
 
-      // 1. Анимация нажатия (уменьшаем с 0.8 до 0.7 и возвращаем обратно)
       this.scene.tweens.add({
         targets: this.container,
-        scale: 0.7, // Заметное уменьшение для эффекта "вдавливания"
+        scale: 0.7,
         duration: 100,
-        yoyo: true, // Автоматически возвращает масштаб к исходному (0.8)
+        yoyo: true,
         ease: "Quad.easeOut",
       });
 
-      // 2. Игровая логика
       EventBus.emit(UIEvents.FILL_REQUESTED);
     });
 
-    // 🎯 Дополнительно: если игрок нажал, но увел мышь с кнопки, возвращаем масштаб
     this.bg.on("pointerupoutside", () => {
       if (!this.isDisabled) {
         this.scene.tweens.add({
@@ -82,52 +74,48 @@ export class FillButton {
         });
       }
     });
-
-    this.bg.on("pointerover", () => {
-      if (this.isDisabled) return;
-      this.bg.setTint(0xdddddd);
-      this.item.setTint(0x599bff);
-      this.text.setTint(0xdddddd);
-    });
-
-    this.bg.on("pointerout", () => {
-      if (this.isDisabled) return;
-      this.bg.clearTint();
-      this.item.clearTint();
-      this.text.setTint(this.ACTIVE_TEXT_TINT);
-    });
   }
 
-  public updateText(): void {
+  // 🎯 Этот метод теперь обновляет и текст, и картинку сквиша
+  public updateVisuals(): void {
+    // 1. Обновляем текст и состояние
     const coins = this.gameState.coins;
     const emptyCells = this.grid.getEmptyCells().length;
     const spawnCount = Math.min(coins, emptyCells);
 
     this.text.setText(`x${spawnCount}`);
-
     this.setDisabled(spawnCount === 0);
+
+    // 2. 🎯 ОБНОВЛЯЕМ КАРТИНКУ СКВИША (на случай, если уровень игрока изменился)
+    const targetSquishLevel = Math.max(1, this.gameState.level - 6);
+    const frameName = ItemRegistry.getFrameName(targetSquishLevel);
+
+    // setTexture мгновенно меняет кадр, не пересоздавая объект Image
+    this.item.setTexture("squishes", frameName);
   }
 
   private setDisabled(disabled: boolean): void {
-    if (this.isDisabled === disabled) return;
+    if (this.isDisabled === disabled) {
+      return;
+    }
+
     this.isDisabled = disabled;
 
     if (disabled) {
       this.bg.disableInteractive();
 
-      // 🎯 Убираем любой цветной тинт и делаем полупрозрачными
+      // Используем Alpha для чистого эффекта неактивности (вместо грязного tint)
       this.bg.clearTint();
-      this.bg.setAlpha(0.6); // Кнопка становится "призрачной"
+      this.bg.setAlpha(0.4);
 
       this.item.clearTint();
       this.item.setAlpha(0.4);
 
       this.text.setAlpha(0.4);
-      this.text.setTint(0xffffff); // Белый текст на полупрозрачном фоне читается лучше
+      this.text.setTint(0xffffff);
     } else {
       this.bg.setInteractive({ useHandCursor: true });
 
-      // 🎯 Возвращаем полную яркость и цвет
       this.bg.setAlpha(1);
       this.bg.clearTint();
 
@@ -140,19 +128,24 @@ export class FillButton {
   }
 
   private setupListeners(): void {
-    this.handleGridChange = () => this.updateText();
-    this.handleCoinsChange = () => this.updateText();
+    this.handleGridChange = () => this.updateVisuals();
+    this.handleCoinsChange = () => this.updateVisuals();
+    this.handleLevelChange = () => this.updateVisuals(); // 🎯 Добавили слушатель уровня
 
     EventBus.on(GameEvents.GRID_ITEM_CHANGED, this.handleGridChange);
     EventBus.on(GameEvents.COINS_CHANGED, this.handleCoinsChange);
+    EventBus.on(GameEvents.LEVEL_CHANGED, this.handleLevelChange);
   }
 
   private handleGridChange!: () => void;
   private handleCoinsChange!: () => void;
+  private handleLevelChange!: () => void; // 🎯 Новая ссылка на обработчик
 
   public destroy(): void {
     EventBus.off(GameEvents.GRID_ITEM_CHANGED, this.handleGridChange);
     EventBus.off(GameEvents.COINS_CHANGED, this.handleCoinsChange);
+    EventBus.off(GameEvents.LEVEL_CHANGED, this.handleLevelChange); // 🎯 Чистим за собой
+
     this.container.destroy();
   }
 }

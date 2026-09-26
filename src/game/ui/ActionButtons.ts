@@ -112,11 +112,6 @@ export class ActionButtons {
   }
 
   private setupListeners(): void {
-    // 🎯 При смене уровня тоже обновляем текст кнопки заполнения (на случай изменения стоимости)
-    EventBus.on(GameEvents.LEVEL_CHANGED, () => {
-      this.fillButton.updateText();
-    });
-
     EventBus.on(GameEvents.SPINS_CHANGED, () => {
       this.updateSpinButtonText();
 

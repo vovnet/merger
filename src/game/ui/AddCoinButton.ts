@@ -14,7 +14,7 @@ export class AddCoinButton {
   private container!: Phaser.GameObjects.Container;
   private btnBg!: Phaser.GameObjects.Image; // add_coin_back
   private progressFill!: Phaser.GameObjects.Image; // add_coin_mask
-  private plusOneText!: Phaser.GameObjects.Text;
+  private plusOneText!: Phaser.GameObjects.BitmapText;
 
   private currentState: ButtonState = ButtonState.IDLE;
   private readonly COOLDOWN_MS = 5000;
@@ -22,9 +22,9 @@ export class AddCoinButton {
   private realWidth: number = 0;
   private realHeight: number = 0;
 
-  // 🎯 Новые константы для ограничения зоны заполнения
-  private readonly START_PERCENT = 0.16; // 20%
-  private readonly END_PERCENT = 0.76; // 80%
+  // 🎯 Константы для ограничения зоны заполнения (16% - 76%)
+  private readonly START_PERCENT = 0.16;
+  private readonly END_PERCENT = 0.76;
 
   constructor(scene: Phaser.Scene, x: number, y: number, gameState: GameState) {
     this.scene = scene;
@@ -34,17 +34,17 @@ export class AddCoinButton {
   }
 
   private create(x: number, y: number): void {
+    // 🎯 КРИТИЧЕСКИ ВАЖНО: setOrigin(0.5), чтобы контейнер масштабировался от центра, а не от левого верхнего угла
     this.container = this.scene.add.container(x, y).setDepth(100);
 
-    // 1. Фон кнопки (add_coin_back) - всегда виден
+    // 1. Фон кнопки
     this.btnBg = this.scene.add.image(0, 0, "ui", "add_coin_back").setOrigin(0.5);
     this.container.add(this.btnBg);
 
-    // Получаем размеры
     this.realWidth = this.btnBg.displayWidth;
     this.realHeight = this.btnBg.displayHeight;
 
-    // 2. Прогресс-бар (add_coin_mask) - показывается поверх, обрезается
+    // 2. Прогресс-бар (маска)
     this.progressFill = this.scene.add
       .image(0, 0, "ui", "add_coin_mask")
       .setOrigin(0.5)
@@ -53,16 +53,10 @@ export class AddCoinButton {
 
     // 3. Текст "+1"
     this.plusOneText = this.scene.add
-      .text(0, 0, "+1", {
-        fontSize: "32px",
-        color: "#ffd700",
-        fontFamily: "Arial",
-        fontStyle: "bold",
-        stroke: "#000000",
-        strokeThickness: 4,
-      })
+      .bitmapText(0, 0, "russo", "+1", 32)
       .setOrigin(0.5)
       .setAlpha(0)
+      .setTint(0x00cf0a)
       .setVisible(false);
     this.container.add(this.plusOneText);
 
@@ -74,21 +68,36 @@ export class AddCoinButton {
   private handleClick(): void {
     if (this.currentState !== ButtonState.IDLE) return;
 
+    // 1. Сначала блокируем состояние, чтобы предотвратить двойные клики
     this.setState(ButtonState.COOLDOWN);
+
+    // 2. 🎬 СОЧНАЯ АНИМАЦИЯ НАЖАТИЯ (теперь она не будет убита методом setState)
+    this.scene.tweens.add({
+      targets: this.container, // Анимируем весь контейнер целиком
+      scale: 0.9, // Уменьшаем на 15% (хорошо заметно глазу)
+      duration: 150, // 150 мс (быстро, но достаточно для восприятия)
+      ease: "Quad.easeOut", // Дает эффект лёгкой "пружинки" при возврате
+      yoyo: true, // Автоматически возвращает масштаб к 1.0
+      onComplete: () => {
+        this.container.setScale(1); // Страховка для идеального сброса размера
+      },
+    });
+
+    // 3. Запускаем игровую логику
     this.startCooldown();
   }
 
   private setState(newState: ButtonState): void {
     this.currentState = newState;
+
+    // 🎯 МЫ УБРАЛИ ОТСЮДА killTweensOf!
+    // Раньше он мгновенно уничтожал анимацию клика. Теперь он управляет только интерактивностью.
     switch (newState) {
       case ButtonState.IDLE:
         this.btnBg.setInteractive({ useHandCursor: true });
         break;
 
       case ButtonState.COOLDOWN:
-        this.btnBg.disableInteractive();
-        break;
-
       case ButtonState.CLAIMING:
         this.btnBg.disableInteractive();
         break;
@@ -98,33 +107,24 @@ export class AddCoinButton {
   private startCooldown(): void {
     this.progressFill.setVisible(true);
 
-    // 🎯 Вычисляем границы в пикселях
-    const startHeight = this.realHeight * this.START_PERCENT; // 20% высоты
-    const endHeight = this.realHeight * this.END_PERCENT; // 80% высоты
-    const animRange = endHeight - startHeight; // Диапазон анимации (60%)
+    const startHeight = this.realHeight * this.START_PERCENT;
+    const endHeight = this.realHeight * this.END_PERCENT;
+    const animRange = endHeight - startHeight;
 
-    // Устанавливаем начальное состояние (заполнено на 20%)
-    // setCrop(x, y, width, height) -> y отсчитывается сверху текстуры
     const initialCropY = this.realHeight - startHeight;
     this.progressFill.setCrop(0, initialCropY, this.realWidth, startHeight);
 
-    // Объект для анимации только диапазона (от 0 до 60%)
     const cropState = { currentAnim: 0 };
 
-    // 🎯 АНИМАЦИЯ ЗАПОЛНЕНИЯ С 20% ДО 80%
+    // 🎯 АНИМАЦИЯ ЗАПОЛНЕНИЯ С 16% ДО 76% СНИЗУ ВВЕРХ
     this.scene.tweens.add({
       targets: cropState,
-      currentAnim: animRange, // Анимируем от 0 до 60% высоты
+      currentAnim: animRange,
       duration: this.COOLDOWN_MS,
       ease: "Linear",
       onUpdate: () => {
-        // Текущая высота заполнения = базовые 20% + анимируемая часть
         const currentCropHeight = startHeight + cropState.currentAnim;
-
-        // Y сдвигается вверх по мере роста высоты
         const cropY = this.realHeight - currentCropHeight;
-
-        // Применяем кроп
         this.progressFill.setCrop(0, cropY, this.realWidth, currentCropHeight);
       },
       onComplete: () => {
@@ -139,22 +139,22 @@ export class AddCoinButton {
   }
 
   private onCooldownComplete(): void {
-    // Твин отскока
+    // Твин отскока (награда)
     this.scene.tweens.add({
-      targets: this.btnBg,
-      scale: { from: 1, to: 1.15 },
+      targets: this.container, // Анимируем контейнер для консистентности
+      scale: 1.15,
       duration: 300,
       ease: "Back.easeOut",
       yoyo: true,
       onComplete: () => {
-        this.btnBg.setScale(1);
+        this.container.setScale(1);
       },
     });
 
     // Скрываем маску
     this.progressFill.setVisible(false);
 
-    // 🎯 Сбрасываем кроп обратно к начальным 20% для следующего раза
+    // Сбрасываем кроп обратно к начальным 16% для следующего раза
     const startHeight = this.realHeight * this.START_PERCENT;
     this.progressFill.setCrop(0, this.realHeight - startHeight, this.realWidth, startHeight);
 
@@ -162,11 +162,7 @@ export class AddCoinButton {
   }
 
   private showPlusOneAnimation(): void {
-    this.plusOneText
-      .setAlpha(0)
-      .setScale(0.5)
-      .setPosition(0, -this.realHeight / 2 - 20)
-      .setVisible(true);
+    this.plusOneText.setAlpha(0).setScale(0.5).setPosition(0, -20).setVisible(true);
 
     this.scene.tweens.add({
       targets: this.plusOneText,
@@ -194,11 +190,15 @@ export class AddCoinButton {
   }
 
   public reset(): void {
+    // Безопасная очистка твинов при сбросе
+    this.scene.tweens.killTweensOf(this.container);
+    this.scene.tweens.killTweensOf(this.plusOneText);
+
     this.currentState = ButtonState.IDLE;
     this.btnBg.setInteractive({ useHandCursor: true });
-    this.progressFill.setVisible(false);
+    this.container.setScale(1);
 
-    // 🎯 Сброс к 20%
+    this.progressFill.setVisible(false);
     const startHeight = this.realHeight * this.START_PERCENT;
     this.progressFill.setCrop(0, this.realHeight - startHeight, this.realWidth, startHeight);
 
@@ -206,6 +206,9 @@ export class AddCoinButton {
   }
 
   public destroy(): void {
+    // Безопасная очистка твинов при уничтожении (предотвращает утечки памяти)
+    this.scene.tweens.killTweensOf(this.container);
+    this.scene.tweens.killTweensOf(this.plusOneText);
     this.container.destroy();
   }
 }
