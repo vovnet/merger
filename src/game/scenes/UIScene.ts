@@ -5,7 +5,6 @@ import { Economy } from "../core/Economy";
 import { ContractPanel } from "../ui/ContractPanel";
 import { ContractService } from "../core/ContractService";
 import { ModalManager } from "../ui/modals/ModalManager";
-import { RouletteModal } from "../ui/modals/roulette/RouletteModal";
 
 export class UIScene extends Phaser.Scene {
   private hud: HUD;
@@ -27,7 +26,7 @@ export class UIScene extends Phaser.Scene {
     this.contractPanel = new ContractPanel(this, this.contractService);
 
     this.modalManager = new ModalManager(this);
-    this.modalManager.register("ROULETTE", RouletteModal);
+    // this.modalManager.register("SETTINGS", SettingsModal);
   }
 
   destroy(): void {
