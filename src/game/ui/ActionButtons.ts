@@ -6,6 +6,7 @@ import { GameState } from "../core/GameState";
 import { Grid } from "../core/Grid";
 import { AddCoinButton } from "./AddCoinButton";
 import { FillButton } from "./FillButton"; // 🎯 Новый импорт
+import { AlertButton } from "./AlertButton";
 
 export class ActionButtons {
   private scene: Phaser.Scene;
@@ -16,9 +17,9 @@ export class ActionButtons {
   // 🎯 Заменяем отдельные переменные на экземпляр класса
   private fillButton!: FillButton;
 
-  private spinButtonBg!: Phaser.GameObjects.Rectangle;
-  private spinButtonText!: Phaser.GameObjects.Text;
   private addCoinButton!: AddCoinButton;
+  private rouletteButton: AlertButton;
+  private collectionButton: AlertButton;
 
   constructor(scene: Phaser.Scene, economy: Economy) {
     this.scene = scene;
@@ -28,7 +29,6 @@ export class ActionButtons {
 
     this.create();
     this.setupListeners();
-    this.updateSpinButtonText();
   }
 
   private create(): void {
@@ -49,80 +49,33 @@ export class ActionButtons {
     const debugBtnY = 180;
     this.addCoinButton = new AddCoinButton(this.scene, debugBtnX, debugBtnY, this.gameState);
 
-    // 🎯 3. Кнопка рулетки (Спины)
-    const spinBtnX = 100;
-    const spinBtnY = height - 40;
-
-    this.spinButtonBg = this.scene.add
-      .rectangle(spinBtnX, spinBtnY, 160, 50, 0xffd700)
-      .setInteractive({ useHandCursor: true })
-      .setDepth(100);
-
-    this.spinButtonBg.setStrokeStyle(2, 0xffffff);
-
-    this.spinButtonText = this.scene.add
-      .text(spinBtnX, spinBtnY, `🎟️ 0`, {
-        fontSize: "20px",
-        color: "#000000",
-        fontFamily: "Arial",
-        fontStyle: "bold",
-        stroke: "#ffffff",
-        strokeThickness: 2,
-      })
-      .setOrigin(0.5)
-      .setDepth(101);
-
-    this.spinButtonBg.on("pointerdown", () => {
-      if (this.gameState.spins > 0) {
+    this.rouletteButton = new AlertButton(this.scene, {
+      x: 300,
+      y: 660,
+      scale: 0.5,
+      frameKey: "roulette_btn",
+      textureKey: "ui",
+      onClick: () => {
         this.scene.scene.launch("RouletteScene");
-      } else {
-        this.scene.tweens.add({
-          targets: this.spinButtonBg,
-          x: { from: spinBtnX, to: spinBtnX - 5 },
-          duration: 50,
-          yoyo: true,
-          repeat: 3,
-          ease: "Sine.easeInOut",
-        });
-      }
+      },
+      alert: this.gameState.spins > 0,
     });
 
-    this.spinButtonBg.on("pointerover", () => {
-      if (this.gameState.spins > 0) this.spinButtonBg.setFillStyle(0xffe44d);
+    this.collectionButton = new AlertButton(this.scene, {
+      x: 500,
+      y: 660,
+      scale: 0.5,
+      textureKey: "ui",
+      frameKey: "collection_btn",
+      onClick: () => {
+        this.scene.scene.launch("CollectionScene");
+      },
     });
-
-    this.spinButtonBg.on("pointerout", () => {
-      if (this.gameState.spins > 0) this.spinButtonBg.setFillStyle(0xffd700);
-    });
-  }
-
-  private updateSpinButtonText(): void {
-    const spins = this.gameState.spins;
-    this.spinButtonText.setText(`🎟️ ${spins}`);
-
-    if (spins === 0) {
-      this.spinButtonBg.setFillStyle(0x7f8c8d);
-      this.spinButtonText.setColor("#ffffff");
-      this.spinButtonBg.disableInteractive();
-    } else {
-      this.spinButtonBg.setFillStyle(0xffd700);
-      this.spinButtonText.setColor("#000000");
-      this.spinButtonBg.setInteractive({ useHandCursor: true });
-    }
   }
 
   private setupListeners(): void {
     EventBus.on(GameEvents.SPINS_CHANGED, () => {
-      this.updateSpinButtonText();
-
-      if (this.gameState.spins > 0) {
-        this.scene.tweens.add({
-          targets: this.spinButtonBg,
-          scale: { from: 1.2, to: 1 },
-          duration: 300,
-          ease: "Back.easeOut",
-        });
-      }
+      this.rouletteButton.setAlert(this.gameState.spins > 0);
     });
   }
 
@@ -130,8 +83,5 @@ export class ActionButtons {
     // 🎯 Вызываем destroy у вложенных компонентов
     this.fillButton.destroy();
     this.addCoinButton.destroy();
-
-    this.spinButtonBg.destroy();
-    this.spinButtonText.destroy();
   }
 }
