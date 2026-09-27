@@ -375,9 +375,6 @@ export class CollectionScene extends Phaser.Scene {
     if (this.gridContainer.filters) {
       // internal.addMask применяет маску в локальных координатах контейнера
       this.gridContainer.filters.internal.addMask(maskShape);
-    } else {
-      // Фоллбэк на случай, если игра вдруг запустится в Canvas-режиме (редкость)
-      // this.gridContainer.setMask(new Phaser.Display.Masks.GeometryMask(this, maskShape));
     }
 
     // 3. Логика скроллинга (остается без изменений)
