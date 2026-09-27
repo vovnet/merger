@@ -2,18 +2,18 @@ import * as Phaser from "phaser";
 import { GameState } from "../core/GameState";
 import { RouletteLogic, RouletteState, RouletteWinData } from "../core/RouleteLogic";
 import { AudioService } from "../core/AudioService";
+import { AlertButton } from "../ui/AlertButton";
 
 export class RouletteScene extends Phaser.Scene {
   private gameState!: GameState;
   private rouletteLogic!: RouletteLogic;
 
   // 🎯 Главный контейнер для всего UI рулетки (для плавного fade in/out)
-  private rouletteView!: Phaser.GameObjects.Container;
+  private rouletteView: Phaser.GameObjects.Container;
 
-  private spinBtn!: Phaser.GameObjects.Rectangle;
-  private spinText!: Phaser.GameObjects.Text;
-  private closeBtn!: Phaser.GameObjects.Rectangle;
-  private closeText!: Phaser.GameObjects.Text;
+  private spinBtn: Phaser.GameObjects.Rectangle;
+  private spinText: Phaser.GameObjects.Text;
+  private closeBtn: AlertButton;
   private audioService: AudioService;
 
   constructor() {
@@ -106,24 +106,15 @@ export class RouletteScene extends Phaser.Scene {
 
     this.spinBtn.on("pointerdown", () => this.handleSpinClick());
 
-    this.closeBtn = this.add
-      .rectangle(screenWidth - 80, 80, 50, 50, 0xff4444)
-      .setInteractive({ useHandCursor: true });
-
-    this.closeBtn.setStrokeStyle(2, 0xffffff, 0.8);
-    this.rouletteView.add(this.closeBtn);
-
-    this.closeText = this.add
-      .text(screenWidth - 80, 80, "✕", {
-        fontSize: "32px",
-        color: "#ffffff",
-        fontFamily: "Arial",
-        fontStyle: "bold",
-      })
-      .setOrigin(0.5);
-    this.rouletteView.add(this.closeText);
-
-    this.closeBtn.on("pointerdown", () => this.handleCloseClick());
+    this.closeBtn = new AlertButton(this.rouletteView.scene, {
+      x: 1220,
+      y: 60,
+      scale: 0.7,
+      textureKey: "ui",
+      frameKey: "close_btn",
+      onClick: () => this.handleCloseClick(),
+      parent: this.rouletteView,
+    });
   }
 
   private handleSpinClick(): void {

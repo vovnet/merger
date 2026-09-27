@@ -8,13 +8,15 @@ export interface AlertButtonConfig {
   onClick?: () => void;
   textureKey: string;
   frameKey: string;
+  parent?: Phaser.Scene | Phaser.GameObjects.Container;
 }
 
 export class AlertButton {
   private scene: Phaser.Scene;
-  private container!: Phaser.GameObjects.Container;
-  private btnSprite!: Phaser.GameObjects.Image;
-  private alertIndicator!: Phaser.GameObjects.Container | null;
+  private parent: Phaser.Scene | Phaser.GameObjects.Container;
+  private container: Phaser.GameObjects.Container;
+  private btnSprite: Phaser.GameObjects.Image;
+  private alertIndicator: Phaser.GameObjects.Container | null;
   private alertPulseTween?: Phaser.Tweens.Tween;
   private isAnimating: boolean = false;
 
@@ -24,6 +26,7 @@ export class AlertButton {
 
   constructor(scene: Phaser.Scene, config: AlertButtonConfig) {
     this.scene = scene;
+    this.parent = config.parent ?? scene;
     this.create(config);
   }
 
@@ -35,7 +38,8 @@ export class AlertButton {
     const hasAlert = config.alert ?? false;
 
     // 2. Контейнер (всегда в масштабе 1, чтобы не влиять на алерт)
-    this.container = this.scene.add.container(x, y);
+    this.container = new Phaser.GameObjects.Container(this.getScene(), x, y);
+    this.addToParent(this.container);
 
     // 3. Основной спрайт кнопки (масштабируем ТОЛЬКО его)
     this.btnSprite = this.scene.add.image(0, 0, config.textureKey, config.frameKey);
@@ -68,6 +72,18 @@ export class AlertButton {
       this.createAlertIndicator();
     } else {
       this.alertIndicator = null;
+    }
+  }
+
+  private getScene(): Phaser.Scene {
+    return this.parent instanceof Phaser.Scene ? this.parent : this.parent.scene;
+  }
+
+  private addToParent(gameObject: Phaser.GameObjects.GameObject): void {
+    if (this.parent instanceof Phaser.Scene) {
+      this.parent.add.existing(gameObject);
+    } else if (this.parent instanceof Phaser.GameObjects.Container) {
+      this.parent.add(gameObject);
     }
   }
 
