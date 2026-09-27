@@ -7,8 +7,10 @@ import { GameState } from "../core/GameState";
 export class HUD {
   private scene: Phaser.Scene;
   private gameState: GameState;
-  private coinsText: Phaser.GameObjects.Text;
-  private roundText: Phaser.GameObjects.Text; // 🎯 НОВОЕ: отображение раунда
+  private coinContainer: Phaser.GameObjects.Container;
+  private coinsSprite: Phaser.GameObjects.Sprite;
+  private coinsText: Phaser.GameObjects.BitmapText;
+  private roundText: Phaser.GameObjects.Text;
   private itemChain: ItemChain;
 
   constructor(scene: Phaser.Scene) {
@@ -20,24 +22,20 @@ export class HUD {
   }
 
   private create(): void {
-    // 💰 Текст монет (слева сверху)
-    this.coinsText = this.scene.add
-      .text(1040, 20, `💰 0`, {
-        fontSize: "24px",
-        color: "#ffd700",
-        fontFamily: "Arial",
-        fontStyle: "bold",
-        stroke: "#000000",
-        strokeThickness: 3,
-      })
-      .setOrigin(0, 0)
-      .setDepth(100);
+    this.coinsSprite = this.scene.add.sprite(18, 0, "ui", "coin").setScale(0.6).setOrigin(0.5);
 
-    // 🎯 НОВОЕ: Текст раунда (ниже монет)
+    this.coinsText = this.scene.add
+      .bitmapText(40, 0, "russo", "", 24)
+      .setOrigin(0, 0.5)
+      .setDepth(100)
+      .setTint(0x1ac729);
+
+    this.coinContainer = this.scene.add.container(1040, 42, [this.coinsText, this.coinsSprite]);
+
     this.roundText = this.scene.add
       .text(150, 20, `🔄 Раунд 1`, {
         fontSize: "22px",
-        color: "#a8e6ff", // Мягкий голубой цвет
+        color: "#a8e6ff",
         fontFamily: "Arial",
         fontStyle: "bold",
         stroke: "#000000",
@@ -52,10 +50,13 @@ export class HUD {
   }
 
   private setupListeners(): void {
-    EventBus.on(GameEvents.COINS_CHANGED, () => this.syncUI());
+    EventBus.on(GameEvents.COINS_CHANGED, () => {
+      this.syncUI(); // Сначала обновляем текст, чтобы новый номер был виден во время анимации
+      this.playCoinPopAnimation(); // Затем проигрываем "сочный" эффект
+    });
+
     EventBus.on(GameEvents.LEVEL_CHANGED, () => this.syncUI());
 
-    // 🎯 НОВОЕ: слушаем событие престижа
     EventBus.on(GameEvents.PRESTIGE_OCCURRED, (data: { newRound: number }) => {
       this.playPrestigeAnimation(data.newRound);
     });
@@ -66,12 +67,45 @@ export class HUD {
     this.roundText.setText(`🔄 Раунд ${this.gameState.round}`);
   }
 
-  // 🎯 НОВОЕ: анимация "перерождения" при престиже
+  // 🎯 НОВАЯ МЕТОД: Анимация "прилета" монеты
+  private playCoinPopAnimation(): void {
+    // 1. Мгновенно прерываем любые текущие анимации этих объектов,
+    // чтобы при быстром спаме монет не было рассинхрона или застревания масштаба
+    this.scene.tweens.killTweensOf(this.coinContainer);
+    this.scene.tweens.killTweensOf(this.coinsSprite);
+
+    // Сбрасываем в исходное состояние перед началом новой анимации
+    this.coinContainer.setScale(1);
+    this.coinsSprite.setAngle(0);
+
+    // 2. Анимация контейнера: резкий "удар" и упругий возврат
+    this.scene.tweens.add({
+      targets: this.coinContainer,
+      scale: { from: 1, to: 1.25 }, // Увеличиваем на 25% (хорошо заметно)
+      duration: 150, // Очень быстро (150 мс) для ощущения удара
+      ease: "Back.easeOut", // Дает эффект "перелета" и пружинистого возврата
+      yoyo: true, // Автоматически возвращаем масштаб к 1.0
+      onComplete: () => {
+        this.coinContainer.setScale(1); // Гарантируем идеальный сброс
+      },
+    });
+
+    // 3. Дополнительный "сок": иконка монетки слегка наклоняется, как будто от удара
+    this.scene.tweens.add({
+      targets: this.coinsSprite,
+      angle: { from: 0, to: 20 }, // Наклон на 20 градусов
+      duration: 150,
+      ease: "Quad.easeOut",
+      yoyo: true,
+      onComplete: () => {
+        this.coinsSprite.setAngle(0);
+      },
+    });
+  }
+
   private playPrestigeAnimation(newRound: number): void {
-    // 1. Обновляем текст
     this.roundText.setText(`🔄 Раунд ${newRound}`);
 
-    // 2. Эффект "вспышки": текст резко увеличивается и возвращается
     this.scene.tweens.add({
       targets: this.roundText,
       scale: { from: 1, to: 1.8 },
@@ -80,7 +114,6 @@ export class HUD {
       ease: "Back.easeOut",
     });
 
-    // 3. Вспышка белого круга вокруг текста (опционально)
     const flash = this.scene.add
       .circle(
         this.roundText.x + this.roundText.width / 2,
@@ -100,7 +133,6 @@ export class HUD {
       onComplete: () => flash.destroy(),
     });
 
-    // 4. Лёгкий shake монет, чтобы подчеркнуть бонус
     this.scene.tweens.add({
       targets: this.coinsText,
       x: { from: this.coinsText.x, to: this.coinsText.x + 3 },
@@ -112,6 +144,8 @@ export class HUD {
   }
 
   destroy(): void {
+    this.scene.tweens.killTweensOf(this.coinContainer);
+    this.scene.tweens.killTweensOf(this.coinsSprite);
     this.coinsText.destroy();
     this.roundText.destroy();
     this.itemChain.destroy();
