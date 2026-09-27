@@ -14,13 +14,16 @@ export class ActionButtons {
   private gameState: GameState;
   private grid: Grid;
 
-  // 🎯 Заменяем отдельные переменные на экземпляр класса
   private fillButton!: FillButton;
-
   private addCoinButton!: AddCoinButton;
+
   private rouletteButton: AlertButton;
   private collectionButton: AlertButton;
   private settingsButton: AlertButton;
+  private achivementsButton: AlertButton;
+  private leaderboardButton: AlertButton;
+
+  private adButton: AlertButton;
 
   constructor(scene: Phaser.Scene, economy: Economy) {
     this.scene = scene;
@@ -37,13 +40,7 @@ export class ActionButtons {
     const height = this.scene.scale.height;
 
     // 🎯 1. Создаем кнопку заполнения через новый класс
-    this.fillButton = new FillButton(
-      this.scene,
-      width - 140,
-      height - 160,
-      this.gameState,
-      this.grid,
-    );
+    this.fillButton = new FillButton(this.scene, 1130, 500, this.gameState, this.grid);
 
     // 🎯 2. Кнопка добавления монет (твоя отладочная/основная кнопка)
     const debugBtnX = width - 160;
@@ -51,7 +48,7 @@ export class ActionButtons {
     this.addCoinButton = new AddCoinButton(this.scene, debugBtnX, debugBtnY, this.gameState);
 
     this.rouletteButton = new AlertButton(this.scene, {
-      x: 300,
+      x: 350,
       y: 660,
       scale: 0.5,
       frameKey: "roulette_btn",
@@ -70,6 +67,39 @@ export class ActionButtons {
       frameKey: "collection_btn",
       onClick: () => {
         this.scene.scene.launch("CollectionScene");
+      },
+    });
+
+    this.achivementsButton = new AlertButton(this.scene, {
+      x: 650,
+      y: 660,
+      scale: 0.5,
+      textureKey: "ui",
+      frameKey: "achivements_btn",
+      onClick: () => {
+        console.log("open achivements");
+      },
+    });
+
+    this.leaderboardButton = new AlertButton(this.scene, {
+      x: 800,
+      y: 660,
+      scale: 0.5,
+      textureKey: "ui",
+      frameKey: "leaderboard_btn",
+      onClick: () => {
+        console.log("open leaderboard");
+      },
+    });
+
+    this.adButton = new AlertButton(this.scene, {
+      x: 1100,
+      y: 660,
+      scale: 0.6,
+      textureKey: "ui",
+      frameKey: "ad_btn",
+      onClick: () => {
+        console.log("open ad");
       },
     });
 
