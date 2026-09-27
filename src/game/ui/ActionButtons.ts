@@ -20,6 +20,7 @@ export class ActionButtons {
   private addCoinButton!: AddCoinButton;
   private rouletteButton: AlertButton;
   private collectionButton: AlertButton;
+  private settingsButton: AlertButton;
 
   constructor(scene: Phaser.Scene, economy: Economy) {
     this.scene = scene;
@@ -69,6 +70,17 @@ export class ActionButtons {
       frameKey: "collection_btn",
       onClick: () => {
         this.scene.scene.launch("CollectionScene");
+      },
+    });
+
+    this.settingsButton = new AlertButton(this.scene, {
+      x: 1220,
+      y: 40,
+      scale: 0.7,
+      textureKey: "ui",
+      frameKey: "settings_btn",
+      onClick: () => {
+        console.log("open settings modal");
       },
     });
   }
