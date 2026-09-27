@@ -47,7 +47,7 @@ export class ActionButtons {
 
     // 🎯 2. Кнопка добавления монет (твоя отладочная/основная кнопка)
     const debugBtnX = width - 160;
-    const debugBtnY = 180;
+    const debugBtnY = 220;
     this.addCoinButton = new AddCoinButton(this.scene, debugBtnX, debugBtnY, this.gameState);
 
     this.rouletteButton = new AlertButton(this.scene, {

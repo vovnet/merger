@@ -22,7 +22,7 @@ export class HUD {
   private create(): void {
     // 💰 Текст монет (слева сверху)
     this.coinsText = this.scene.add
-      .text(20, 20, `💰 0`, {
+      .text(1040, 20, `💰 0`, {
         fontSize: "24px",
         color: "#ffd700",
         fontFamily: "Arial",

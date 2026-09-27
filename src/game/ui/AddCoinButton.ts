@@ -16,6 +16,7 @@ export class AddCoinButton {
   private btnBg!: Phaser.GameObjects.Image;
   private progressFill!: Phaser.GameObjects.Image;
   private plusOneText!: Phaser.GameObjects.BitmapText;
+  private plusOneCoin!: Phaser.GameObjects.Image; // 🎯 Новый спрайт монетки
 
   private currentState: ButtonState = ButtonState.IDLE;
   private readonly COOLDOWN_MS = 5000;
@@ -24,7 +25,7 @@ export class AddCoinButton {
   private realHeight: number = 0;
 
   private audioService: AudioService;
-  private cooldownPulseTween?: Phaser.Tweens.Tween; // 🎯 Ссылка на твин пульсации
+  private cooldownPulseTween?: Phaser.Tweens.Tween;
 
   private readonly START_PERCENT = 0.16;
   private readonly END_PERCENT = 0.76;
@@ -52,13 +53,24 @@ export class AddCoinButton {
       .setVisible(false);
     this.container.add(this.progressFill);
 
+    // 1. Текст "+1"
     this.plusOneText = this.scene.add
-      .bitmapText(0, 0, "russo", "+1", 32)
+      .bitmapText(0, 0, "russo", "+1", 48)
       .setOrigin(0.5)
       .setAlpha(0)
       .setTint(0x00cf0a)
       .setVisible(false);
     this.container.add(this.plusOneText);
+
+    // 🎯 2. Спрайт монетки (располагаем слева от текста)
+    // 💡 Совет: измени значение -25, если монетка слишком далеко или близко к тексту
+    this.plusOneCoin = this.scene.add
+      .image(-25, 0, "ui", "coin")
+      .setOrigin(0.5)
+      .setAlpha(0)
+      .setScale(0.5)
+      .setVisible(false);
+    this.container.add(this.plusOneCoin);
 
     this.btnBg.setInteractive({ useHandCursor: true });
     this.btnBg.on("pointerdown", () => this.handleClick());
@@ -126,14 +138,13 @@ export class AddCoinButton {
       },
     });
 
-    // 🎯 АНИМАЦИЯ ПУЛЬСАЦИИ ВО ВРЕМЯ ЗАПОЛНЕНИЯ
     this.cooldownPulseTween = this.scene.tweens.add({
       targets: this.container,
-      scaleY: 0.9, // Слегка сплющиваем по вертикали (на 5%)
-      duration: 700, // 1 секунда на цикл
-      ease: "Quad.easeInOut", // Плавная синусоида для естественного "дыхания"
-      yoyo: true, // Возвращаемся к scaleY: 1
-      repeat: -1, // 🎯 Бесконечный цикл пока идет кулдаун
+      scaleY: 0.9,
+      duration: 700,
+      ease: "Quad.easeInOut",
+      yoyo: true,
+      repeat: -1,
     });
 
     this.scene.time.delayedCall(this.COOLDOWN_MS, () => {
@@ -144,11 +155,9 @@ export class AddCoinButton {
   }
 
   private onCooldownComplete(): void {
-    // 🎯 ОСТАНАВЛИВАЕМ ПУЛЬСАЦИЮ перед анимацией награды
     this.cooldownPulseTween?.stop();
-    this.container.setScale(1); // Сбрасываем масштаб
+    this.container.setScale(1);
 
-    // Твин отскока (награда)
     this.scene.tweens.add({
       targets: this.container,
       scale: 1.15,
@@ -169,25 +178,33 @@ export class AddCoinButton {
   }
 
   private showPlusOneAnimation(): void {
-    this.plusOneText.setAlpha(0).setScale(0.5).setPosition(0, -20).setVisible(true);
+    // 🎯 Сбрасываем и показываем ОБА элемента перед анимацией
+    this.plusOneText.setAlpha(0).setScale(0.2).setPosition(40, -20).setVisible(true);
+    this.plusOneCoin.setAlpha(0).setScale(0.2).setPosition(-20, -20).setVisible(true);
 
+    // 🎯 Массив целей: анимируем текст и монетку одновременно
+    const rewardTargets = [this.plusOneText, this.plusOneCoin];
+
+    // Фаза 1: Появление и подпрыгивание
     this.scene.tweens.add({
-      targets: this.plusOneText,
+      targets: rewardTargets,
       alpha: { from: 0, to: 1 },
-      scale: { from: 0.5, to: 1.2 },
+      scale: { from: 0.2, to: 1 },
       y: "-=30",
       duration: 500,
       ease: "Back.easeOut",
       onComplete: () => {
+        // Фаза 2: Пауза и исчезновение
         this.scene.time.delayedCall(500, () => {
           this.scene.tweens.add({
-            targets: this.plusOneText,
+            targets: rewardTargets,
             alpha: 0,
-            y: "-=20",
+            y: "-=40", // Двигаем еще выше на 20px
             duration: 300,
             ease: "Power2.in",
             onComplete: () => {
               this.plusOneText.setVisible(false);
+              this.plusOneCoin.setVisible(false); // 🎯 Скрываем монетку
               this.setState(ButtonState.IDLE);
             },
           });
@@ -199,7 +216,8 @@ export class AddCoinButton {
   public reset(): void {
     this.scene.tweens.killTweensOf(this.container);
     this.scene.tweens.killTweensOf(this.plusOneText);
-    this.cooldownPulseTween?.stop(); // 🎯 Останавливаем пульсацию при сбросе
+    this.scene.tweens.killTweensOf(this.plusOneCoin); // 🎯 Очистка твинов монетки
+    this.cooldownPulseTween?.stop();
 
     this.currentState = ButtonState.IDLE;
     this.btnBg.setInteractive({ useHandCursor: true });
@@ -210,12 +228,14 @@ export class AddCoinButton {
     this.progressFill.setCrop(0, this.realHeight - startHeight, this.realWidth, startHeight);
 
     this.plusOneText.setVisible(false);
+    this.plusOneCoin.setVisible(false); // 🎯 Сброс видимости монетки
   }
 
   public destroy(): void {
     this.scene.tweens.killTweensOf(this.container);
     this.scene.tweens.killTweensOf(this.plusOneText);
-    this.cooldownPulseTween?.stop(); // 🎯 Останавливаем пульсацию при уничтожении
+    this.scene.tweens.killTweensOf(this.plusOneCoin); // 🎯 Очистка твинов монетки
+    this.cooldownPulseTween?.stop();
     this.container.destroy();
   }
 }
