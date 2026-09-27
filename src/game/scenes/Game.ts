@@ -13,6 +13,7 @@ import { GameState } from "../core/GameState";
 import { ItemRegistry } from "../core/ItemRegistry";
 import { GridPosition } from "../types/Item";
 import { GrassWind } from "../core/GrassWind";
+import { ParallaxController } from "../core/ParallaxController";
 
 export class Game extends Phaser.Scene {
   private gameState: GameState;
@@ -24,6 +25,8 @@ export class Game extends Phaser.Scene {
   private contractService: ContractService;
   private audioService: AudioService;
   private grassWind: GrassWind;
+
+  private bgParallax: ParallaxController;
 
   constructor() {
     super({ key: "GameScene" });
@@ -94,7 +97,9 @@ export class Game extends Phaser.Scene {
 
     const bg = this.add.image(this.scale.width / 2, this.scale.height / 2, "bg_main").setDepth(-10);
     const coverScale = Math.max(this.scale.width / bg.width, this.scale.height / bg.height);
-    bg.setScale(coverScale);
+    bg.setScale(coverScale + 0.03);
+
+    this.bgParallax = new ParallaxController(this, bg);
 
     this.grassWind = new GrassWind(
       this,
@@ -242,6 +247,9 @@ export class Game extends Phaser.Scene {
   update(time: number, delta: number): void {
     if (this.grassWind) {
       this.grassWind.update(time, delta);
+    }
+    if (this.bgParallax) {
+      this.bgParallax.update();
     }
   }
 
