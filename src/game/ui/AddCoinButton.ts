@@ -16,7 +16,10 @@ export class AddCoinButton {
   private btnBg!: Phaser.GameObjects.Image;
   private progressFill!: Phaser.GameObjects.Image;
   private plusOneText!: Phaser.GameObjects.BitmapText;
-  private plusOneCoin!: Phaser.GameObjects.Image; // 🎯 Новый спрайт монетки
+  private plusOneCoin!: Phaser.GameObjects.Image;
+
+  // 🎯 Эмиттер для мыльных пузырей
+  private bubbleEmitter?: Phaser.GameObjects.Particles.ParticleEmitter;
 
   private currentState: ButtonState = ButtonState.IDLE;
   private readonly COOLDOWN_MS = 5000;
@@ -53,7 +56,6 @@ export class AddCoinButton {
       .setVisible(false);
     this.container.add(this.progressFill);
 
-    // 1. Текст "+1"
     this.plusOneText = this.scene.add
       .bitmapText(0, 0, "russo", "+1", 48)
       .setOrigin(0.5)
@@ -62,8 +64,6 @@ export class AddCoinButton {
       .setVisible(false);
     this.container.add(this.plusOneText);
 
-    // 🎯 2. Спрайт монетки (располагаем слева от текста)
-    // 💡 Совет: измени значение -25, если монетка слишком далеко или близко к тексту
     this.plusOneCoin = this.scene.add
       .image(-25, 0, "ui", "coin")
       .setOrigin(0.5)
@@ -147,6 +147,9 @@ export class AddCoinButton {
       repeat: -1,
     });
 
+    // 🎯 ЗАПУСКАЕМ МЫЛЬНЫЕ ПУЗЫРИ
+    this.startBubbles();
+
     this.scene.time.delayedCall(this.COOLDOWN_MS, () => {
       this.gameState.addCoins(1);
       this.showPlusOneAnimation();
@@ -157,6 +160,9 @@ export class AddCoinButton {
   private onCooldownComplete(): void {
     this.cooldownPulseTween?.stop();
     this.container.setScale(1);
+
+    // 🎯 ОСТАНАВЛИВАЕМ ПУЗЫРИ (они красиво растворятся сами благодаря lifespan)
+    this.stopBubbles();
 
     this.scene.tweens.add({
       targets: this.container,
@@ -178,14 +184,11 @@ export class AddCoinButton {
   }
 
   private showPlusOneAnimation(): void {
-    // 🎯 Сбрасываем и показываем ОБА элемента перед анимацией
     this.plusOneText.setAlpha(0).setScale(0.2).setPosition(40, -20).setVisible(true);
     this.plusOneCoin.setAlpha(0).setScale(0.2).setPosition(-20, -20).setVisible(true);
 
-    // 🎯 Массив целей: анимируем текст и монетку одновременно
     const rewardTargets = [this.plusOneText, this.plusOneCoin];
 
-    // Фаза 1: Появление и подпрыгивание
     this.scene.tweens.add({
       targets: rewardTargets,
       alpha: { from: 0, to: 1 },
@@ -194,17 +197,16 @@ export class AddCoinButton {
       duration: 500,
       ease: "Back.easeOut",
       onComplete: () => {
-        // Фаза 2: Пауза и исчезновение
         this.scene.time.delayedCall(500, () => {
           this.scene.tweens.add({
             targets: rewardTargets,
             alpha: 0,
-            y: "-=40", // Двигаем еще выше на 20px
+            y: "-=40",
             duration: 300,
             ease: "Power2.in",
             onComplete: () => {
               this.plusOneText.setVisible(false);
-              this.plusOneCoin.setVisible(false); // 🎯 Скрываем монетку
+              this.plusOneCoin.setVisible(false);
               this.setState(ButtonState.IDLE);
             },
           });
@@ -213,11 +215,62 @@ export class AddCoinButton {
     });
   }
 
+  // 🎯 МЕТОДЫ УПРАВЛЕНИЯ ЭМИТТЕРОМ
+  private startBubbles(): void {
+    if (!this.bubbleEmitter) {
+      this.bubbleEmitter = this.scene.add.particles(0, 22, "fireworks", {
+        frame: "confetti_2",
+
+        // 🎯 1. Широкая зона спавна (от -70 до +70 пикселей по горизонтали)
+        // Используем фиксированные числа для надежности, они отлично работают внутри контейнера
+        x: { min: -70, max: 70 },
+        y: { min: -40, max: 40 },
+
+        // 🎯 2. Широкий разброс при движении (КЛЮЧЕВОЕ ИЗМЕНЕНИЕ)
+        // -90° это строго вверх. -140° это влево-вверх, -40° это вправо-вверх.
+        // Теперь пузыри будут реально разлетаться веером!
+        angle: { min: -150, max: -20 },
+        speed: { min: 40, max: 90 }, // Чуть увеличили скорость, чтобы разлет был заметнее
+
+        // 🎯 3. Дополнительные улучшения для эффекта "мыльного пузыря"
+        scale: { start: 0.3, end: 0.7 }, // Пузырь заметно растет, пока летит
+        alpha: { start: 0.8, end: 0 }, // Плавное растворение
+        lifespan: { min: 1500, max: 2500 }, // Живут дольше, чтобы успеть разлететься
+        frequency: 100, // Чуть чаще (каждые 100 мс)
+        quantity: 1,
+        tint: 0xff4dff,
+        blendMode: "ADD",
+        emitting: false,
+
+        // 🎯 4. Вращение! Это критически важно для спрайтов типа "confetti" или "star",
+        // чтобы они переливались и выглядели как объемные пузыри, а не плоские наклейки.
+        rotate: { min: 0, max: 360, ease: "Linear" },
+      });
+
+      this.bubbleEmitter.startFollow(this.container);
+      this.bubbleEmitter.setDepth(this.container.depth + 1);
+    }
+
+    this.bubbleEmitter.start();
+  }
+
+  private stopBubbles(): void {
+    if (this.bubbleEmitter) {
+      this.bubbleEmitter.stop();
+      // Мы используем stop(), а не destroy(), чтобы уже вылетевшие пузыри
+      // красиво завершили свой жизненный цикл (растворились), а не исчезли мгновенно.
+    }
+  }
+
   public reset(): void {
     this.scene.tweens.killTweensOf(this.container);
     this.scene.tweens.killTweensOf(this.plusOneText);
-    this.scene.tweens.killTweensOf(this.plusOneCoin); // 🎯 Очистка твинов монетки
+    this.scene.tweens.killTweensOf(this.plusOneCoin);
     this.cooldownPulseTween?.stop();
+
+    // 🎯 Полное уничтожение эмиттера при сбросе для предотвращения утечек
+    this.bubbleEmitter?.destroy();
+    this.bubbleEmitter = undefined;
 
     this.currentState = ButtonState.IDLE;
     this.btnBg.setInteractive({ useHandCursor: true });
@@ -228,14 +281,19 @@ export class AddCoinButton {
     this.progressFill.setCrop(0, this.realHeight - startHeight, this.realWidth, startHeight);
 
     this.plusOneText.setVisible(false);
-    this.plusOneCoin.setVisible(false); // 🎯 Сброс видимости монетки
+    this.plusOneCoin.setVisible(false);
   }
 
   public destroy(): void {
     this.scene.tweens.killTweensOf(this.container);
     this.scene.tweens.killTweensOf(this.plusOneText);
-    this.scene.tweens.killTweensOf(this.plusOneCoin); // 🎯 Очистка твинов монетки
+    this.scene.tweens.killTweensOf(this.plusOneCoin);
     this.cooldownPulseTween?.stop();
+
+    // 🎯 Гарантированная очистка эмиттера
+    this.bubbleEmitter?.destroy();
+    this.bubbleEmitter = undefined;
+
     this.container.destroy();
   }
 }
