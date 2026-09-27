@@ -359,11 +359,28 @@ export class CollectionScene extends Phaser.Scene {
     const screenWidth = this.scale.width;
     const screenHeight = this.scale.height;
 
-    const shape = this.make.graphics();
-    shape.fillStyle(0xffffff);
-    shape.fillRect(0, this.headerHeight, screenWidth, screenHeight - this.headerHeight);
-    this.gridContainer.setMask(shape.createGeometryMask());
+    // 1. Создаем форму маски (Graphics объект)
+    // Используем this.add.graphics, чтобы объект корректно инициализировался в сцене
+    const maskShape = this.add.graphics();
+    maskShape.fillStyle(0xffffff); // Цвет не важен, важна полная непрозрачность (alpha = 1)
+    maskShape.fillRect(0, this.headerHeight, screenWidth, screenHeight - this.headerHeight);
 
+    // 🎯 Делаем саму форму невидимой. Нам нужна только её геометрия для обрезки,
+    // рисовать белый прямоугольник на экране не нужно.
+    maskShape.setVisible(false);
+
+    this.gridContainer.enableFilters();
+
+    // 2. 🎯 ПРИМЕНЯЕМ МАСКУ ЧЕРЕЗ ФИЛЬТР (Новый способ для WebGL)
+    if (this.gridContainer.filters) {
+      // internal.addMask применяет маску в локальных координатах контейнера
+      this.gridContainer.filters.internal.addMask(maskShape);
+    } else {
+      // Фоллбэк на случай, если игра вдруг запустится в Canvas-режиме (редкость)
+      // this.gridContainer.setMask(new Phaser.Display.Masks.GeometryMask(this, maskShape));
+    }
+
+    // 3. Логика скроллинга (остается без изменений)
     this.input.on("wheel", (_p: any, _x: any, _y: any, deltaY: number) => {
       this.setScrollY(this.scrollY - deltaY * 0.5);
     });
@@ -371,6 +388,7 @@ export class CollectionScene extends Phaser.Scene {
     this.input.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
       this.lastPointerY = pointer.y;
     });
+
     this.input.on("pointermove", (pointer: Phaser.Input.Pointer) => {
       if (!pointer.isDown) return;
       const dy = pointer.y - this.lastPointerY;
