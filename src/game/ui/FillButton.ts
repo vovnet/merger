@@ -106,12 +106,12 @@ export class FillButton {
 
       // Используем Alpha для чистого эффекта неактивности (вместо грязного tint)
       this.bg.clearTint();
-      this.bg.setAlpha(0.4);
+      this.bg.setAlpha(0.7);
 
       this.item.clearTint();
-      this.item.setAlpha(0.4);
+      this.item.setAlpha(0.7);
 
-      this.text.setAlpha(0.4);
+      this.text.setAlpha(0.8);
       this.text.setTint(0xffffff);
     } else {
       this.bg.setInteractive({ useHandCursor: true });
