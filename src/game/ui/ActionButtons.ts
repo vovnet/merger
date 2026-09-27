@@ -76,6 +76,7 @@ export class ActionButtons {
       scale: 0.5,
       textureKey: "ui",
       frameKey: "achivements_btn",
+      disabled: true,
       onClick: () => {
         console.log("open achivements");
       },

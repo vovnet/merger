@@ -5,6 +5,7 @@ export interface AlertButtonConfig {
   y?: number;
   scale?: number;
   alert?: boolean;
+  disabled?: boolean; // 🎯 Новый параметр для начального состояния
   onClick?: () => void;
   textureKey: string;
   frameKey: string;
@@ -19,8 +20,8 @@ export class AlertButton {
   private alertIndicator: Phaser.GameObjects.Container | null;
   private alertPulseTween?: Phaser.Tweens.Tween;
   private isAnimating: boolean = false;
+  private isDisabled: boolean = false; // 🎯 Флаг состояния disabled
 
-  // Размеры алерта теперь абсолютные и не зависят от масштаба кнопки
   private readonly ALERT_SIZE = 24;
   private readonly ALERT_OFFSET = 8;
 
@@ -31,43 +32,48 @@ export class AlertButton {
   }
 
   private create(config: AlertButtonConfig): void {
-    // 1. Безопасные значения по умолчанию
     const x = config.x ?? 0;
     const y = config.y ?? 0;
     const scale = config.scale ?? 1;
     const hasAlert = config.alert ?? false;
+    const isDisabled = config.disabled ?? false; // 🎯 Читаем начальное состояние
 
-    // 2. Контейнер (всегда в масштабе 1, чтобы не влиять на алерт)
     this.container = new Phaser.GameObjects.Container(this.getScene(), x, y);
     this.addToParent(this.container);
 
-    // 3. Основной спрайт кнопки (масштабируем ТОЛЬКО его)
     this.btnSprite = this.scene.add.image(0, 0, config.textureKey, config.frameKey);
     this.btnSprite.setOrigin(0.5);
-    this.btnSprite.setScale(scale); // 🎯 Масштаб применяется здесь
-    this.btnSprite.setInteractive({ useHandCursor: true });
+    this.btnSprite.setScale(scale);
+
+    // 🎯 Применяем начальное состояние disabled, если оно передано
+    if (isDisabled) {
+      this.setDisabled(true);
+    } else {
+      this.btnSprite.setInteractive({ useHandCursor: true });
+    }
+
     this.container.add(this.btnSprite);
 
-    // 4. Обработчик клика с анимацией (анимируем только спрайт)
     this.btnSprite.on("pointerdown", () => {
-      if (this.isAnimating) return;
+      // 🎯 Двойная защита: не реагируем, если анимируется ИЛИ если disabled
+      if (this.isAnimating || this.isDisabled) return;
+
       this.isAnimating = true;
 
       this.scene.tweens.add({
-        targets: this.btnSprite, // 🎯 Цель анимации - спрайт, а не контейнер
+        targets: this.btnSprite,
         scale: scale * 0.9,
         duration: 100,
         ease: "Quad.easeOut",
         yoyo: true,
         onComplete: () => {
-          this.btnSprite.setScale(scale); // 🎯 Возвращаем исходный масштаб спрайту
+          this.btnSprite.setScale(scale);
           this.isAnimating = false;
-          config.onClick?.(); // Безопасный вызов
+          config.onClick?.();
         },
       });
     });
 
-    // 5. Индикатор алерта
     if (hasAlert) {
       this.createAlertIndicator();
     } else {
@@ -88,11 +94,8 @@ export class AlertButton {
   }
 
   private createAlertIndicator(): void {
-    // Контейнер для алерта (будет добавлен в главный контейнер, масштаб которого = 1)
     this.alertIndicator = this.scene.add.container(0, 0);
 
-    // 🎯 displayWidth и displayHeight уже учитывают scale самого спрайта!
-    // Поэтому мы можем использовать их для точного позиционирования в углу.
     const btnWidth = this.btnSprite.displayWidth;
     const btnHeight = this.btnSprite.displayHeight;
 
@@ -101,15 +104,13 @@ export class AlertButton {
 
     this.alertIndicator.setPosition(offsetX, offsetY);
 
-    // Красный кружок (абсолютный размер, не масштабируется)
     const circle = this.scene.add.graphics();
     circle.fillStyle(0xff3333, 1);
     circle.fillCircle(0, 0, this.ALERT_SIZE / 2);
     this.alertIndicator.add(circle);
 
-    // Текст "!" (абсолютный размер, не масштабируется)
     const exclamation = this.scene.add.text(0, 0, "!", {
-      fontSize: "16px", // Фиксированный размер
+      fontSize: "16px",
       color: "#ffffff",
       fontFamily: "Arial",
       fontStyle: "bold",
@@ -119,7 +120,6 @@ export class AlertButton {
 
     this.container.add(this.alertIndicator);
 
-    // Пульсация алерта (масштабируется только сам индикатор от 1 до 1.2)
     this.alertPulseTween = this.scene.tweens.add({
       targets: this.alertIndicator,
       scale: { from: 1, to: 1.2 },
@@ -128,6 +128,25 @@ export class AlertButton {
       yoyo: true,
       repeat: -1,
     });
+  }
+
+  // 🎯 НОВЫЙ ПУБЛИЧНЫЙ МЕТОД: Переключение состояния disabled
+  public setDisabled(disabled: boolean): void {
+    if (this.isDisabled === disabled) return; // Если состояние не меняется, ничего не делаем
+
+    this.isDisabled = disabled;
+
+    if (disabled) {
+      // Делаем кнопку полупрозрачной
+      this.btnSprite.setAlpha(0.6);
+      // Отключаем возможность кликать и наводить мышь
+      this.btnSprite.disableInteractive();
+    } else {
+      // Возвращаем полную непрозрачность
+      this.btnSprite.setAlpha(1);
+      // Возвращаем интерактивность
+      this.btnSprite.setInteractive({ useHandCursor: true });
+    }
   }
 
   // Публичный метод для переключения алерта в рантайме
@@ -143,7 +162,7 @@ export class AlertButton {
 
   public destroy(): void {
     this.alertPulseTween?.stop();
-    this.scene.tweens.killTweensOf(this.btnSprite); // Чистим твины спрайта
+    this.scene.tweens.killTweensOf(this.btnSprite);
     this.container.destroy();
   }
 }
