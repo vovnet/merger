@@ -119,7 +119,7 @@ export class ActionButtons {
     this.settingsButton = new AlertButton(this.scene, {
       x: 1220,
       y: 40,
-      // scale: 0.7,
+      scale: 0.7,
       textureKey: "ui",
       frameKey: "settings_btn",
       onClick: () => {

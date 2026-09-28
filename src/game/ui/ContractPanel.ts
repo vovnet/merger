@@ -13,10 +13,16 @@ export class ContractPanel {
   private taskCards: Phaser.GameObjects.Container[] = [];
   private bgGraphics!: Phaser.GameObjects.Graphics;
 
-  // Эти константы теперь отвечают только за РАССТОЯНИЕ между карточками
+  // 🎯 НОВЫЕ ПОЛЯ для футера с прогрессом и наградой
+  private footerContainer!: Phaser.GameObjects.Container;
+  private overallProgressText!: Phaser.GameObjects.BitmapText;
+  private rewardContainer!: Phaser.GameObjects.Container;
+  private completedText!: Phaser.GameObjects.BitmapText;
+
   private readonly CARD_WIDTH = 120;
   private readonly CARD_HEIGHT = 140;
   private readonly CARD_GAP = 30;
+  private readonly FOOTER_OFFSET = 50; // Отступ от последней карточки до футера
   private readonly PANEL_X = 80;
   private readonly PANEL_Y = 150;
 
@@ -26,6 +32,7 @@ export class ContractPanel {
     this.container = scene.add.container(this.PANEL_X, this.PANEL_Y).setDepth(150);
 
     this.createVisuals();
+    this.createFooter(); // 🎯 Создаем футер один раз
     this.bindEvents();
 
     const existingContract = this.contractService.getActiveContract();
@@ -44,6 +51,41 @@ export class ContractPanel {
     this.container.add(this.bgGraphics);
   }
 
+  // 🎯 НОВЫЙ МЕТОД: Создание футера с прогрессом и наградой
+  private createFooter(): void {
+    this.footerContainer = this.scene.add.container(0, 0);
+
+    // 1. Общий прогресс (например, "2/3")
+    this.overallProgressText = this.scene.add
+      .bitmapText(0, 0, "russo", "0/0", 26)
+      .setOrigin(0.5)
+      .setTint(0xffd700); // Золотой цвет для акцента
+    this.footerContainer.add(this.overallProgressText);
+
+    // 2. Контейнер награды: спрайт "ticket" + текст "+1"
+    this.rewardContainer = this.scene.add.container(0, 35);
+
+    const ticketSprite = this.scene.add.image(-20, 6, "ui", "ticket").setScale(0.6);
+    ticketSprite.setOrigin(0.5);
+
+    const rewardText = this.scene.add
+      .bitmapText(5, 0, "russo", "+1", 24)
+      .setOrigin(0, 0.5)
+      .setTint(0xffffff);
+
+    this.rewardContainer.add([ticketSprite, rewardText]);
+    this.footerContainer.add(this.rewardContainer);
+
+    this.completedText = this.scene.add
+      .bitmapText(0, 15, "russo", "ВЫПОЛНЕНО", 18)
+      .setOrigin(0.5)
+      .setTint(0x4caf50) // Зеленый цвет успеха
+      .setVisible(false);
+    this.footerContainer.add(this.completedText);
+
+    this.container.add(this.footerContainer);
+  }
+
   private bindEvents(): void {
     EventBus.on(GameEvents.CONTRACT_CREATED, this.renderContract, this);
     EventBus.on(GameEvents.CONTRACT_UPDATED, this.updateProgress, this);
@@ -55,6 +97,7 @@ export class ContractPanel {
     this.container.setVisible(true);
 
     this.renderTasks(contract.tasks);
+    this.updateFooter(contract.tasks); // 🎯 Обновляем футер
     this.drawBackground(contract.tasks.length);
 
     this.container.setScale(0);
@@ -78,11 +121,9 @@ export class ContractPanel {
   }
 
   private createTaskCard(task: ContractTask, index: number): Phaser.GameObjects.Container {
-    // 🎯 1. УБРАЛИ card.setScale(0.5). Теперь база = 1.
     const card = this.scene.add.container(0, index * (this.CARD_HEIGHT + this.CARD_GAP));
 
     const frameKey = task.isLocked ? "contract_item" : "open_contract_item";
-
     const cardSprite = this.scene.add.image(0, 0, "ui", frameKey).setScale(0.8);
     card.add(cardSprite);
 
@@ -93,9 +134,6 @@ export class ContractPanel {
       const frameName = ItemRegistry.getFrameName(task.targetLevel);
       const itemSprite = this.scene.add.image(0, -15, "squishes", frameName);
       const maxDim = Math.max(itemSprite.width, itemSprite.height);
-
-      // 🎯 3. Размер предмета теперь честный.
-      // Он будет визуально занимать ~90px на экране. Никаких умножений на 2!
       const scale = (90 / maxDim) * 0.9;
       itemSprite.setScale(scale);
       card.add(itemSprite);
@@ -121,45 +159,75 @@ export class ContractPanel {
       text = `${task.currentCount} / ${task.requiredCount}`;
     }
 
-    // 🎯 4. Размер шрифта теперь честный. 20px — это отличный, читаемый размер.
     return this.scene.add.bitmapText(0, 40, "russo", text, 20).setOrigin(0.5);
+  }
+
+  // 🎯 НОВЫЙ МЕТОД: Обновление футера в зависимости от прогресса
+  private updateFooter(tasks: ContractTask[]): void {
+    const completedCount = tasks.filter((t) => t.isCompleted).length;
+    const totalCount = tasks.length;
+    const isFullyCompleted = completedCount === totalCount && totalCount > 0;
+
+    // Позиционируем футер под последней карточкой
+    // Учитываем, что карточки визуально меньше из-за scale(0.8)
+    const visualCardHeight = this.CARD_HEIGHT * 0.8;
+    const lastCardY = (totalCount - 1) * (this.CARD_HEIGHT + this.CARD_GAP);
+    const footerY = lastCardY + visualCardHeight / 2 + this.FOOTER_OFFSET;
+    this.footerContainer.y = footerY;
+
+    if (isFullyCompleted) {
+      // 🎯 Все задачи выполнены — показываем "Награда получена"
+      this.overallProgressText.setVisible(false);
+      this.rewardContainer.setVisible(false);
+      this.completedText.setVisible(true);
+
+      // Небольшая анимация появления
+      this.completedText.setScale(0);
+      this.scene.tweens.add({
+        targets: this.completedText,
+        scale: 1,
+        duration: 300,
+        ease: "Back.easeOut",
+      });
+    } else {
+      // 🎯 Есть невыполненные задачи — показываем прогресс и награду
+      this.overallProgressText.setVisible(true);
+      this.rewardContainer.setVisible(true);
+      this.completedText.setVisible(false);
+
+      this.overallProgressText.setText(`${completedCount}/${totalCount}`);
+    }
   }
 
   private animateCardUnlock(card: Phaser.GameObjects.Container, task: ContractTask): void {
     const cardSprite = card.getData("sprite") as Phaser.GameObjects.Image;
 
-    // Фаза 1: Сжимаем по горизонтали до 0 (переворот)
     this.scene.tweens.add({
       targets: card,
       scaleX: 0,
       duration: 150,
       ease: "Quad.easeIn",
       onComplete: () => {
-        // Фаза 2: Меняем визуал в момент "невидимости"
         cardSprite.setTexture("ui", "open_contract_item");
 
-        // Создаем предмет
         const frameName = ItemRegistry.getFrameName(task.targetLevel);
         const itemSprite = this.scene.add.image(0, -15, "squishes", frameName);
         const maxDim = Math.max(itemSprite.width, itemSprite.height);
-        const scale = (90 / maxDim) * 0.9; // Честный размер, без компенсаций
+        const scale = (90 / maxDim) * 0.9;
         itemSprite.setScale(scale);
         card.add(itemSprite);
         card.setData("itemSprite", itemSprite);
 
-        // Создаем текст
         const progressText = this.createProgressText(task);
         card.add(progressText);
         card.setData("progressText", progressText);
 
-        // Фаза 3: Разворачиваем карточку обратно
         this.scene.tweens.add({
           targets: card,
-          scaleX: 1, // Возвращаем к нормальному состоянию (1)
+          scaleX: 1,
           duration: 150,
           ease: "Quad.easeOut",
           onComplete: () => {
-            // 🎯 5. ИСПРАВЛЕН "ПОДСКОК": теперь от 1 до 1.05 (а не от 0.5)
             this.scene.tweens.add({
               targets: card,
               scaleY: { from: 1, to: 1.05 },
@@ -179,8 +247,10 @@ export class ContractPanel {
     if (contract.tasks.length !== this.taskCards.length) {
       this.renderTasks(contract.tasks);
       this.drawBackground(contract.tasks.length);
-      return;
     }
+
+    // 🎯 ОБНОВЛЯЕМ ФУТЕР при каждом изменении прогресса
+    this.updateFooter(contract.tasks);
 
     contract.tasks.forEach((task, index) => {
       const card = this.taskCards[index];
@@ -192,11 +262,10 @@ export class ContractPanel {
         this.animateCardUnlock(card, task);
         card.setData("isLocked", false);
       } else if (!wasLocked && !task.isLocked) {
-        // 🎯 Исправлен тип каста на BitmapText для строгости TypeScript
         const progressText = card.getData("progressText") as Phaser.GameObjects.BitmapText;
         if (progressText) {
           if (task.isCompleted) {
-            progressText.setText("✅ ГОТОВО");
+            progressText.setText("ГОТОВО");
             progressText.setTint(0x4caf50);
           } else {
             progressText.setText(`${task.currentCount} / ${task.requiredCount}`);
@@ -220,11 +289,15 @@ export class ContractPanel {
   private drawBackground(taskCount: number): void {
     this.bgGraphics.clear();
 
-    const totalHeight = taskCount * (this.CARD_HEIGHT + this.CARD_GAP) - this.CARD_GAP;
-    const panelWidth = this.CARD_WIDTH + 40;
-    const panelHeight = totalHeight + 120;
+    // 🎯 Увеличиваем высоту фона, чтобы учесть футер
+    const cardsHeight = taskCount * (this.CARD_HEIGHT + this.CARD_GAP);
+    const footerSpace = 80; // Место для футера
+    const totalHeight = cardsHeight + footerSpace;
 
-    this.bgGraphics.fillStyle(0x2a2a3e, 0.85);
+    const panelWidth = this.CARD_WIDTH + 40;
+    const panelHeight = totalHeight + 40;
+
+    this.bgGraphics.fillStyle(0x0060b9, 0.85);
     this.bgGraphics.fillRoundedRect(-panelWidth / 2, -100, panelWidth, panelHeight, 20);
     this.bgGraphics.lineStyle(4, 0xffffff, 1);
     this.bgGraphics.strokeRoundedRect(-panelWidth / 2, -100, panelWidth, panelHeight, 20);
