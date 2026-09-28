@@ -93,12 +93,24 @@ export class ActionButtons {
       },
     });
 
+    const buttonContent = this.scene.add.container(0, 0);
+
+    const coinIcon = this.scene.add.image(20, 0, "ui", "coin").setScale(1.8).setRotation(-0.3);
+
+    const labelText = this.scene.add
+      .bitmapText(10, 0, "russo", "x30", 64)
+      .setOrigin(0, 0.5)
+      .setTint(0xffd700);
+
+    buttonContent.add([coinIcon, labelText]);
+
     this.adButton = new AlertButton(this.scene, {
       x: 1100,
       y: 660,
       scale: 0.6,
       textureKey: "ui",
       frameKey: "ad_btn",
+      contentContainer: buttonContent,
       onClick: () => {
         console.log("open ad");
       },

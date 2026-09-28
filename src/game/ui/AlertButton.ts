@@ -5,11 +5,12 @@ export interface AlertButtonConfig {
   y?: number;
   scale?: number;
   alert?: boolean;
-  disabled?: boolean; // 🎯 Новый параметр для начального состояния
+  disabled?: boolean;
   onClick?: () => void;
   textureKey: string;
   frameKey: string;
   parent?: Phaser.Scene | Phaser.GameObjects.Container;
+  contentContainer?: Phaser.GameObjects.Container; // 🎯 Опциональный контент
 }
 
 export class AlertButton {
@@ -20,7 +21,7 @@ export class AlertButton {
   private alertIndicator: Phaser.GameObjects.Container | null;
   private alertPulseTween?: Phaser.Tweens.Tween;
   private isAnimating: boolean = false;
-  private isDisabled: boolean = false; // 🎯 Флаг состояния disabled
+  private isDisabled: boolean = false;
 
   private readonly ALERT_SIZE = 24;
   private readonly ALERT_OFFSET = 8;
@@ -36,44 +37,59 @@ export class AlertButton {
     const y = config.y ?? 0;
     const scale = config.scale ?? 1;
     const hasAlert = config.alert ?? false;
-    const isDisabled = config.disabled ?? false; // 🎯 Читаем начальное состояние
+    const isDisabled = config.disabled ?? false;
 
+    // 1. ГЛАВНЫЙ КОНТЕЙНЕР (Точка отсчета 0,0)
     this.container = new Phaser.GameObjects.Container(this.getScene(), x, y);
     this.addToParent(this.container);
 
+    // Устанавливаем начальный масштаб всему контейнеру сразу
+    this.container.setScale(scale);
+
+    // 2. ФОН КНОПКИ
     this.btnSprite = this.scene.add.image(0, 0, config.textureKey, config.frameKey);
     this.btnSprite.setOrigin(0.5);
-    this.btnSprite.setScale(scale);
+    this.container.add(this.btnSprite);
 
-    // 🎯 Применяем начальное состояние disabled, если оно передано
+    // 3. ПОЛЬЗОВАТЕЛЬСКИЙ КОНТЕНТ
+    // 💡 ВАЖНО: Пользователь должен создавать этот контейнер так,
+    // чтобы его визуальный центр находился в координатах (0, 0).
+    if (config.contentContainer) {
+      // Мы просто добавляем его в главный контейнер.
+      // Никаких setOrigin или setScale вызывать не нужно!
+      this.container.add(config.contentContainer);
+    }
+
+    // 4. ИНТЕРАКТИВНОСТЬ
     if (isDisabled) {
       this.setDisabled(true);
     } else {
       this.btnSprite.setInteractive({ useHandCursor: true });
     }
 
-    this.container.add(this.btnSprite);
-
+    // 5. ОБРАБОТЧИК КЛИКА
     this.btnSprite.on("pointerdown", () => {
-      // 🎯 Двойная защита: не реагируем, если анимируется ИЛИ если disabled
       if (this.isAnimating || this.isDisabled) return;
 
       this.isAnimating = true;
 
+      // 🎯 АНИМИРУЕМ ВЕСЬ КОНТЕЙНЕР, а не только фон!
+      // Так и фон, и текст, и иконки сожмутся синхронно
       this.scene.tweens.add({
-        targets: this.btnSprite,
-        scale: scale * 0.9,
+        targets: this.container,
+        scale: scale * 0.9, // Сжимаем весь контейнер
         duration: 100,
         ease: "Quad.easeOut",
         yoyo: true,
         onComplete: () => {
-          this.btnSprite.setScale(scale);
+          this.container.setScale(scale); // Гарантированный сброс
           this.isAnimating = false;
           config.onClick?.();
         },
       });
     });
 
+    // 6. ИНДИКАТОР АЛЕРТА
     if (hasAlert) {
       this.createAlertIndicator();
     } else {
@@ -130,26 +146,23 @@ export class AlertButton {
     });
   }
 
-  // 🎯 НОВЫЙ ПУБЛИЧНЫЙ МЕТОД: Переключение состояния disabled
   public setDisabled(disabled: boolean): void {
-    if (this.isDisabled === disabled) return; // Если состояние не меняется, ничего не делаем
+    if (this.isDisabled === disabled) return;
 
     this.isDisabled = disabled;
+    const targetAlpha = disabled ? 0.6 : 1;
+
+    // 🎯 Меняем прозрачность ВСЕГО контейнера.
+    // В Phaser 3 установка alpha контейнеру автоматически применяет её ко всем детям.
+    this.container.setAlpha(targetAlpha);
 
     if (disabled) {
-      // Делаем кнопку полупрозрачной
-      this.btnSprite.setAlpha(0.6);
-      // Отключаем возможность кликать и наводить мышь
       this.btnSprite.disableInteractive();
     } else {
-      // Возвращаем полную непрозрачность
-      this.btnSprite.setAlpha(1);
-      // Возвращаем интерактивность
       this.btnSprite.setInteractive({ useHandCursor: true });
     }
   }
 
-  // Публичный метод для переключения алерта в рантайме
   public setAlert(alert: boolean): void {
     if (alert && !this.alertIndicator) {
       this.createAlertIndicator();
@@ -162,7 +175,7 @@ export class AlertButton {
 
   public destroy(): void {
     this.alertPulseTween?.stop();
-    this.scene.tweens.killTweensOf(this.btnSprite);
-    this.container.destroy();
+    this.scene.tweens.killTweensOf(this.container);
+    this.container.destroy(); // Уничтожит всё содержимое рекурсивно
   }
 }
