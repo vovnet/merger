@@ -158,7 +158,11 @@ export class GameState {
 
   public upgradeRandomRareSquish(): { index: number } {
     const index = Phaser.Math.Between(0, this.RARE_SQUISH_COUNT - 1);
-    this.discoverRareSquish(index);
+    const currentRank = this.data.rareSquishRanks[index];
+    if (currentRank <= 0) {
+      this.discoverRareSquish(index);
+    }
+    this.setRareSquishRank(index, currentRank + 1);
     return { index };
   }
 
