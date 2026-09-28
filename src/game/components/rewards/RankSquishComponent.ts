@@ -3,12 +3,16 @@ import * as Phaser from "phaser";
 import { IRewardComponent } from "./IRewardComponent";
 import { ItemRegistry } from "../../core/ItemRegistry";
 import { AudioService } from "../../core/AudioService";
+import { RewardVFX } from "../../utils/RewardVFX";
 
 export class RankSquishComponent implements IRewardComponent {
   private scene: Phaser.Scene;
   private rank: number;
   private level: number;
   private audioService: AudioService;
+
+  private x: number;
+  private y: number;
 
   private rankIcon!: Phaser.GameObjects.Image;
   private rankText!: Phaser.GameObjects.Text;
@@ -24,11 +28,11 @@ export class RankSquishComponent implements IRewardComponent {
 
   // 🎯 1. Сначала мы ТОЛЬКО создаем объекты и расставляем их (без анимаций)
   public build(centerX: number, centerY: number): void {
+    this.x = centerX;
+    this.y = centerY;
     const iconFrame = `rank${Math.min(this.rank, this.MAX_RANK_ICONS)}`;
     this.rankIcon = this.scene.add.image(centerX, centerY - 240, "ranks", iconFrame).setOrigin(0.5);
 
-    const iconTargetSize = 100;
-    const iconScale = iconTargetSize / Math.max(this.rankIcon.width, this.rankIcon.height);
     this.rankIcon.setScale(0); // Начальное состояние для анимации
 
     this.rankText = this.scene.add
@@ -51,7 +55,9 @@ export class RankSquishComponent implements IRewardComponent {
   }
 
   // 🎯 2. Потом запускаем анимацию появления (объекты уже существуют)
-  public playAppearAnimation(): void {
+  public playAppearAnimation(): number {
+    RewardVFX.spawnFirework(this.scene, this.x, this.y + 20);
+
     const iconScale = 100 / Math.max(this.rankIcon.width, this.rankIcon.height);
 
     this.scene.tweens.add({
@@ -93,30 +99,23 @@ export class RankSquishComponent implements IRewardComponent {
           scale: targetScale,
           duration: 200,
           ease: "Power2.out",
+          onComplete: () => {
+            this.scene.tweens.add({
+              targets: this.squish,
+              angle: { from: -3, to: 3 },
+              duration: 1500,
+              yoyo: true,
+              repeat: -1,
+              ease: "Sine.easeInOut",
+            });
+          },
         }),
     });
+
+    return 1000;
   }
 
-  public playIdleAnimation(): void {
-    this.scene.tweens.add({
-      targets: this.rankIcon,
-      angle: { from: -6, to: 6 },
-      duration: 1200,
-      yoyo: true,
-      repeat: -1,
-      ease: "Sine.easeInOut",
-      delay: 500,
-    });
-    this.scene.tweens.add({
-      targets: this.squish,
-      angle: { from: -3, to: 3 },
-      duration: 1500,
-      yoyo: true,
-      repeat: -1,
-      ease: "Sine.easeInOut",
-      delay: 900,
-    });
-  }
+  public playIdleAnimation(): void {}
 
   public destroy(): void {
     this.rankIcon.destroy();

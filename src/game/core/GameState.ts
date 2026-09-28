@@ -23,7 +23,7 @@ export class GameState {
     this.data = {
       coins: 500,
       level: 1,
-      spins: 1,
+      spins: 100,
       round: 1,
       totalMerges: 0,
       highestLevel: 1,

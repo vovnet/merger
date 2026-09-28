@@ -1,6 +1,6 @@
 export interface IRewardComponent {
   build(centerX: number, centerY: number): void;
-  playAppearAnimation(): void;
+  playAppearAnimation(): number;
   playIdleAnimation(): void;
   destroy(): void;
 }

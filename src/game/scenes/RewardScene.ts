@@ -4,6 +4,8 @@ import { IRewardComponent } from "../components/rewards/IRewardComponent";
 import { RankSquishComponent } from "../components/rewards/RankSquishComponent";
 import { RewardVFX } from "../utils/RewardVFX";
 import { RewardData } from "../types/Rewards";
+import { CoinRewardComponent } from "../components/rewards/CoinRewardComponent";
+import { RareRewardComponent } from "../components/rewards/RareRewardComponent";
 
 export class RewardScene extends Phaser.Scene {
   private rewardData!: RewardData;
@@ -11,15 +13,17 @@ export class RewardScene extends Phaser.Scene {
 
   private canClose = false;
   private isClosing = false;
+  private onComplete?: () => void;
 
   constructor() {
     super({ key: "RewardScene" });
   }
 
-  init(data: { reward: RewardData }): void {
+  init(data: { reward: RewardData; onComplete?: () => void }): void {
     this.rewardData = data.reward;
     this.canClose = false;
     this.isClosing = false;
+    this.onComplete = data.onComplete;
   }
 
   create(): void {
@@ -40,20 +44,18 @@ export class RewardScene extends Phaser.Scene {
       if (this.isClosing || !this.canClose) return;
       this.isClosing = true;
       this.cameras.main.fadeOut(200, 0, 0, 0);
-      this.cameras.main.once("camerafadeoutcomplete", () => this.scene.stop());
+      this.cameras.main.once("camerafadeoutcomplete", () => {
+        this.scene.stop();
+        this.onComplete?.();
+      });
     };
 
     overlay.on("pointerdown", closeScene);
 
-    // 2. 🎯 ИСПРАВЛЕНИЕ: Создаем и собираем компонент
     this.rewardComponent = this.createRewardComponent(this.rewardData);
-    this.rewardComponent.build(centerX, centerY); // <-- Сначала строим UI
+    this.rewardComponent.build(centerX, centerY);
 
-    // 3. 🎯 Только теперь запускаем анимацию
-    this.rewardComponent.playAppearAnimation();
-
-    // 4. VFX (Фейерверк)
-    RewardVFX.spawnFirework(this, centerX, centerY + 20);
+    const delayToIdleAmination = this.rewardComponent.playAppearAnimation();
 
     // 5. Подсказка и разрешение на закрытие
     const hintText = this.add
@@ -65,7 +67,7 @@ export class RewardScene extends Phaser.Scene {
       .setOrigin(0.5)
       .setAlpha(0);
 
-    this.time.delayedCall(1000, () => {
+    this.time.delayedCall(delayToIdleAmination, () => {
       this.canClose = true;
       this.rewardComponent.playIdleAnimation(); // Idle запускаем после появления
 
@@ -92,8 +94,9 @@ export class RewardScene extends Phaser.Scene {
       case "RANK_SQUISH":
         return new RankSquishComponent(this, data.rank!, data.level!);
       case "COINS":
-        // return new CoinRewardComponent(this, data.amount!);
-        throw new Error("CoinRewardComponent not implemented yet");
+        return new CoinRewardComponent(this, data.amount!);
+      case "RARE_SQUISH":
+        return new RareRewardComponent(this, data.rank!, data.level!);
       default:
         throw new Error(`Unknown reward type: ${data.type}`);
     }

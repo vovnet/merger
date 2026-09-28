@@ -1,4 +1,4 @@
-export type RewardType = "RANK_SQUISH" | "COINS" | "ITEM";
+export type RewardType = "RANK_SQUISH" | "COINS" | "RARE_SQUISH";
 
 export interface RewardData {
   type: RewardType;
