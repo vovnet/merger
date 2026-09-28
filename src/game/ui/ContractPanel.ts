@@ -1,4 +1,3 @@
-// ui/ContractPanel.ts
 import * as Phaser from "phaser";
 import { EventBus } from "../core/EventBus";
 import { GameEvents } from "../types/GameEvents";
@@ -11,13 +10,13 @@ export class ContractPanel {
   private container: Phaser.GameObjects.Container;
   private contractService: ContractService;
 
-  private titleText!: Phaser.GameObjects.Text;
   private taskCards: Phaser.GameObjects.Container[] = [];
   private bgGraphics!: Phaser.GameObjects.Graphics;
 
+  // Эти константы теперь отвечают только за РАССТОЯНИЕ между карточками
   private readonly CARD_WIDTH = 120;
   private readonly CARD_HEIGHT = 140;
-  private readonly CARD_GAP = 15;
+  private readonly CARD_GAP = 30;
   private readonly PANEL_X = 80;
   private readonly PANEL_Y = 150;
 
@@ -41,18 +40,6 @@ export class ContractPanel {
   }
 
   private createVisuals(): void {
-    this.titleText = this.scene.add
-      .text(0, -80, " КОНТРАКТ", {
-        fontSize: "22px",
-        color: "#ffffff",
-        fontFamily: "Arial",
-        fontStyle: "bold",
-        stroke: "#000000",
-        strokeThickness: 4,
-      })
-      .setOrigin(0.5);
-    this.container.add(this.titleText);
-
     this.bgGraphics = this.scene.add.graphics();
     this.container.add(this.bgGraphics);
   }
@@ -79,13 +66,10 @@ export class ContractPanel {
     });
   }
 
-  // 🎯 НОВЫЙ МЕТОД: Полностью перерисовывает все карточки
   private renderTasks(tasks: ContractTask[]): void {
-    // Уничтожаем старые карточки
     this.taskCards.forEach((card) => card.destroy());
     this.taskCards = [];
 
-    // Создаём новые
     tasks.forEach((task, index) => {
       const card = this.createTaskCard(task, index);
       this.container.add(card);
@@ -94,106 +78,130 @@ export class ContractPanel {
   }
 
   private createTaskCard(task: ContractTask, index: number): Phaser.GameObjects.Container {
+    // 🎯 1. УБРАЛИ card.setScale(0.5). Теперь база = 1.
     const card = this.scene.add.container(0, index * (this.CARD_HEIGHT + this.CARD_GAP));
-    const cardX = 0;
-    const cardY = 0;
 
-    // 1. Фон карточки
-    const cardBg = this.scene.add.graphics();
-    const bgColor = task.isLocked ? 0x7f8c8d : 0x4a90e2;
-    cardBg.fillStyle(bgColor, 1);
-    cardBg.fillRoundedRect(
-      cardX - this.CARD_WIDTH / 2,
-      cardY - this.CARD_HEIGHT / 2,
-      this.CARD_WIDTH,
-      this.CARD_HEIGHT,
-      12,
-    );
+    const frameKey = task.isLocked ? "contract_item" : "open_contract_item";
 
-    const borderColor = 0xffffff;
-    cardBg.lineStyle(4, borderColor, task.isLocked ? 0.5 : 1);
-    cardBg.strokeRoundedRect(
-      cardX - this.CARD_WIDTH / 2,
-      cardY - this.CARD_HEIGHT / 2,
-      this.CARD_WIDTH,
-      this.CARD_HEIGHT,
-      12,
-    );
-    card.add(cardBg);
+    const cardSprite = this.scene.add.image(0, 0, "ui", frameKey).setScale(0.8);
+    card.add(cardSprite);
 
-    // 2. Спрайт айтема
-    const frameName = ItemRegistry.getFrameName(task.targetLevel);
-    const itemSprite = this.scene.add.image(cardX, cardY - 20, "squishes", frameName);
-    const maxDim = Math.max(itemSprite.width, itemSprite.height);
-    const scale = (70 / maxDim) * 0.9;
+    card.setData("sprite", cardSprite);
+    card.setData("isLocked", task.isLocked);
 
-    itemSprite.setAlpha(task.isLocked ? 0.4 : 1);
-    itemSprite.setScale(scale);
-    card.add(itemSprite);
+    if (!task.isLocked) {
+      const frameName = ItemRegistry.getFrameName(task.targetLevel);
+      const itemSprite = this.scene.add.image(0, -15, "squishes", frameName);
+      const maxDim = Math.max(itemSprite.width, itemSprite.height);
 
-    // 3. Иконка замка для заблокированных задач
-    if (task.isLocked) {
-      const lockIcon = this.scene.add
-        .text(cardX, cardY - 20, "🔒", {
-          fontSize: "40px",
-        })
-        .setOrigin(0.5)
-        .setDepth(10);
-      card.add(lockIcon);
+      // 🎯 3. Размер предмета теперь честный.
+      // Он будет визуально занимать ~90px на экране. Никаких умножений на 2!
+      const scale = (90 / maxDim) * 0.9;
+      itemSprite.setScale(scale);
+      card.add(itemSprite);
+      card.setData("itemSprite", itemSprite);
+
+      const progressText = this.createProgressText(task);
+      card.add(progressText);
+      card.setData("progressText", progressText);
+    } else {
+      card.setData("itemSprite", null);
+      card.setData("progressText", null);
     }
-
-    // 4. Текст прогресса
-    const progressText = this.createProgressText(task);
-    card.add(progressText);
 
     return card;
   }
 
-  private createProgressText(task: ContractTask): Phaser.GameObjects.Text {
+  private createProgressText(task: ContractTask): Phaser.GameObjects.BitmapText {
     let text = "";
-    let color = "#ffffff";
 
-    if (task.isLocked) {
-      text = "🔒 ЗАБЛОКИРОВАНО";
-      color = "#bdc3c7";
-    } else if (task.isCompleted) {
-      text = "✅ ГОТОВО";
-      color = "#4caf50";
+    if (task.isCompleted) {
+      text = "ГОТОВО";
     } else {
       text = `${task.currentCount} / ${task.requiredCount}`;
-      color = "#ffffff";
     }
 
-    return this.scene.add
-      .text(0, 45, text, {
-        fontSize: "16px",
-        color: color,
-        fontFamily: "Arial",
-        fontStyle: "bold",
-        stroke: "#000000",
-        strokeThickness: 3,
-      })
-      .setOrigin(0.5);
+    // 🎯 4. Размер шрифта теперь честный. 20px — это отличный, читаемый размер.
+    return this.scene.add.bitmapText(0, 40, "russo", text, 20).setOrigin(0.5);
   }
 
-  // 🎯 ИСПРАВЛЕНО: Теперь просто перерисовываем все карточки
+  private animateCardUnlock(card: Phaser.GameObjects.Container, task: ContractTask): void {
+    const cardSprite = card.getData("sprite") as Phaser.GameObjects.Image;
+
+    // Фаза 1: Сжимаем по горизонтали до 0 (переворот)
+    this.scene.tweens.add({
+      targets: card,
+      scaleX: 0,
+      duration: 150,
+      ease: "Quad.easeIn",
+      onComplete: () => {
+        // Фаза 2: Меняем визуал в момент "невидимости"
+        cardSprite.setTexture("ui", "open_contract_item");
+
+        // Создаем предмет
+        const frameName = ItemRegistry.getFrameName(task.targetLevel);
+        const itemSprite = this.scene.add.image(0, -15, "squishes", frameName);
+        const maxDim = Math.max(itemSprite.width, itemSprite.height);
+        const scale = (90 / maxDim) * 0.9; // Честный размер, без компенсаций
+        itemSprite.setScale(scale);
+        card.add(itemSprite);
+        card.setData("itemSprite", itemSprite);
+
+        // Создаем текст
+        const progressText = this.createProgressText(task);
+        card.add(progressText);
+        card.setData("progressText", progressText);
+
+        // Фаза 3: Разворачиваем карточку обратно
+        this.scene.tweens.add({
+          targets: card,
+          scaleX: 1, // Возвращаем к нормальному состоянию (1)
+          duration: 150,
+          ease: "Quad.easeOut",
+          onComplete: () => {
+            // 🎯 5. ИСПРАВЛЕН "ПОДСКОК": теперь от 1 до 1.05 (а не от 0.5)
+            this.scene.tweens.add({
+              targets: card,
+              scaleY: { from: 1, to: 1.05 },
+              duration: 100,
+              yoyo: true,
+              ease: "Sine.easeOut",
+            });
+          },
+        });
+      },
+    });
+  }
+
   private updateProgress(data: ContractUpdateData): void {
     const contract = data.contract;
 
-    // Полностью перерисовываем карточки (это надёжнее, чем пытаться обновлять частично)
-    this.renderTasks(contract.tasks);
-    this.drawBackground(contract.tasks.length);
+    if (contract.tasks.length !== this.taskCards.length) {
+      this.renderTasks(contract.tasks);
+      this.drawBackground(contract.tasks.length);
+      return;
+    }
 
-    // Анимация для выполненных задач
     contract.tasks.forEach((task, index) => {
-      if (task.isCompleted && this.taskCards[index]) {
-        this.scene.tweens.add({
-          targets: this.taskCards[index],
-          scale: { from: 1.0, to: 1.1 },
-          duration: 150,
-          yoyo: true,
-          ease: "Power2",
-        });
+      const card = this.taskCards[index];
+      if (!card) return;
+
+      const wasLocked = card.getData("isLocked") as boolean;
+
+      if (wasLocked && !task.isLocked) {
+        this.animateCardUnlock(card, task);
+        card.setData("isLocked", false);
+      } else if (!wasLocked && !task.isLocked) {
+        // 🎯 Исправлен тип каста на BitmapText для строгости TypeScript
+        const progressText = card.getData("progressText") as Phaser.GameObjects.BitmapText;
+        if (progressText) {
+          if (task.isCompleted) {
+            progressText.setText("✅ ГОТОВО");
+            progressText.setTint(0x4caf50);
+          } else {
+            progressText.setText(`${task.currentCount} / ${task.requiredCount}`);
+          }
+        }
       }
     });
   }

@@ -50,7 +50,7 @@ export class ActionButtons {
     this.rouletteButton = new AlertButton(this.scene, {
       x: 350,
       y: 660,
-      scale: 0.5,
+      scale: 0.6,
       frameKey: "roulette_btn",
       textureKey: "ui",
       onClick: () => {
@@ -62,7 +62,7 @@ export class ActionButtons {
     this.collectionButton = new AlertButton(this.scene, {
       x: 500,
       y: 660,
-      scale: 0.5,
+      scale: 0.6,
       textureKey: "ui",
       frameKey: "collection_btn",
       onClick: () => {
@@ -73,7 +73,7 @@ export class ActionButtons {
     this.achivementsButton = new AlertButton(this.scene, {
       x: 650,
       y: 660,
-      scale: 0.5,
+      scale: 0.6,
       textureKey: "ui",
       frameKey: "achivements_btn",
       disabled: true,
@@ -85,7 +85,7 @@ export class ActionButtons {
     this.leaderboardButton = new AlertButton(this.scene, {
       x: 800,
       y: 660,
-      scale: 0.5,
+      scale: 0.6,
       textureKey: "ui",
       frameKey: "leaderboard_btn",
       onClick: () => {
@@ -100,14 +100,14 @@ export class ActionButtons {
     const labelText = this.scene.add
       .bitmapText(10, 0, "russo", "x30", 64)
       .setOrigin(0, 0.5)
-      .setTint(0xffd700);
+      .setTint(0x40c00d);
 
     buttonContent.add([coinIcon, labelText]);
 
     this.adButton = new AlertButton(this.scene, {
-      x: 1100,
+      x: 1140,
       y: 660,
-      scale: 0.6,
+      scale: 0.7,
       textureKey: "ui",
       frameKey: "ad_btn",
       contentContainer: buttonContent,
@@ -119,7 +119,7 @@ export class ActionButtons {
     this.settingsButton = new AlertButton(this.scene, {
       x: 1220,
       y: 40,
-      scale: 0.7,
+      // scale: 0.7,
       textureKey: "ui",
       frameKey: "settings_btn",
       onClick: () => {
