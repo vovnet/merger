@@ -22,10 +22,14 @@ export class HUD {
   }
 
   private create(): void {
-    this.coinsSprite = this.scene.add.sprite(18, 0, "ui", "coin").setScale(0.6).setOrigin(0.5);
+    this.coinsSprite = this.scene.add
+      .sprite(18, 6, "ui", "coin")
+      .setScale(0.8)
+      .setOrigin(0.5)
+      .setAngle(-20);
 
     this.coinsText = this.scene.add
-      .bitmapText(40, 0, "russo", "", 24)
+      .bitmapText(40, 0, "russo", "", 32)
       .setOrigin(0, 0.5)
       .setDepth(100)
       .setTint(0x1ac729);
@@ -98,7 +102,7 @@ export class HUD {
       ease: "Quad.easeOut",
       yoyo: true,
       onComplete: () => {
-        this.coinsSprite.setAngle(0);
+        this.coinsSprite.setAngle(-20);
       },
     });
   }
