@@ -56,6 +56,7 @@ export class Game extends Phaser.Scene {
     this.load.audio("water_bubbling", "assets/sound/water_bubbling.mp3");
     this.load.audio("ui_pop", "assets/sound/ui_pop.mp3");
     this.load.audio("tick", "assets/sound/tick.mp3");
+    this.load.audio("tearing", "assets/sound/tearing.mp3");
 
     this.load.bitmapFont("russo", "assets/fonts/days.png", "assets/fonts/days.xml");
 

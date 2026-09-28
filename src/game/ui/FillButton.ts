@@ -3,7 +3,7 @@ import { EventBus } from "../core/EventBus";
 import { GameEvents, UIEvents } from "../types/GameEvents";
 import { GameState } from "../core/GameState";
 import { Grid } from "../core/Grid";
-import { ItemRegistry } from "../core/ItemRegistry";
+import { AudioService } from "../core/AudioService";
 
 export class FillButton {
   private scene: Phaser.Scene;
@@ -14,6 +14,8 @@ export class FillButton {
   private bg!: Phaser.GameObjects.Image;
   private text!: Phaser.GameObjects.BitmapText;
   private item!: Phaser.GameObjects.Image;
+
+  private audioService: AudioService;
 
   private isDisabled: boolean = false;
   private readonly ACTIVE_TEXT_TINT = 0xffffff;
@@ -30,6 +32,7 @@ export class FillButton {
   }
 
   private create(x: number, y: number): void {
+    this.audioService = this.scene.registry.get("audioService") as AudioService;
     this.container = this.scene.add.container(x, y).setDepth(100);
 
     this.bg = this.scene.add.image(0, 0, "ui", "spawn_btn").setOrigin(0.5);
@@ -39,11 +42,7 @@ export class FillButton {
       .setOrigin(0.5)
       .setTint(this.ACTIVE_TEXT_TINT);
 
-    const targetSquishLevel = Math.max(1, this.gameState.level - 6);
-
-    this.item = this.scene.add
-      .image(0, -46, "squishes", ItemRegistry.getFrameName(targetSquishLevel))
-      .setScale(0.9);
+    this.item = this.scene.add.image(0, -46, "ui", "coin_open").setScale(1.3).setRotation(-1);
 
     this.container.add([this.bg, this.text, this.item]);
     this.container.setScale(0.8);
@@ -60,6 +59,8 @@ export class FillButton {
         yoyo: true,
         ease: "Quad.easeOut",
       });
+
+      this.audioService.playTearingSound();
 
       EventBus.emit(UIEvents.FILL_REQUESTED);
     });
@@ -83,15 +84,8 @@ export class FillButton {
     const emptyCells = this.grid.getEmptyCells().length;
     const spawnCount = Math.min(coins, emptyCells);
 
-    this.text.setText(`+${spawnCount}`);
+    this.text.setText(spawnCount.toString());
     this.setDisabled(spawnCount === 0);
-
-    // 2. 🎯 ОБНОВЛЯЕМ КАРТИНКУ СКВИША (на случай, если уровень игрока изменился)
-    const targetSquishLevel = Math.max(1, this.gameState.level - 6);
-    const frameName = ItemRegistry.getFrameName(targetSquishLevel);
-
-    // setTexture мгновенно меняет кадр, не пересоздавая объект Image
-    this.item.setTexture("squishes", frameName);
   }
 
   private setDisabled(disabled: boolean): void {

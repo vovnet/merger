@@ -65,4 +65,11 @@ export class AudioService {
       rate: 0.8, // Более низкий тон
     });
   }
+
+  public playTearingSound(): void {
+    this.scene.sound.play("tearing", {
+      volume: 0.8,
+      rate: 0.8,
+    });
+  }
 }

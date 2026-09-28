@@ -297,9 +297,9 @@ export class ContractPanel {
     const panelWidth = this.CARD_WIDTH + 40;
     const panelHeight = totalHeight + 40;
 
-    this.bgGraphics.fillStyle(0x0060b9, 0.85);
+    this.bgGraphics.fillStyle(0x0060b9, 0.65);
     this.bgGraphics.fillRoundedRect(-panelWidth / 2, -100, panelWidth, panelHeight, 20);
-    this.bgGraphics.lineStyle(4, 0xffffff, 1);
+    this.bgGraphics.lineStyle(1, 0xffffff, 1);
     this.bgGraphics.strokeRoundedRect(-panelWidth / 2, -100, panelWidth, panelHeight, 20);
   }
 
