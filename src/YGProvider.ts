@@ -54,6 +54,16 @@ class YGProvider {
       },
     });
   }
+
+  public async showFullscreenAdv() {
+    this.sdk?.adv.showFullscreenAdv({
+      callbacks: {
+        onOpen: () => this.pause(),
+        onClose: () => this.resume(),
+        onError: () => this.resume(),
+      },
+    });
+  }
 }
 
 export const ygProvider = new YGProvider();
