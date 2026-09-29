@@ -119,6 +119,7 @@ export class Game extends Phaser.Scene {
     this.grassWind.setDepth(-9);
 
     // this.loadGameProgress();
+    EventBus.emit(GameEvents.GAME_READY);
   }
 
   private loadGameProgress(): void {

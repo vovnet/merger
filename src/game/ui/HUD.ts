@@ -11,6 +11,7 @@ export class HUD {
   private coinsSprite: Phaser.GameObjects.Sprite;
   private coinsText: Phaser.GameObjects.BitmapText;
   private roundText: Phaser.GameObjects.Text;
+  private scoreText: Phaser.GameObjects.BitmapText;
   private itemChain: ItemChain;
 
   constructor(scene: Phaser.Scene) {
@@ -47,6 +48,15 @@ export class HUD {
       })
       .setOrigin(0, 0)
       .setDepth(100);
+
+    this.scoreText = this.scene.add
+      .bitmapText(this.scene.scale.width / 2, 96, "russo", "", 22)
+      .setOrigin(0.5)
+      .setTint(0xffdd1c);
+
+    EventBus.on(GameEvents.SCORE_CHANGED, (score: number) => {
+      this.scoreText.setText(score.toString());
+    });
 
     this.itemChain = new ItemChain(this.scene);
 

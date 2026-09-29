@@ -1,4 +1,6 @@
 export const GameEvents = {
+  // События игры
+  GAME_READY: "gameReady",
   // UI действия
   SHOW_TOAST: "showToast",
   SHOW_LEVEL_UP: "showLevelUp",
@@ -10,6 +12,7 @@ export const GameEvents = {
   LEVEL_CHANGED: "levelChanged",
   EMPTY_CELLS_CHANGED: "emptyCellsChanged",
   HISTORY_CHANGED: "historyChanged",
+  SCORE_CHANGED: "scoreChanged",
 
   GRID_ITEM_ADDED: "itemAdded",
   GRID_ITEM_REMOVED: "itemRemoved",

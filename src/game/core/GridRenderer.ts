@@ -76,9 +76,8 @@ export class GridRenderer {
     EventBus.on(GameEvents.GRID_ITEM_MERGED, (data: any) => {
       const { px, py } = this.gridToPixel(data.item.pos);
       this.vfxManager.spawnMergeParticles(px, py, data.newLevel);
-      const economy = this.scene.registry.get("economy") as Economy;
-      const reward = economy.getMergeReward(data.newLevel);
-      this.showMergeReward(data.item.pos, reward);
+
+      this.showMergeReward(data.item.pos, 1);
     });
 
     EventBus.on(GameEvents.CONTRACT_UPDATED, (data: ContractUpdateData) => {

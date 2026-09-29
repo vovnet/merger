@@ -22,7 +22,7 @@ export class AddCoinButton {
   private bubbleEmitter?: Phaser.GameObjects.Particles.ParticleEmitter;
 
   private currentState: ButtonState = ButtonState.IDLE;
-  private readonly COOLDOWN_MS = 5000;
+  private readonly COOLDOWN_MS = 3000;
 
   private realWidth: number = 0;
   private realHeight: number = 0;

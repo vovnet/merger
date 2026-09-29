@@ -110,6 +110,7 @@ export class GameState {
 
   public incrementMerges(): void {
     this.data.totalMerges++;
+    EventBus.emit(GameEvents.SCORE_CHANGED, this.data.totalMerges);
   }
 
   public hasReachedMaxLevel(): boolean {
