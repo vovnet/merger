@@ -211,8 +211,8 @@ export class RouletteLogic {
         : maxIndex;
 
     const winnerItem = this.reelItems[winnerIndex];
-    const targetX = -(winnerItem.x - screenWidth / 2 + this.config.cardW / 2);
-    const finalX = targetX + Phaser.Math.Between(-20, 20);
+    const targetX = screenWidth / 2 - winnerItem.x;
+    const finalX = targetX + Phaser.Math.Between(-15, 15);
 
     // 🎯 НАСТРОЙКА ДЛЯ ЗВУКА ЩЕЛЧКА
     let lastX = this.reelContainer.x;

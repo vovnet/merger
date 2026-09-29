@@ -9,8 +9,8 @@ export class RouletteScene extends Phaser.Scene {
   private rouletteLogic: RouletteLogic;
 
   private rouletteView: Phaser.GameObjects.Container;
-  private spinBtn: Phaser.GameObjects.Rectangle;
-  private spinText: Phaser.GameObjects.Text;
+  private spinBtn: AlertButton;
+  private spinText: Phaser.GameObjects.BitmapText;
   private closeBtn: AlertButton;
 
   constructor() {
@@ -53,31 +53,26 @@ export class RouletteScene extends Phaser.Scene {
 
     this.rouletteView.add(
       this.add
-        .text(screenWidth / 2, 80, "РУЛЕТКА", {
-          fontSize: "48px",
-          color: "#ffd700",
-          fontFamily: "Arial",
-          fontStyle: "bold",
-          stroke: "#000000",
-          strokeThickness: 6,
-        })
-        .setOrigin(0.5),
+        .bitmapText(screenWidth / 2, 80, "russo", "СКВИШ-ВЕРТУШКА", 74)
+        .setOrigin(0.5)
+        .setTint(0xffcb1f),
     );
 
-    this.rouletteView.add(
-      this.add.triangle(
-        screenWidth / 2,
-        screenHeight / 2 - 90,
-        0,
-        0,
-        -20,
-        -30,
-        20,
-        -30,
-        0xffd700,
-        1,
-      ),
-    );
+    const arrow = this.add
+      .sprite(screenWidth / 2, screenHeight / 2 - 120, "ui", "roulette_arrow")
+      .setOrigin(0.5)
+      .setScale(0.6);
+
+    this.tweens.add({
+      targets: arrow,
+      y: "-=5", // Сдвигаем на 5 пикселей вверх от текущей позиции
+      duration: 500, // Длительность одного движения (1 секунда = очень плавно)
+      ease: "Sine.easeInOut", // Самая плавная и естественная функция сглаживания
+      yoyo: true, // Возвращаем обратно вниз
+      repeat: -1, // Повторять бесконечно
+    });
+
+    this.rouletteView.add(arrow);
 
     this.rouletteLogic.initReel(screenWidth, screenHeight);
     this.rouletteView.add(this.rouletteLogic.reelContainer);
@@ -87,23 +82,25 @@ export class RouletteScene extends Phaser.Scene {
   }
 
   private setupUI(screenWidth: number, screenHeight: number): void {
-    this.spinBtn = this.add
-      .rectangle(screenWidth / 2, screenHeight - 100, 200, 60, 0x4ecdc4)
-      .setInteractive({ useHandCursor: true })
-      .setStrokeStyle(3, 0xffffff, 0.8);
-    this.rouletteView.add(this.spinBtn);
+    this.spinBtn = new AlertButton(this, {
+      textureKey: "ui",
+      frameKey: "run_roulette_png",
+      x: screenWidth / 2,
+      y: screenHeight - 100,
+      scale: 0.8,
+      onClick: () => this.handleSpinClick(),
+    });
 
-    this.spinText = this.add
-      .text(screenWidth / 2, screenHeight - 100, "КРУТИТЬ", {
-        fontSize: "24px",
-        color: "#ffffff",
-        fontFamily: "Arial",
-        fontStyle: "bold",
-      })
-      .setOrigin(0.5);
-    this.rouletteView.add(this.spinText);
+    const ticketSprite = this.add.image(0, 0, "ui", "ticket").setScale(1.8);
 
-    this.spinBtn.on("pointerdown", () => this.handleSpinClick());
+    this.spinText = this.add.bitmapText(0, 0, "russo", "", 42).setOrigin(0.5).setTint(0xe1ff3a);
+
+    const ticketContainer = this.add.container(screenWidth / 2, screenHeight - 220, [
+      ticketSprite,
+      this.spinText,
+    ]);
+
+    this.rouletteView.add(ticketContainer);
 
     this.closeBtn = new AlertButton(this, {
       x: screenWidth - 60,
@@ -218,19 +215,15 @@ export class RouletteScene extends Phaser.Scene {
     const state = this.rouletteLogic.currentState;
     const spins = this.gameState.spins;
 
+    this.spinText.setText(`${spins}`);
+
     if (state === RouletteState.IDLE) {
-      this.spinBtn.setInteractive({ useHandCursor: true });
-      this.spinBtn.setFillStyle(0x4ecdc4);
-      this.spinText.setText(`КРУТИТЬ (${spins} 🎟️)`);
+      this.spinBtn.setDisabled(false);
     } else if (state === RouletteState.SPINNING) {
-      this.spinBtn.disableInteractive();
-      this.spinBtn.setFillStyle(0x7f8c8d);
-      this.spinText.setText("КРУТИМ...");
+      this.spinBtn.setDisabled(true);
     } else if (state === RouletteState.RESULT) {
       if (spins <= 0) {
-        this.spinBtn.disableInteractive();
-        this.spinBtn.setFillStyle(0x7f8c8d);
-        this.spinText.setText("НЕТ СПИНОВ");
+        this.spinBtn.setDisabled(true);
       }
     }
   }

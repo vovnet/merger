@@ -1,35 +1,10 @@
 {
   "frames": [
     {
-      "filename": "ad_btn",
-      "frame": {
-        "x": 2,
-        "y": 2,
-        "w": 359,
-        "h": 120
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 359,
-        "h": 120
-      },
-      "sourceSize": {
-        "w": 359,
-        "h": 120
-      },
-      "pivot": {
-        "x": 0.5,
-        "y": 0.5
-      }
-    },
-    {
       "filename": "spawn_btn",
       "frame": {
         "x": 2,
-        "y": 126,
+        "y": 2,
         "w": 256,
         "h": 238
       },
@@ -51,24 +26,24 @@
       }
     },
     {
-      "filename": "run_roulette_png",
+      "filename": "ad_btn",
       "frame": {
-        "x": 365,
-        "y": 2,
-        "w": 225,
-        "h": 128
+        "x": 2,
+        "y": 244,
+        "w": 359,
+        "h": 120
       },
       "rotated": false,
       "trimmed": false,
       "spriteSourceSize": {
         "x": 0,
         "y": 0,
-        "w": 225,
-        "h": 128
+        "w": 359,
+        "h": 120
       },
       "sourceSize": {
-        "w": 225,
-        "h": 128
+        "w": 359,
+        "h": 120
       },
       "pivot": {
         "x": 0.5,
@@ -78,8 +53,8 @@
     {
       "filename": "add_coin_back",
       "frame": {
-        "x": 262,
-        "y": 134,
+        "x": 365,
+        "y": 2,
         "w": 196,
         "h": 220
       },
@@ -103,8 +78,8 @@
     {
       "filename": "add_coin_mask",
       "frame": {
-        "x": 2,
-        "y": 368,
+        "x": 365,
+        "y": 226,
         "w": 196,
         "h": 220
       },
@@ -119,31 +94,6 @@
       "sourceSize": {
         "w": 196,
         "h": 220
-      },
-      "pivot": {
-        "x": 0.5,
-        "y": 0.5
-      }
-    },
-    {
-      "filename": "leaderboard_btn",
-      "frame": {
-        "x": 202,
-        "y": 368,
-        "w": 212,
-        "h": 120
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 212,
-        "h": 120
-      },
-      "sourceSize": {
-        "w": 212,
-        "h": 120
       },
       "pivot": {
         "x": 0.5,
@@ -153,8 +103,8 @@
     {
       "filename": "contract_item",
       "frame": {
-        "x": 418,
-        "y": 358,
+        "x": 2,
+        "y": 368,
         "w": 156,
         "h": 201
       },
@@ -178,8 +128,8 @@
     {
       "filename": "open_contract_item",
       "frame": {
-        "x": 2,
-        "y": 592,
+        "x": 162,
+        "y": 368,
         "w": 156,
         "h": 201
       },
@@ -201,10 +151,60 @@
       }
     },
     {
+      "filename": "run_roulette_png",
+      "frame": {
+        "x": 322,
+        "y": 450,
+        "w": 225,
+        "h": 128
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 225,
+        "h": 128
+      },
+      "sourceSize": {
+        "w": 225,
+        "h": 128
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      }
+    },
+    {
+      "filename": "leaderboard_btn",
+      "frame": {
+        "x": 551,
+        "y": 450,
+        "w": 212,
+        "h": 120
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 212,
+        "h": 120
+      },
+      "sourceSize": {
+        "w": 212,
+        "h": 120
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      }
+    },
+    {
       "filename": "achivements_btn",
       "frame": {
-        "x": 202,
-        "y": 492,
+        "x": 565,
+        "y": 2,
         "w": 198,
         "h": 120
       },
@@ -228,8 +228,8 @@
     {
       "filename": "collection_btn",
       "frame": {
-        "x": 162,
-        "y": 616,
+        "x": 565,
+        "y": 126,
         "w": 194,
         "h": 120
       },
@@ -253,8 +253,8 @@
     {
       "filename": "roulette_btn",
       "frame": {
-        "x": 360,
-        "y": 616,
+        "x": 565,
+        "y": 250,
         "w": 187,
         "h": 120
       },
@@ -278,8 +278,8 @@
     {
       "filename": "lock_icon",
       "frame": {
-        "x": 462,
-        "y": 134,
+        "x": 551,
+        "y": 574,
         "w": 106,
         "h": 128
       },
@@ -303,8 +303,8 @@
     {
       "filename": "close_btn",
       "frame": {
-        "x": 594,
-        "y": 2,
+        "x": 661,
+        "y": 574,
         "w": 94,
         "h": 92
       },
@@ -319,31 +319,6 @@
       "sourceSize": {
         "w": 94,
         "h": 92
-      },
-      "pivot": {
-        "x": 0.5,
-        "y": 0.5
-      }
-    },
-    {
-      "filename": "coin_open",
-      "frame": {
-        "x": 594,
-        "y": 98,
-        "w": 79,
-        "h": 94
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 79,
-        "h": 94
-      },
-      "sourceSize": {
-        "w": 79,
-        "h": 94
       },
       "pivot": {
         "x": 0.5,
@@ -353,8 +328,8 @@
     {
       "filename": "music_off_btn",
       "frame": {
-        "x": 578,
-        "y": 196,
+        "x": 262,
+        "y": 2,
         "w": 94,
         "h": 92
       },
@@ -378,8 +353,8 @@
     {
       "filename": "music_on_btn",
       "frame": {
-        "x": 578,
-        "y": 292,
+        "x": 262,
+        "y": 98,
         "w": 94,
         "h": 92
       },
@@ -403,8 +378,8 @@
     {
       "filename": "settings_btn",
       "frame": {
-        "x": 578,
-        "y": 388,
+        "x": 2,
+        "y": 573,
         "w": 94,
         "h": 91
       },
@@ -428,8 +403,8 @@
     {
       "filename": "sound_off_btn",
       "frame": {
-        "x": 578,
-        "y": 483,
+        "x": 100,
+        "y": 573,
         "w": 94,
         "h": 91
       },
@@ -453,8 +428,8 @@
     {
       "filename": "sound_on_btn",
       "frame": {
-        "x": 551,
-        "y": 578,
+        "x": 198,
+        "y": 573,
         "w": 94,
         "h": 91
       },
@@ -476,10 +451,60 @@
       }
     },
     {
+      "filename": "roulette_arrow",
+      "frame": {
+        "x": 296,
+        "y": 582,
+        "w": 86,
+        "h": 92
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 86,
+        "h": 92
+      },
+      "sourceSize": {
+        "w": 86,
+        "h": 92
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      }
+    },
+    {
+      "filename": "coin_open",
+      "frame": {
+        "x": 386,
+        "y": 582,
+        "w": 79,
+        "h": 94
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 79,
+        "h": 94
+      },
+      "sourceSize": {
+        "w": 79,
+        "h": 94
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      }
+    },
+    {
       "filename": "coin",
       "frame": {
-        "x": 462,
-        "y": 266,
+        "x": 469,
+        "y": 582,
         "w": 64,
         "h": 77
       },
@@ -503,8 +528,8 @@
     {
       "filename": "ticket",
       "frame": {
-        "x": 551,
-        "y": 673,
+        "x": 469,
+        "y": 663,
         "w": 64,
         "h": 56
       },
@@ -532,8 +557,8 @@
     "image": "ui_spritesheet.png",
     "format": "RGBA8888",
     "size": {
-      "w": 690,
-      "h": 795
+      "w": 765,
+      "h": 721
     },
     "scale": 1
   }
