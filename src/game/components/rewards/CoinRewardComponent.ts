@@ -4,6 +4,7 @@ import { IRewardComponent } from "./IRewardComponent";
 import { RewardVFX } from "../../utils/RewardVFX";
 import { AudioService } from "../../core/AudioService";
 import { inRange } from "../../utils/math";
+import { COIN_REWARDS } from "../../config/CoinRewards";
 
 export class CoinRewardComponent implements IRewardComponent {
   private scene: Phaser.Scene;
@@ -30,8 +31,8 @@ export class CoinRewardComponent implements IRewardComponent {
     // 🎯 Создаем контейнер для всей награды, чтобы легко её анимировать как единое целое
     this.container = this.scene.add.container(centerX, centerY).setDepth(10);
 
-    const isMedium = inRange(this.amount, 4, 10);
-    const isHight = inRange(this.amount, 11, 9999999);
+    const isMedium = inRange(this.amount, COIN_REWARDS.MEDIUM, COIN_REWARDS.LARGE - 1);
+    const isHight = inRange(this.amount, COIN_REWARDS.LARGE, 9999999);
 
     const framename = isHight ? "coin_pack_3" : isMedium ? "coin_pack_2" : "coin_pack_1";
 

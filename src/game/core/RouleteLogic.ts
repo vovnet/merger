@@ -1,5 +1,7 @@
 import * as Phaser from "phaser";
 import { AudioService } from "./AudioService";
+import { COIN_REWARDS } from "../config/CoinRewards";
+import { inRange } from "../utils/math";
 
 export enum RouletteState {
   IDLE = "IDLE",
@@ -104,34 +106,34 @@ export class RouletteLogic {
 
     let value = 0;
     let displayText = "";
-    let displayColor = "#ffffff";
+    let displayColor = 0xffffff;
     let subtitle = "";
     const isRare = type === "RARE_SQUISH";
 
     // 🎯 ФИКСИРОВАННЫЕ ЗНАЧЕНИЯ НАГРАД
     switch (type) {
       case "COINS_SMALL":
-        value = 50;
-        displayText = `${value} 💰`;
-        displayColor = "#a8e6cf";
-        subtitle = "Мало";
+        value = COIN_REWARDS.SMALL;
+        displayText = `${value}`;
+        displayColor = 0x8e6cf;
+        subtitle = `x${COIN_REWARDS.SMALL}`;
         break;
       case "COINS_MEDIUM":
-        value = 100;
-        displayText = `${value} 💰`;
-        displayColor = "#ffd93d";
-        subtitle = "Средне";
+        value = COIN_REWARDS.MEDIUM;
+        displayText = `${value}`;
+        displayColor = 0xffd93d;
+        subtitle = `x${COIN_REWARDS.MEDIUM}`;
         break;
       case "COINS_LARGE":
-        value = 250;
-        displayText = `${value} 💰`;
-        displayColor = "#ff8c42";
-        subtitle = "Много";
+        value = COIN_REWARDS.LARGE;
+        displayText = `${value}`;
+        displayColor = 0xff8c42;
+        subtitle = `x${COIN_REWARDS.LARGE}`;
         break;
       case "RARE_SQUISH":
         value = 0;
         displayText = "RARE";
-        displayColor = "#ff9edb";
+        displayColor = 0xff9edb;
         subtitle = "РЕДКИЙ!";
         break;
     }
@@ -150,36 +152,28 @@ export class RouletteLogic {
     // 🎯 УСЛОВНОЕ ОТОБРАЖЕНИЕ: Картинка для редкого, Текст для монет
     if (isRare) {
       const rareIcon = this.scene.add.image(0, -10, "squish-pack", "squish_pack");
-      rareIcon.setScale(0.6); // Подгони под свой спрайт
+      rareIcon.setScale(0.7); // Подгони под свой спрайт
       container.add(rareIcon);
     } else {
-      const coinText = this.scene.add
-        .text(0, -10, displayText, {
-          fontSize: "28px",
-          color: displayColor,
-          fontFamily: "Arial",
-          fontStyle: "bold",
-          stroke: "#000000",
-          strokeThickness: 2,
-        })
-        .setOrigin(0.5);
-
-      container.add(coinText);
+      const coin = this.createCoinSprite(value);
+      container.add(coin);
     }
 
     // Подпись типа награды
     container.add(
-      this.scene.add
-        .text(0, 45, subtitle, {
-          fontSize: "14px",
-          color: "#cccccc",
-          fontFamily: "Arial",
-          fontStyle: "bold",
-        })
-        .setOrigin(0.5),
+      this.scene.add.bitmapText(0, 45, "russo", subtitle, 18).setOrigin(0.5).setTint(displayColor),
     );
 
     return container;
+  }
+
+  private createCoinSprite(amount: number) {
+    const isMedium = inRange(amount, COIN_REWARDS.MEDIUM, COIN_REWARDS.LARGE - 1);
+    const isHight = inRange(amount, COIN_REWARDS.LARGE, 9999999);
+
+    const framename = isHight ? "coin_pack_3" : isMedium ? "coin_pack_2" : "coin_pack_1";
+
+    return this.scene.add.image(0, 0, "squish-pack", framename).setOrigin(0.5).setScale(0.28);
   }
 
   public startSpin(onComplete: (winData: RouletteWinData) => void): void {
@@ -193,9 +187,9 @@ export class RouletteLogic {
 
     if (winRand < 0.1) {
       actualWinType = "RARE_SQUISH";
-    } else if (winRand < 0.4) {
+    } else if (winRand < 0.6) {
       actualWinType = "COINS_SMALL";
-    } else if (winRand < 0.7) {
+    } else if (winRand < 0.8) {
       actualWinType = "COINS_MEDIUM";
     } else {
       actualWinType = "COINS_LARGE";

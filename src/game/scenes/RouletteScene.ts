@@ -1,19 +1,17 @@
 import * as Phaser from "phaser";
 import { GameState } from "../core/GameState";
 import { RouletteLogic, RouletteState, RouletteWinData } from "../core/RouleteLogic";
-import { AudioService } from "../core/AudioService";
 import { AlertButton } from "../ui/AlertButton";
 import { RewardData } from "../types/Rewards";
 
 export class RouletteScene extends Phaser.Scene {
-  private gameState!: GameState;
-  private rouletteLogic!: RouletteLogic;
+  private gameState: GameState;
+  private rouletteLogic: RouletteLogic;
 
   private rouletteView: Phaser.GameObjects.Container;
   private spinBtn: Phaser.GameObjects.Rectangle;
   private spinText: Phaser.GameObjects.Text;
   private closeBtn: AlertButton;
-  private audioService: AudioService;
 
   constructor() {
     super({ key: "RouletteScene" });
@@ -27,14 +25,12 @@ export class RouletteScene extends Phaser.Scene {
 
   create(): void {
     this.gameState = this.registry.get("gameState") as GameState;
-    this.audioService = this.registry.get("audioService") as AudioService;
 
     this.events.once("shutdown", () => {
       this.events.off("wake", this.onSceneWake, this);
       this.rouletteLogic.destroy();
     });
 
-    // 🎯 1. СЛУШАЕМ ПРОБУЖДЕНИЕ от RewardScene
     this.events.on("wake", this.onSceneWake, this);
 
     const screenWidth = this.scale.width;
@@ -110,7 +106,7 @@ export class RouletteScene extends Phaser.Scene {
     this.spinBtn.on("pointerdown", () => this.handleSpinClick());
 
     this.closeBtn = new AlertButton(this, {
-      x: screenWidth - 60, // 🎯 Адаптивная позиция вместо хардкода 1220
+      x: screenWidth - 60,
       y: 60,
       scale: 0.7,
       textureKey: "ui",
