@@ -11,10 +11,18 @@ class YGProvider {
     if (this.sdk) return;
 
     this.sdk = await YaGames.init();
+    const lang = this.sdk.environment.i18n.lang;
+    this.initListeners();
+  }
 
+  private initListeners() {
     EventBus.on(GameEvents.GAME_READY, () => {
       this.sdk?.features.LoadingAPI.ready();
     });
+  }
+
+  public async showRewardedVideo(events: { onRewarded: () => void }) {
+    this.sdk?.adv.showRewardedVideo({ callbacks: { onRewarded: events.onRewarded } });
   }
 }
 

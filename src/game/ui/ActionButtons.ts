@@ -8,6 +8,7 @@ import { AddCoinButton } from "./AddCoinButton";
 import { FillButton } from "./FillButton"; // 🎯 Новый импорт
 import { AlertButton } from "./AlertButton";
 import { RewardData } from "../types/Rewards";
+import { ygProvider } from "../../YGProvider";
 
 export class ActionButtons {
   private scene: Phaser.Scene;
@@ -113,10 +114,12 @@ export class ActionButtons {
       frameKey: "ad_btn",
       contentContainer: buttonContent,
       onClick: () => {
-        console.log("open ad");
-        this.scene.scene.launch("RewardScene", {
-          reward: { type: "COINS", amount: 30 } as RewardData,
-          onComplete: () => this.gameState.addCoins(30),
+        ygProvider.showRewardedVideo({
+          onRewarded: () =>
+            this.scene.scene.launch("RewardScene", {
+              reward: { type: "COINS", amount: 30 } as RewardData,
+              onComplete: () => this.gameState.addCoins(30),
+            }),
         });
       },
     });
