@@ -1,6 +1,8 @@
 export const GameEvents = {
   // События игры
   GAME_READY: "gameReady",
+  GAME_PAUSE_REQUEST: "gamePauseRequest",
+  GAME_RESUME_REQUEST: "gameResumeRequest",
   // UI действия
   SHOW_TOAST: "showToast",
   SHOW_LEVEL_UP: "showLevelUp",

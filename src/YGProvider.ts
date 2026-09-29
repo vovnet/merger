@@ -12,6 +12,7 @@ class YGProvider {
 
     this.sdk = await YaGames.init();
     const lang = this.sdk.environment.i18n.lang;
+
     this.initListeners();
   }
 
@@ -19,10 +20,36 @@ class YGProvider {
     EventBus.on(GameEvents.GAME_READY, () => {
       this.sdk?.features.LoadingAPI.ready();
     });
+
+    this.sdk?.on("game_api_pause", () => {
+      this.pause();
+    });
+
+    this.sdk?.on("game_api_resume", () => {
+      this.resume();
+    });
+  }
+
+  private pause() {
+    EventBus.emit(GameEvents.GAME_PAUSE_REQUEST);
+  }
+
+  private resume() {
+    EventBus.emit(GameEvents.GAME_RESUME_REQUEST);
   }
 
   public async showRewardedVideo(events: { onRewarded: () => void }) {
-    this.sdk?.adv.showRewardedVideo({ callbacks: { onRewarded: events.onRewarded } });
+    this.sdk?.adv.showRewardedVideo({
+      callbacks: {
+        onRewarded: () => {
+          this.resume();
+          events.onRewarded();
+        },
+        onOpen: () => this.pause(),
+        onClose: () => this.resume(),
+        onError: () => this.resume(),
+      },
+    });
   }
 }
 
