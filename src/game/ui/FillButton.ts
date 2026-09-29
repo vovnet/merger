@@ -61,6 +61,7 @@ export class FillButton {
       });
 
       this.audioService.playTearingSound();
+      this.scene.scene.get("GameScene").cameras.main.shake(200, 0.005);
 
       EventBus.emit(UIEvents.FILL_REQUESTED);
     });
