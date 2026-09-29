@@ -118,6 +118,16 @@ export class Game extends Phaser.Scene {
 
     this.grassWind.setDepth(-9);
 
+    this.game.events.on("hidden", () => {
+      console.log("🔴 Вкладка скрыта - игра на паузе");
+      EventBus.emit(GameEvents.GAME_PAUSE_REQUEST);
+    });
+
+    this.game.events.on("visible", () => {
+      console.log("🟢 Вкладка снова видна");
+      EventBus.emit(GameEvents.GAME_RESUME_REQUEST);
+    });
+
     // this.loadGameProgress();
     EventBus.emit(GameEvents.GAME_READY);
   }
