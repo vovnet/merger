@@ -50,6 +50,9 @@ export class GameState {
   public get highestLevel(): number {
     return this.data.highestLevel;
   }
+  public get score(): number {
+    return this.data.totalMerges;
+  }
 
   // --- МЕТОДЫ ИЗМЕНЕНИЯ ---
   public setCoins(value: number): void {

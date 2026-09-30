@@ -49,10 +49,17 @@ export class HUD {
       .setOrigin(0, 0)
       .setDepth(100);
 
+    const scoreIcon = this.scene.add.image(-20, 0, "ui", "score_icon").setScale(0.6);
+
     this.scoreText = this.scene.add
-      .bitmapText(this.scene.scale.width / 2, 96, "russo", "", 22)
-      .setOrigin(0.5)
+      .bitmapText(0, 0, "russo", this.gameState.score.toString(), 22)
+      .setOrigin(0, 0.5)
       .setTint(0xffdd1c);
+
+    const scoreContainer = this.scene.add.container(this.scene.scale.width / 2, 20, [
+      scoreIcon,
+      this.scoreText,
+    ]);
 
     EventBus.on(GameEvents.SCORE_CHANGED, (score: number) => {
       this.scoreText.setText(score.toString());
