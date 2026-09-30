@@ -11,6 +11,7 @@ export interface AlertButtonConfig {
   frameKey: string;
   parent?: Phaser.Scene | Phaser.GameObjects.Container;
   contentContainer?: Phaser.GameObjects.Container; // 🎯 Опциональный контент
+  depth?: number;
 }
 
 export class AlertButton {
@@ -49,7 +50,7 @@ export class AlertButton {
     // 2. ФОН КНОПКИ
     this.btnSprite = this.scene.add.image(0, 0, config.textureKey, config.frameKey);
     this.btnSprite.setOrigin(0.5);
-    this.container.add(this.btnSprite);
+    this.container.add(this.btnSprite).setDepth(config.depth || 0);
 
     // 3. ПОЛЬЗОВАТЕЛЬСКИЙ КОНТЕНТ
     // 💡 ВАЖНО: Пользователь должен создавать этот контейнер так,

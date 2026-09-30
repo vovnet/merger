@@ -1,6 +1,7 @@
 import * as Phaser from "phaser";
 import { ItemRegistry } from "../core/ItemRegistry";
 import { GameState } from "../core/GameState";
+import { AlertButton } from "../ui/AlertButton";
 
 export class CollectionScene extends Phaser.Scene {
   private gameState!: GameState;
@@ -189,25 +190,13 @@ export class CollectionScene extends Phaser.Scene {
 
   // 🎯 Заголовок одной колонки
   private renderColumnHeader(centerX: number, y: number, title: string, subtitle: string): void {
-    const titleText = this.add
-      .text(centerX, y + 20, title, {
-        fontSize: "22px",
-        color: "#ffd700",
-        fontFamily: "Arial",
-        fontStyle: "bold",
-        stroke: "#000000",
-        strokeThickness: 3,
-      })
-      .setOrigin(0.5);
+    const titleText = this.add.bitmapText(centerX, y + 20, "russo", title, 38).setOrigin(0.5);
     this.gridContainer.add(titleText);
 
     const subtitleText = this.add
-      .text(centerX, y + 48, subtitle, {
-        fontSize: "14px",
-        color: "#a8e6ff",
-        fontFamily: "Arial",
-      })
-      .setOrigin(0.5);
+      .bitmapText(centerX, y + 48, "russo", subtitle, 20)
+      .setOrigin(0.5)
+      .setTint(0xa8e6ff);
     this.gridContainer.add(subtitleText);
   }
 
@@ -280,13 +269,9 @@ export class CollectionScene extends Phaser.Scene {
       this.gridContainer.add(icon);
 
       const rankText = this.add
-        .text(x, y - 25, `РАНГ ${rank}`, {
-          fontSize: "15px",
-          color: "#ffd700",
-          fontFamily: "Arial",
-          fontStyle: "bold",
-        })
-        .setOrigin(0.5);
+        .bitmapText(x, y - 25, "russo", `РАНГ ${rank}`, 18)
+        .setOrigin(0.5)
+        .setTint(0xffd700);
       this.gridContainer.add(rankText);
 
       const shadow = this.add.ellipse(x, y + 66, 80, 18, 0x000000, 0.3);
@@ -327,13 +312,10 @@ export class CollectionScene extends Phaser.Scene {
       this.gridContainer.add(icon);
 
       const rankText = this.add
-        .text(x, y - 25, `РАНГ ${rank}`, {
-          fontSize: "15px",
-          color: "#ff9edb",
-          fontFamily: "Arial",
-          fontStyle: "bold",
-        })
-        .setOrigin(0.5);
+        .bitmapText(x, y - 25, "russo", `РАНГ ${rank}`, 18)
+        .setOrigin(0.5)
+        .setTint(0xff9edb);
+
       this.gridContainer.add(rankText);
 
       const shadow = this.add.ellipse(x, y + 66, 80, 18, 0x000000, 0.4);
@@ -405,36 +387,20 @@ export class CollectionScene extends Phaser.Scene {
 
     this.add.rectangle(0, 0, screenWidth, this.headerHeight, 0x22223a).setOrigin(0).setDepth(5);
 
-    const backBtn = this.add
-      .rectangle(80, 60, 120, 50, 0x4a4a6e)
-      .setInteractive({ useHandCursor: true })
-      .setDepth(6);
-    backBtn.setStrokeStyle(2, 0xffffff, 0.5);
+    new AlertButton(this.scene.scene, {
+      textureKey: "ui",
+      frameKey: "close_btn",
+      x: this.scale.width - 80,
+      y: 60,
+      scale: 0.8,
+      onClick: () => this.close(),
+      depth: 6,
+    });
 
     this.add
-      .text(80, 60, "← НАЗАД", {
-        fontSize: "20px",
-        color: "#ffffff",
-        fontFamily: "Arial",
-        fontStyle: "bold",
-      })
+      .bitmapText(screenWidth / 2, 45, "russo", "МОЯ КОЛЛЕКЦИЯ", 56)
       .setOrigin(0.5)
-      .setDepth(6);
-
-    backBtn.on("pointerdown", () => this.close());
-    backBtn.on("pointerover", () => backBtn.setFillStyle(0x5a5a7e));
-    backBtn.on("pointerout", () => backBtn.setFillStyle(0x4a4a6e));
-
-    this.add
-      .text(screenWidth / 2, 45, "📚 КОЛЛЕКЦИЯ", {
-        fontSize: "32px",
-        color: "#ffd700",
-        fontFamily: "Arial",
-        fontStyle: "bold",
-        stroke: "#000000",
-        strokeThickness: 4,
-      })
-      .setOrigin(0.5)
+      .setTint(0xffd700)
       .setDepth(6);
 
     // Общий счётчик открытий
@@ -445,12 +411,15 @@ export class CollectionScene extends Phaser.Scene {
     const totalItems = maxLevel + this.RARE_SQUISH_COUNT;
 
     this.add
-      .text(screenWidth / 2, 85, `Всего открыто: ${totalDiscovered} / ${totalItems}`, {
-        fontSize: "18px",
-        color: "#a8e6ff",
-        fontFamily: "Arial",
-      })
+      .bitmapText(
+        screenWidth / 2,
+        85,
+        "russo",
+        `Всего открыто: ${totalDiscovered} / ${totalItems}`,
+        32,
+      )
       .setOrigin(0.5)
+      .setTint(0xa8e6ff)
       .setDepth(6);
   }
 
