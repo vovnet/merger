@@ -55,7 +55,7 @@ export class RouletteScene extends Phaser.Scene {
       this.add
         .bitmapText(screenWidth / 2, 80, "russo", "СКВИШ-ВЕРТУШКА", 74)
         .setOrigin(0.5)
-        .setTint(0xffcb1f),
+        .setTint(0xca43ff),
     );
 
     const arrow = this.add
@@ -91,9 +91,9 @@ export class RouletteScene extends Phaser.Scene {
       onClick: () => this.handleSpinClick(),
     });
 
-    const ticketSprite = this.add.image(0, 0, "ui", "ticket").setScale(1.8);
+    const ticketSprite = this.add.image(-30, 0, "ui", "ticket").setOrigin(0.5).setScale(1.2);
 
-    this.spinText = this.add.bitmapText(0, 0, "russo", "", 42).setOrigin(0.5).setTint(0xe1ff3a);
+    this.spinText = this.add.bitmapText(40, 0, "russo", "", 46).setOrigin(0.5).setTint(0xe1ff3a);
 
     const ticketContainer = this.add.container(screenWidth / 2, screenHeight - 220, [
       ticketSprite,
