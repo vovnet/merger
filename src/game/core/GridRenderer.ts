@@ -10,6 +10,7 @@ import { GridDragController } from "./GridDragController";
 import { GridVFXManager } from "./GridVFXManager";
 import { Economy } from "./Economy";
 import { TapDestroyController } from "./TapDestroyController";
+import { GameState } from "./GameState";
 
 export class GridRenderer {
   private sprites: Map<string, Phaser.GameObjects.Container> = new Map();
@@ -22,12 +23,16 @@ export class GridRenderer {
   private dragController: GridDragController;
   private vfxManager: GridVFXManager;
 
+  private gameState: GameState;
+
   private tapDestroy: TapDestroyController;
 
   constructor(
     private scene: Phaser.Scene,
     private grid: Grid,
   ) {
+    this.gameState = scene.registry.get("gameState") as GameState;
+
     const totalWidth = grid.cols * this.cellSize;
     const totalHeight = grid.rows * this.cellSize;
     this.offsetX = (scene.scale.width - totalWidth) / 2;
@@ -97,7 +102,18 @@ export class GridRenderer {
 
   public showMergeReward(pos: GridPosition, amount: number): void {
     const { px, py } = this.gridToPixel(pos);
-    this.vfxManager.spawnMoneyPopup(px, py, amount);
+    const bonusRand = Math.random();
+    if (bonusRand < 0.005) {
+      const amount = 1;
+      this.gameState.addSpins(amount);
+      this.vfxManager.spawnResourcePopup(px, py, amount, "ticket");
+    } else if (bonusRand < 0.05) {
+      const amount = Phaser.Math.Between(1, 5);
+      this.vfxManager.spawnResourcePopup(px, py, amount, "coin");
+      this.gameState.addCoins(amount);
+    } else {
+      this.vfxManager.spawnRewardPopup(px, py, amount);
+    }
   }
 
   // 🎯 Математика координат
