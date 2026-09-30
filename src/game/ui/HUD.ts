@@ -12,6 +12,7 @@ export class HUD {
   private coinsText: Phaser.GameObjects.BitmapText;
   private roundText: Phaser.GameObjects.BitmapText;
   private scoreText: Phaser.GameObjects.BitmapText;
+  private ticketText: Phaser.GameObjects.BitmapText;
   private itemChain: ItemChain;
 
   constructor(scene: Phaser.Scene) {
@@ -43,7 +44,7 @@ export class HUD {
       .bitmapText(0, 0, "russo", `${this.gameState.round}`, 22)
       .setOrigin(0, 0.5)
       .setDepth(100);
-    this.scene.add.container(520, 20, [roundIcon, this.roundText]);
+    this.scene.add.container(460, 20, [roundIcon, this.roundText]);
 
     const scoreIcon = this.scene.add.image(-20, 0, "ui", "score_icon").setScale(0.6);
     this.scoreText = this.scene.add
@@ -52,9 +53,20 @@ export class HUD {
       .setTint(0xffdd1c);
     this.scene.add.container(this.scene.scale.width / 2, 20, [scoreIcon, this.scoreText]);
 
+    const ticketIcon = this.scene.add.image(-22, 0, "ui", "ticket").setScale(0.5);
+    this.ticketText = this.scene.add
+      .bitmapText(0, 0, "russo", this.gameState.spins.toString(), 22)
+      .setTint(0xff56e3)
+      .setOrigin(0, 0.5);
+    this.scene.add.container(this.scene.scale.width / 2 + 200, 20, [ticketIcon, this.ticketText]);
+
     EventBus.on(GameEvents.SCORE_CHANGED, (score: number) => {
       this.scoreText.setText(score.toString());
     });
+
+    EventBus.on(GameEvents.SPINS_CHANGED, (spins: number) =>
+      this.ticketText.setText(spins.toString()),
+    );
 
     this.itemChain = new ItemChain(this.scene, this.scene.scale.width / 2, 70);
 
