@@ -10,7 +10,7 @@ export class HUD {
   private coinContainer: Phaser.GameObjects.Container;
   private coinsSprite: Phaser.GameObjects.Sprite;
   private coinsText: Phaser.GameObjects.BitmapText;
-  private roundText: Phaser.GameObjects.Text;
+  private roundText: Phaser.GameObjects.BitmapText;
   private scoreText: Phaser.GameObjects.BitmapText;
   private itemChain: ItemChain;
 
@@ -28,44 +28,35 @@ export class HUD {
       .setScale(0.8)
       .setOrigin(0.5)
       .setAngle(-20);
-
     this.coinsText = this.scene.add
       .bitmapText(40, 0, "russo", "", 32)
       .setOrigin(0, 0.5)
       .setDepth(100)
       .setTint(0x1ac729);
-
     this.coinContainer = this.scene.add.container(1040, 42, [this.coinsText, this.coinsSprite]);
 
+    const roundIcon = this.scene.add
+      .image(-20, 0, "ranks", `rank${Math.min(this.gameState.round, 37)}`)
+      .setOrigin(0.5)
+      .setScale(0.2);
     this.roundText = this.scene.add
-      .text(150, 20, `🔄 Раунд 1`, {
-        fontSize: "22px",
-        color: "#a8e6ff",
-        fontFamily: "Arial",
-        fontStyle: "bold",
-        stroke: "#000000",
-        strokeThickness: 3,
-      })
-      .setOrigin(0, 0)
+      .bitmapText(0, 0, "russo", `${this.gameState.round}`, 22)
+      .setOrigin(0, 0.5)
       .setDepth(100);
+    this.scene.add.container(520, 20, [roundIcon, this.roundText]);
 
     const scoreIcon = this.scene.add.image(-20, 0, "ui", "score_icon").setScale(0.6);
-
     this.scoreText = this.scene.add
       .bitmapText(0, 0, "russo", this.gameState.score.toString(), 22)
       .setOrigin(0, 0.5)
       .setTint(0xffdd1c);
-
-    const scoreContainer = this.scene.add.container(this.scene.scale.width / 2, 20, [
-      scoreIcon,
-      this.scoreText,
-    ]);
+    this.scene.add.container(this.scene.scale.width / 2, 20, [scoreIcon, this.scoreText]);
 
     EventBus.on(GameEvents.SCORE_CHANGED, (score: number) => {
       this.scoreText.setText(score.toString());
     });
 
-    this.itemChain = new ItemChain(this.scene);
+    this.itemChain = new ItemChain(this.scene, this.scene.scale.width / 2, 70);
 
     this.syncUI();
   }
@@ -85,7 +76,6 @@ export class HUD {
 
   private syncUI(): void {
     this.coinsText.setText(`💰 ${this.gameState.coins}`);
-    this.roundText.setText(`🔄 Раунд ${this.gameState.round}`);
   }
 
   // 🎯 НОВАЯ МЕТОД: Анимация "прилета" монеты

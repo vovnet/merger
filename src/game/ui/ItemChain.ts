@@ -17,12 +17,12 @@ export class ItemChain {
 
   private readonly CHAIN_LENGTH = 8; // количество слотов в цепочке
 
-  constructor(scene: Phaser.Scene) {
+  constructor(scene: Phaser.Scene, x: number, y: number) {
     this.scene = scene;
     this.gameState = this.scene.registry.get("gameState") as GameState;
     this.currentLevel = this.gameState.level;
 
-    this.container = this.scene.add.container(scene.scale.width / 2, 60).setDepth(100);
+    this.container = this.scene.add.container(x, y).setDepth(100);
 
     this.redraw(); // 🎯 Полная перерисовка из исходного состояния
     this.setupListeners();
