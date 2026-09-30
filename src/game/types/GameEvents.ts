@@ -3,6 +3,8 @@ export const GameEvents = {
   GAME_READY: "gameReady",
   GAME_PAUSE_REQUEST: "gamePauseRequest",
   GAME_RESUME_REQUEST: "gameResumeRequest",
+  SHOW_AD_NOTIFICATION: "showAdNotivication",
+  SHOW_FULLSCREEN_ADV: "showFullscreenAdv",
   // UI действия
   SHOW_TOAST: "showToast",
   SHOW_LEVEL_UP: "showLevelUp",

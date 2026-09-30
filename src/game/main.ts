@@ -4,6 +4,7 @@ import { UIScene } from "./scenes/UIScene";
 import { CollectionScene } from "./scenes/CollectionScene";
 import { RouletteScene } from "./scenes/RouletteScene";
 import { RewardScene } from "./scenes/RewardScene";
+import { AdNotificationScene } from "./scenes/AdNotificationScene";
 
 // Find out more information about the Game Config at:
 // https://docs.phaser.io/api-documentation/typedef/types-core#gameconfig
@@ -18,7 +19,7 @@ const config: Types.Core.GameConfig = {
     autoCenter: Scale.CENTER_BOTH,
   },
   disableContextMenu: true,
-  scene: [MainGame, UIScene, RewardScene, CollectionScene, RouletteScene],
+  scene: [MainGame, UIScene, RewardScene, CollectionScene, RouletteScene, AdNotificationScene],
   banner: { hidePhaser: true },
 };
 

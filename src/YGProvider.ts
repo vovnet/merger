@@ -31,6 +31,7 @@ class YGProvider {
 
     EventBus.on(GameEvents.GAME_PAUSE_REQUEST, () => this.sdk?.features.GameplayAPI.stop());
     EventBus.on(GameEvents.GAME_RESUME_REQUEST, () => this.sdk?.features.GameplayAPI.start());
+    EventBus.on(GameEvents.SHOW_FULLSCREEN_ADV, () => this.showFullscreenAdv());
   }
 
   private pause() {

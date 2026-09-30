@@ -93,6 +93,7 @@ export class Game extends Phaser.Scene {
 
     this.scene.launch("UIScene", { economy: this.economy, contractService: this.contractService });
     this.scene.get("UIScene") as UIScene;
+    this.scene.launch("AdNotificationScene");
 
     this.setupEventListeners();
 
