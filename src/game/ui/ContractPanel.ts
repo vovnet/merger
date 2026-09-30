@@ -69,7 +69,7 @@ export class ContractPanel {
     ticketSprite.setOrigin(0.5);
 
     const rewardText = this.scene.add
-      .bitmapText(5, 0, "russo", "+1", 24)
+      .bitmapText(5, 0, "russo", "+5", 24)
       .setOrigin(0, 0.5)
       .setTint(0xffffff);
 
