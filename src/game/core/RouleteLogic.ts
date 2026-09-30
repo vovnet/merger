@@ -24,6 +24,13 @@ export interface RouletteWinData {
   rareIndex?: number;
 }
 
+const CARDS_BG_COLORS = {
+  COINS_SMALL: 0x314a5a,
+  COINS_MEDIUM: 0x57523c,
+  COINS_LARGE: 0x55322d,
+  RARE_SQUISH: 0x4a2c6a,
+};
+
 export class RouletteLogic {
   private scene: Phaser.Scene;
   private config: Required<RouletteConfig>;
@@ -140,7 +147,8 @@ export class RouletteLogic {
 
     container.setData({ type, value });
 
-    const bgColor = isRare ? 0x4a2c6a : 0x3a3a5e;
+    const bgColor = CARDS_BG_COLORS[isRare ? "RARE_SQUISH" : type];
+    // const bgColor = isRare ? 0x4a2c6a : 0x3a3a5e;
     const borderColor = isRare ? 0xffd700 : 0xffffff;
     const borderAlpha = isRare ? 0.9 : 0.4;
 
