@@ -9,6 +9,7 @@ import { FillButton } from "./FillButton"; // 🎯 Новый импорт
 import { AlertButton } from "./AlertButton";
 import { RewardData } from "../types/Rewards";
 import { ygProvider } from "../../YGProvider";
+import { AdvButton } from "../components/adv-button/AdvButton";
 
 export class ActionButtons {
   private scene: Phaser.Scene;
@@ -25,7 +26,7 @@ export class ActionButtons {
   private achivementsButton: AlertButton;
   private leaderboardButton: AlertButton;
 
-  private adButton: AlertButton;
+  private adButton: AdvButton;
 
   constructor(scene: Phaser.Scene, economy: Economy) {
     this.scene = scene;
@@ -106,7 +107,7 @@ export class ActionButtons {
 
     buttonContent.add([coinIcon, labelText]);
 
-    this.adButton = new AlertButton(this.scene, {
+    this.adButton = new AdvButton(this.scene, {
       x: 1140,
       y: 660,
       scale: 0.7,
