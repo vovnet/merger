@@ -275,7 +275,23 @@ export class ContractService {
     const minLevel = Math.max(1, playerLevel - 4);
     const maxLevel = playerLevel;
 
-    const targetLevel = Phaser.Math.Between(minLevel, maxLevel);
+    let minItemCount = Infinity;
+    const candidateLevels: number[] = [];
+
+    for (let level = minLevel; level <= maxLevel; level++) {
+      const count = this.grid.countItemsByLevel(level);
+
+      if (count < minItemCount) {
+        minItemCount = count;
+        candidateLevels.length = 0;
+        candidateLevels.push(level);
+      } else if (count === minItemCount) {
+        candidateLevels.push(level);
+      }
+    }
+
+    const targetLevel = Phaser.Utils.Array.GetRandom(candidateLevels);
+
     const requiredCount = Phaser.Math.Between(this.MIN_REQUIRED_COUNT, this.MAX_REQUIRED_COUNT);
 
     return {
