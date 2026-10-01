@@ -10,6 +10,7 @@ import { AlertButton } from "./AlertButton";
 import { RewardData } from "../types/Rewards";
 import { ygProvider } from "../../YGProvider";
 import { AdvButton } from "../components/adv-button/AdvButton";
+import { Switch } from "./Switch";
 
 export class ActionButtons {
   private scene: Phaser.Scene;
@@ -22,7 +23,7 @@ export class ActionButtons {
 
   private rouletteButton: AlertButton;
   private collectionButton: AlertButton;
-  private settingsButton: AlertButton;
+  private soundButton: Switch;
   private achivementsButton: AlertButton;
   private leaderboardButton: AlertButton;
 
@@ -125,14 +126,15 @@ export class ActionButtons {
       },
     });
 
-    this.settingsButton = new AlertButton(this.scene, {
+    this.soundButton = new Switch({
+      scene: this.scene,
       x: 240,
       y: this.scene.scale.height - 58,
       scale: 0.7,
-      textureKey: "ui",
-      frameKey: "settings_btn",
-      onClick: () => {
-        console.log("open settings modal");
+      on: { texture: "ui", frame: "sound_off_btn" },
+      off: { texture: "ui", frame: "sound_on_btn" },
+      onChange: (value) => {
+        console.log("switch: ", value);
       },
     });
   }
