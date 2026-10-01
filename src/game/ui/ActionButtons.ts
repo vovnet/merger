@@ -11,6 +11,7 @@ import { RewardData } from "../types/Rewards";
 import { ygProvider } from "../../YGProvider";
 import { AdvButton } from "../components/adv-button/AdvButton";
 import { Switch } from "./Switch";
+import { AudioService } from "../core/AudioService";
 
 export class ActionButtons {
   private scene: Phaser.Scene;
@@ -126,6 +127,8 @@ export class ActionButtons {
       },
     });
 
+    const audio = this.scene.registry.get("audioService") as AudioService;
+
     this.soundButton = new Switch({
       scene: this.scene,
       x: 240,
@@ -133,8 +136,10 @@ export class ActionButtons {
       scale: 0.7,
       on: { texture: "ui", frame: "sound_off_btn" },
       off: { texture: "ui", frame: "sound_on_btn" },
+      value: audio.isMuted(),
       onChange: (value) => {
         console.log("switch: ", value);
+        audio.toggleMute();
       },
     });
   }

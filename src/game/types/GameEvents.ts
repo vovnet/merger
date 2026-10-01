@@ -5,6 +5,7 @@ export const GameEvents = {
   GAME_RESUME_REQUEST: "gameResumeRequest",
   SHOW_AD_NOTIFICATION: "showAdNotivication",
   SHOW_FULLSCREEN_ADV: "showFullscreenAdv",
+  AUDIO_SETTINGS_CHANGED: "audioSettingsChanged",
   // UI действия
   SHOW_TOAST: "showToast",
   SHOW_LEVEL_UP: "showLevelUp",
