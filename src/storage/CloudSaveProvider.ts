@@ -1,18 +1,17 @@
 import { SaveData } from "../game/types/SaveData";
 import { SaveProvider } from "../game/types/SaveProvider";
+import { ygProvider } from "../YGProvider";
 
 export class CloudSaveProvider implements SaveProvider {
-  async load(): Promise<SaveData | null> {
-    // API request
-
-    return null;
+  async save(data: SaveData): Promise<void> {
+    await ygProvider.saveData(data, true);
   }
 
-  async save(data: SaveData): Promise<void> {
-    // API request
+  async load(): Promise<SaveData | null> {
+    return await ygProvider.loadData();
   }
 
   async clear(): Promise<void> {
-    // API request
+    await ygProvider.clearData();
   }
 }

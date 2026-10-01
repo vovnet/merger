@@ -60,7 +60,7 @@ export class Game extends Phaser.Scene {
       this.audioService,
       this.contractService,
     );
-    this.saveManager = new SaveManager(this.gameSession, this.localProvider);
+    this.saveManager = new SaveManager(this.gameSession, this.localProvider, this.cloudProvider);
 
     this.economy = new Economy(this.gameState);
     this.registry.set("economy", this.economy);
