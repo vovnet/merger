@@ -60,6 +60,7 @@ export class ContractService {
     this.gameState = gameState;
 
     EventBus.on(GameEvents.GRID_ITEM_CHANGED, this.checkProgress, this);
+    EventBus.on(GameEvents.LEVEL_CHANGED, this.handleLevelChanged, this);
   }
 
   // ===========================================================================
@@ -80,13 +81,41 @@ export class ContractService {
       return;
     }
 
-    if (this.contract) {
-      this.recalculateProgress();
+    /**
+     * Контракта нет — создаём.
+     */
+    if (!this.contract) {
+      this.generateContract();
+      return;
+    }
+
+    /**
+     * Выполненный контракт никогда не инвалидируется
+     * из-за изменения уровня игрока.
+     */
+    if (this.contract.status === "completed") {
       this.emitChanged();
       return;
     }
 
-    this.generateContract();
+    /**
+     * Незавершённый контракт мог устареть,
+     * пока игра была закрыта.
+     */
+    if (this.isContractOutdated()) {
+      this.contract = null;
+      this.emitChanged();
+
+      this.generateContract();
+      return;
+    }
+
+    /**
+     * Контракт всё ещё валиден.
+     * Пересчитываем прогресс относительно текущего Grid.
+     */
+    this.recalculateProgress();
+    this.emitChanged();
   }
 
   /**
@@ -175,6 +204,31 @@ export class ContractService {
    */
   public canClaimReward(): boolean {
     return this.contract?.status === "completed";
+  }
+
+  public handleLevelChanged(): void {
+    if (!this.isUnlocked()) {
+      this.contract = null;
+      this.emitChanged();
+      return;
+    }
+
+    /**
+     * Выполненный контракт не трогаем вообще.
+     */
+    if (this.contract && this.contract.status === "completed") {
+      return;
+    }
+
+    /**
+     * Если текущий контракт устарел —
+     * удаляем и создаём новый.
+     */
+    if (this.isContractOutdated()) {
+      this.contract = null;
+      this.emitChanged();
+      this.generateContract();
+    }
   }
 
   // ===========================================================================
@@ -272,12 +326,9 @@ export class ContractService {
 
     this.contract = {
       id: data.id,
-
       targetLevel: data.targetLevel,
       requiredCount: data.requiredCount,
-
       currentCount: data.currentCount,
-
       status: data.status,
     };
   }
@@ -318,6 +369,21 @@ export class ContractService {
     };
   }
 
+  private isContractOutdated(): boolean {
+    if (!this.contract) {
+      return false;
+    }
+
+    if (this.contract.status === "completed") {
+      return false;
+    }
+
+    const currentLevel = this.gameState.level;
+    const minimumValidTargetLevel = currentLevel - 5;
+
+    return this.contract.targetLevel < minimumValidTargetLevel;
+  }
+
   private emitChanged(): void {
     EventBus.emit(GameEvents.CONTRACT_UPDATED, {
       contract: this.getContractSnapshot(),
@@ -330,5 +396,6 @@ export class ContractService {
 
   public destroy(): void {
     EventBus.off(GameEvents.GRID_ITEM_CHANGED, this.checkProgress, this);
+    EventBus.off(GameEvents.LEVEL_CHANGED, this.handleLevelChanged, this);
   }
 }
