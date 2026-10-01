@@ -14,6 +14,6 @@ export interface Contract {
 }
 
 export interface ContractUpdateData {
-  contract: Contract;
+  contract: Contract | null;
   activeTargetLevel: number | null;
 }

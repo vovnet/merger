@@ -45,7 +45,8 @@ export const GameEvents = {
   SPINS_CHANGED: "spins_changed",
   RARE_SQUISH_RANK_CHANGED: "rare_squish_rank_changed",
 
-  GAME_STATE_LOADED: "game_state_loaded",
+  GAME_SAVE_LOADED: "game_save_loaded",
+  GAME_SAVED: "game_saved",
   PRESTIGE_OCCURRED: "prestige_occurred",
 } as const;
 

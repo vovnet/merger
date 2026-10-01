@@ -194,6 +194,5 @@ export class GameState {
     EventBus.emit(GameEvents.COINS_CHANGED, { value: this.data.coins, previousValue: 0 });
     EventBus.emit(GameEvents.LEVEL_CHANGED, { value: this.data.level, previousValue: 0 });
     EventBus.emit(GameEvents.SPINS_CHANGED, this.data.spins);
-    EventBus.emit(GameEvents.GAME_STATE_LOADED);
   }
 }

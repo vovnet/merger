@@ -2,7 +2,6 @@ import * as Phaser from "phaser";
 import { Grid } from "../core/Grid";
 import { GridRenderer } from "../core/GridRenderer";
 import { Economy } from "../core/Economy";
-import { HistoryService } from "../core/HistoryService";
 import { EventBus } from "../core/EventBus";
 import { ComboData, GameEvents, UIEvents } from "../types/GameEvents";
 import { UIScene } from "./UIScene";
@@ -14,6 +13,11 @@ import { ItemRegistry } from "../core/ItemRegistry";
 import { GridPosition } from "../types/Item";
 import { GrassWind } from "../core/GrassWind";
 import { ParallaxController } from "../core/ParallaxController";
+import { GameSession } from "../../storage/GameSession";
+import { SaveManager } from "../../storage/SaveManager";
+import { SaveProvider } from "../types/SaveProvider";
+import { LocalSaveProvider } from "../../storage/LocalSaveProvider";
+import { CloudSaveProvider } from "../../storage/CloudSaveProvider";
 
 export class Game extends Phaser.Scene {
   private gameState: GameState;
@@ -21,12 +25,15 @@ export class Game extends Phaser.Scene {
   private gridRenderer: GridRenderer;
   private economy: Economy;
 
-  private historyService: HistoryService;
   private contractService: ContractService;
   private audioService: AudioService;
   private grassWind: GrassWind;
 
   private bgParallax: ParallaxController;
+  private gameSession: GameSession;
+  private saveManager: SaveManager;
+  private localProvider: SaveProvider;
+  private cloudProvider: SaveProvider;
 
   constructor() {
     super({ key: "GameScene" });
@@ -34,7 +41,7 @@ export class Game extends Phaser.Scene {
 
   preload() {}
 
-  create(): void {
+  async create() {
     this.gameState = new GameState();
     this.registry.set("gameState", this.gameState);
 
@@ -43,15 +50,22 @@ export class Game extends Phaser.Scene {
     this.grid = new Grid({ cols: 7, rows: 5 });
     this.registry.set("grid", this.grid);
 
-    this.historyService = new HistoryService();
-    this.historyService.bind(this.grid);
-
-    this.gridRenderer = new GridRenderer(this, this.grid);
-
     this.contractService = new ContractService(this.grid, this.gameState);
+
+    this.localProvider = new LocalSaveProvider();
+    this.cloudProvider = new CloudSaveProvider();
+    this.gameSession = new GameSession(
+      this.gameState,
+      this.grid,
+      this.audioService,
+      this.contractService,
+    );
+    this.saveManager = new SaveManager(this.gameSession, this.localProvider);
 
     this.economy = new Economy(this.gameState);
     this.registry.set("economy", this.economy);
+
+    this.gridRenderer = new GridRenderer(this, this.grid);
 
     this.scene.launch("UIScene", { economy: this.economy, contractService: this.contractService });
     this.scene.get("UIScene") as UIScene;
@@ -91,25 +105,11 @@ export class Game extends Phaser.Scene {
       EventBus.emit(GameEvents.GAME_RESUME_REQUEST);
     });
 
-    // this.loadGameProgress();
-    EventBus.emit(GameEvents.GAME_READY);
-  }
-
-  private loadGameProgress(): void {
-    const saved = localStorage.getItem("my_merge_game_save");
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        this.gameState.deserialize(parsed); // Магия: все классы обновятся сами!
-      } catch (e) {
-        console.error("Ошибка загрузки сохранения", e);
-      }
+    const loaded = await this.saveManager.loadIntoSession();
+    if (!loaded) {
+      this.contractService.initialize();
     }
-  }
-
-  public saveGameProgress(): void {
-    const dataToSave = this.gameState.serialize();
-    localStorage.setItem("my_merge_game_save", JSON.stringify(dataToSave));
+    EventBus.emit(GameEvents.GAME_READY);
   }
 
   private fillAllEmptyCells(): void {
@@ -177,9 +177,9 @@ export class Game extends Phaser.Scene {
       this.fillAllEmptyCells();
     });
 
-    EventBus.on(UIEvents.UNDO_REQUESTED, () => {
-      this.historyService.undo();
-    });
+    // EventBus.on(UIEvents.UNDO_REQUESTED, () => {
+    //   this.historyService.undo();
+    // });
 
     EventBus.on(UIEvents.DEBUG_ADD_COINS, () => {
       this.economy.addSpawnRefund(this.gameState.level);
@@ -244,10 +244,6 @@ export class Game extends Phaser.Scene {
     this.gameState.prestige();
     // 4. Заполняем поле новыми предметами 1-го уровня
     this.fillAllEmptyCells();
-    // 5. Сохраняем прогресс
-    this.saveGameProgress();
-    // 6. Сбрасываем историю (undo больше не работает после престижа)
-    this.historyService.clear();
   }
 
   // Вычисление уровня для кнопки спауна
@@ -257,7 +253,6 @@ export class Game extends Phaser.Scene {
   }
 
   private handleLevelUp(): void {
-    // 🎯 НОВОЕ: Очищаем поле от мёртвых предметов
     const spawnLevel = this.getSpawnLevel();
     const removedItems = this.grid.removeItemsBelowLevel(spawnLevel);
 
@@ -266,11 +261,8 @@ export class Game extends Phaser.Scene {
       const compensation = removedItems.length;
       this.gameState.addCoins(compensation);
     }
-
-    this.historyService.clear();
   }
 
-  // 🎯 ГЛАВНЫЙ МЕТОД: Спаун случайного предмета с учётом задержки
   private spawnRandomItem(): void {
     const levelToSpawn = this.getSpawnLevel();
     const cost = this.economy.getSpawnCost(this.gameState.level);
