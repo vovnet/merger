@@ -32,45 +32,7 @@ export class Game extends Phaser.Scene {
     super({ key: "GameScene" });
   }
 
-  preload() {
-    this.load.image("bg_main", "assets/bg.png");
-    this.load.atlas("squishes", "assets/spritesheet.png", "assets/spritesheet.json");
-    this.load.atlas("ranks", "assets/rank_sprites.png", "assets/rank_sprites.json");
-    this.load.atlas("ui", "assets/ui_spritesheet.png", "assets/ui_spritesheet.json");
-    this.load.atlas("rare-squishes", "assets/rare_texture.png", "assets/rare_texture.json");
-    this.load.atlas(
-      "squish-pack",
-      "assets/squish_pack_spritesheet.png",
-      "assets/squish_pack_spritesheet.json",
-    );
-    this.load.atlas(
-      "fireworks",
-      "assets/fireworks_spritesheet.png",
-      "assets/fireworks_spritesheet.json",
-    );
-    this.load.image("grass", "assets/bush.png");
-
-    this.load.audio("merge_pop", "assets/sound/bubble_1.mp3");
-    this.load.audio("unlock", "assets/sound/unlock.mp3");
-    this.load.audio("sword", "assets/sound/sword.mp3");
-    this.load.audio("water_bubbling", "assets/sound/water_bubbling.mp3");
-    this.load.audio("ui_pop", "assets/sound/ui_pop.mp3");
-    this.load.audio("tick", "assets/sound/tick.mp3");
-    this.load.audio("tearing", "assets/sound/tearing.mp3");
-
-    this.load.bitmapFont("russo", "assets/fonts/days.png", "assets/fonts/days.xml");
-
-    // 1. Создаем временный Graphics объект
-    const graphics = this.add.graphics({ x: 0, y: 0 });
-    // 2. Рисуем мягкий круг (16x16 пикселей)
-    graphics.fillStyle(0xffffff, 1);
-    graphics.fillCircle(8, 8, 8);
-    // 3. Генерируем текстуру из нарисованного
-    graphics.generateTexture("particle_blob", 16, 16);
-    // 4. Сразу удаляем сам Graphics объект!
-    // (Если этого не сделать, белый круг так и останется висеть в левом верхнем углу экрана)
-    graphics.destroy();
-  }
+  preload() {}
 
   create(): void {
     this.gameState = new GameState();
