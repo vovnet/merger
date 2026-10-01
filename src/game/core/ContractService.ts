@@ -1,364 +1,327 @@
+// core/ContractService.ts
+
 import * as Phaser from "phaser";
-import { EventBus } from "./EventBus";
-import { GameEvents } from "../types/GameEvents";
-import { Contract, ContractTask, ContractUpdateData } from "../types/Contract";
 import { Grid } from "./Grid";
 import { GameState } from "./GameState";
+import { EventBus } from "./EventBus";
+import { GameEvents } from "../types/GameEvents";
+
+export type ContractStatus = "active" | "completed";
+
+export interface Contract {
+  id: string;
+  targetLevel: number;
+  requiredCount: number;
+  currentCount: number;
+  status: ContractStatus;
+}
 
 export interface ContractSaveData {
   id: string;
+  targetLevel: number;
+  requiredCount: number;
+  currentCount: number;
+  status: ContractStatus;
+}
 
-  tasks: Array<{
-    id: string;
-    targetLevel: number;
-    requiredCount: number;
-    isCompleted: boolean;
-  }>;
+export interface ContractChangedEvent {
+  contract: Contract | null;
+}
 
-  isCompleted: boolean;
+export interface ContractReward {
+  coins: number;
 }
 
 export class ContractService {
   private readonly UNLOCK_LEVEL = 7;
-  private readonly TASK_COUNT = 3;
+
+  /**
+   * Максимальное количество предметов
+   * в требовании.
+   */
+  private readonly MIN_REQUIRED_COUNT = 2;
+  private readonly MAX_REQUIRED_COUNT = 6;
+
+  /**
+   * Награда.
+   *
+   * Пока оставил простой вариант.
+   * Потом сюда можно вынести RewardService.
+   */
+  private readonly REWARD_COINS = 100;
 
   private readonly grid: Grid;
   private readonly gameState: GameState;
 
-  private activeContract: Contract | null = null;
-
-  private isRestoring = false;
+  private contract: Contract | null = null;
 
   constructor(grid: Grid, gameState: GameState) {
     this.grid = grid;
     this.gameState = gameState;
 
-    this.bindEvents();
-  }
-
-  // ===========================================================================
-  // EVENTS
-  // ===========================================================================
-
-  private bindEvents(): void {
-    EventBus.on(GameEvents.LEVEL_CHANGED, this.handleLevelChanged, this);
-
-    EventBus.on(GameEvents.GRID_ITEM_MERGED, this.checkTasks, this);
-
-    EventBus.on(GameEvents.GRID_ITEM_ADDED, this.checkTasks, this);
-
-    EventBus.on(GameEvents.GRID_ITEM_REMOVED, this.checkTasks, this);
-
-    EventBus.on(GameEvents.GRID_FILLED, this.checkTasks, this);
-
-    EventBus.on(GameEvents.GRID_RESTORED, this.checkTasks, this);
-  }
-
-  private handleLevelChanged(): void {
-    if (this.isRestoring) {
-      return;
-    }
-
-    if (this.gameState.level < this.UNLOCK_LEVEL) {
-      this.clearContract();
-      return;
-    }
-
-    if (!this.activeContract) {
-      this.generateNewContract();
-    }
-  }
-
-  // ===========================================================================
-  // INITIALIZATION
-  // ===========================================================================
-
-  /**
-   * Вызывается после создания новой игры.
-   */
-  public initialize(): void {
-    if (this.gameState.level < this.UNLOCK_LEVEL) {
-      return;
-    }
-
-    if (this.activeContract) {
-      return;
-    }
-
-    this.generateNewContract();
-  }
-
-  /**
-   * Вызывается ПОСЛЕ полного восстановления save.
-   *
-   * Если в save не было контракта, но уровень уже позволяет
-   * использовать контракты — создаём новый.
-   */
-  public finishRestore(): void {
-    if (!this.activeContract) {
-      if (this.gameState.level >= this.UNLOCK_LEVEL) {
-        this.generateNewContract();
-      }
-
-      return;
-    }
-
-    this.updateLockStates();
-    this.checkTasks();
-    this.emitContractUpdated();
-  }
-
-  // ===========================================================================
-  // GENERATION
-  // ===========================================================================
-
-  private generateNewContract(): void {
-    if (this.gameState.level < this.UNLOCK_LEVEL) {
-      return;
-    }
-
-    const tasks: ContractTask[] = [];
-
-    const maxLevel = this.gameState.level - 1;
-    const minLevel = Math.max(1, this.gameState.level - 5);
-
-    const levelPool: number[] = [];
-
-    for (let level = minLevel; level <= maxLevel; level++) {
-      levelPool.push(level);
-    }
-
-    const taskCount = Math.min(this.TASK_COUNT, levelPool.length);
-
-    for (let i = 0; i < taskCount; i++) {
-      const randomIndex = Phaser.Math.Between(0, levelPool.length - 1);
-
-      const targetLevel = levelPool.splice(randomIndex, 1)[0];
-
-      tasks.push({
-        id: `task_${Date.now()}_${i}`,
-        targetLevel,
-        requiredCount: Phaser.Math.Between(2, 6),
-        currentCount: 0,
-        isCompleted: false,
-        isLocked: i > 0,
-      });
-    }
-
-    tasks.sort((a, b) => b.targetLevel - a.targetLevel);
-
-    tasks.forEach((task, index) => {
-      task.isLocked = index > 0;
-    });
-
-    this.activeContract = {
-      id: `contract_${Date.now()}`,
-      tasks,
-      isCompleted: false,
-    };
-
-    EventBus.emit(GameEvents.CONTRACT_CREATED, {
-      contract: this.activeContract,
-      activeTargetLevel: this.getActiveTargetLevel(),
-    } as ContractUpdateData);
-
-    this.checkTasks();
-  }
-
-  // ===========================================================================
-  // TASKS
-  // ===========================================================================
-
-  private checkTasks = (): void => {
-    if (this.isRestoring) {
-      return;
-    }
-
-    if (!this.activeContract) {
-      return;
-    }
-
-    if (this.activeContract.isCompleted) {
-      return;
-    }
-
-    let changed = false;
-    let shouldContinue = true;
-
-    while (shouldContinue) {
-      shouldContinue = false;
-
-      const activeTask = this.activeContract.tasks.find(
-        (task) => !task.isCompleted && !task.isLocked,
-      );
-
-      if (!activeTask) {
-        break;
-      }
-
-      const countOnBoard = this.grid.countItemsByLevel(activeTask.targetLevel);
-
-      if (activeTask.currentCount !== countOnBoard) {
-        activeTask.currentCount = countOnBoard;
-        changed = true;
-      }
-
-      if (countOnBoard >= activeTask.requiredCount) {
-        activeTask.isCompleted = true;
-        changed = true;
-
-        const currentIndex = this.activeContract.tasks.indexOf(activeTask);
-
-        const nextTask = this.activeContract.tasks[currentIndex + 1];
-
-        if (nextTask) {
-          nextTask.isLocked = false;
-          nextTask.currentCount = 0;
-
-          shouldContinue = true;
-        }
-      }
-    }
-
-    this.updateLockStates();
-
-    if (
-      this.activeContract.tasks.length > 0 &&
-      this.activeContract.tasks.every((task) => task.isCompleted)
-    ) {
-      this.activeContract.isCompleted = true;
-      changed = true;
-
-      EventBus.emit(GameEvents.CONTRACT_COMPLETED, {
-        contract: this.activeContract,
-      } as ContractUpdateData);
-    }
-
-    if (changed) {
-      this.emitContractUpdated();
-    }
-  };
-
-  private updateLockStates(): void {
-    if (!this.activeContract) {
-      return;
-    }
-
-    let previousCompleted = true;
-
-    for (const task of this.activeContract.tasks) {
-      if (!previousCompleted) {
-        task.isLocked = true;
-        task.currentCount = 0;
-      } else {
-        task.isLocked = false;
-      }
-
-      if (!task.isCompleted) {
-        previousCompleted = false;
-      }
-    }
+    EventBus.on(GameEvents.GRID_ITEM_CHANGED, this.checkProgress, this);
   }
 
   // ===========================================================================
   // PUBLIC API
   // ===========================================================================
 
-  public getActiveContract(): Contract | null {
-    return this.activeContract;
+  /**
+   * Вызывается один раз после создания новой игры
+   * или после восстановления сохранения.
+   *
+   * Этот метод является единственной точкой,
+   * которая решает: должен ли существовать контракт.
+   */
+  public initialize(): void {
+    if (!this.isUnlocked()) {
+      this.contract = null;
+      this.emitChanged();
+      return;
+    }
+
+    if (this.contract) {
+      this.recalculateProgress();
+      this.emitChanged();
+      return;
+    }
+
+    this.generateContract();
   }
 
-  public getActiveTargetLevel(): number | null {
-    if (!this.activeContract || this.activeContract.isCompleted) {
+  /**
+   * Проверяет текущий прогресс контракта.
+   *
+   * Вызывать после любого изменения Grid.
+   */
+  public checkProgress(): void {
+    if (!this.contract) {
+      return;
+    }
+
+    if (this.contract.status === "completed") {
+      return;
+    }
+
+    const currentCount = this.grid.countItemsByLevel(this.contract.targetLevel);
+
+    if (this.contract.currentCount === currentCount) {
+      return;
+    }
+
+    this.contract.currentCount = currentCount;
+
+    if (currentCount >= this.contract.requiredCount) {
+      this.contract.currentCount = this.contract.requiredCount;
+      this.contract.status = "completed";
+
+      EventBus.emit(GameEvents.CONTRACT_COMPLETED, {
+        contract: this.getContractSnapshot(),
+      });
+    }
+
+    this.emitChanged();
+  }
+
+  /**
+   * Игрок забирает награду.
+   *
+   * Только здесь старый контракт уничтожается
+   * и создаётся новый.
+   */
+  public claimReward(): ContractReward | null {
+    if (!this.contract) {
       return null;
     }
 
-    const activeTask = this.activeContract.tasks.find(
-      (task) => !task.isCompleted && !task.isLocked,
-    );
+    if (this.contract.status !== "completed") {
+      return null;
+    }
 
-    return activeTask ? activeTask.targetLevel : null;
+    const reward: ContractReward = {
+      coins: this.REWARD_COINS,
+    };
+
+    const completedContract = this.getContractSnapshot();
+
+    this.gameState.addCoins(reward.coins);
+
+    EventBus.emit(GameEvents.CONTRACT_REWARD_CLAIMED, {
+      contract: completedContract,
+      reward,
+    });
+
+    this.generateContract();
+
+    return reward;
+  }
+
+  /**
+   * Возвращает immutable-ish копию контракта.
+   */
+  public getContract(): Contract | null {
+    return this.getContractSnapshot();
+  }
+
+  /**
+   * Есть ли активный контракт.
+   */
+  public hasContract(): boolean {
+    return this.contract !== null;
+  }
+
+  /**
+   * Можно ли забрать награду.
+   */
+  public canClaimReward(): boolean {
+    return this.contract?.status === "completed";
+  }
+
+  // ===========================================================================
+  // GENERATION
+  // ===========================================================================
+
+  private generateContract(): void {
+    if (!this.isUnlocked()) {
+      this.contract = null;
+      this.emitChanged();
+      return;
+    }
+
+    const { targetLevel, requiredCount } = this.generateTarget();
+
+    this.contract = {
+      id: this.generateContractId(),
+      targetLevel,
+      requiredCount,
+      currentCount: 0,
+      status: "active",
+    };
+
+    this.recalculateProgress();
+
+    EventBus.emit(GameEvents.CONTRACT_CREATED, {
+      contract: this.getContractSnapshot(),
+    });
+  }
+
+  private generateTarget(): {
+    targetLevel: number;
+    requiredCount: number;
+  } {
+    const playerLevel = this.gameState.level;
+
+    const minLevel = Math.max(1, playerLevel - 6);
+    const maxLevel = playerLevel;
+
+    const targetLevel = Phaser.Math.Between(minLevel, maxLevel);
+    const minRequired = Math.max(this.MIN_REQUIRED_COUNT, this.MAX_REQUIRED_COUNT);
+    const maxRequired = Math.max(minRequired, this.MAX_REQUIRED_COUNT);
+    const requiredCount = Phaser.Math.Between(minRequired, maxRequired);
+
+    return {
+      targetLevel,
+      requiredCount,
+    };
+  }
+
+  // ===========================================================================
+  // PROGRESS
+  // ===========================================================================
+
+  private recalculateProgress(): void {
+    if (!this.contract) {
+      return;
+    }
+
+    if (this.contract.status === "completed") {
+      return;
+    }
+
+    const count = this.grid.countItemsByLevel(this.contract.targetLevel);
+
+    this.contract.currentCount = Math.min(count, this.contract.requiredCount);
+
+    if (this.contract.currentCount >= this.contract.requiredCount) {
+      this.contract.currentCount = this.contract.requiredCount;
+      this.contract.status = "completed";
+
+      EventBus.emit(GameEvents.CONTRACT_COMPLETED, {
+        contract: this.getContractSnapshot(),
+      });
+    }
   }
 
   // ===========================================================================
   // RESTORE
   // ===========================================================================
 
-  public beginRestore(): void {
-    this.isRestoring = true;
-  }
+  /**
+   * Восстанавливает контракт из save.
+   *
+   * Никаких событий здесь не эмитим.
+   *
+   * Restore — это изменение внутреннего состояния.
+   * UI узнает о состоянии через initialize().
+   */
+  public deserialize(data: ContractSaveData | null): void {
+    if (!data) {
+      this.contract = null;
+      return;
+    }
 
-  public endRestore(): void {
-    this.isRestoring = false;
+    this.contract = {
+      id: data.id,
+
+      targetLevel: data.targetLevel,
+      requiredCount: data.requiredCount,
+
+      currentCount: data.currentCount,
+
+      status: data.status,
+    };
   }
 
   public serialize(): ContractSaveData | null {
-    if (!this.activeContract) {
+    if (!this.contract) {
       return null;
     }
 
     return {
-      id: this.activeContract.id,
-
-      tasks: this.activeContract.tasks.map((task) => ({
-        id: task.id,
-        targetLevel: task.targetLevel,
-        requiredCount: task.requiredCount,
-        isCompleted: task.isCompleted,
-      })),
-
-      isCompleted: this.activeContract.isCompleted,
-    };
-  }
-
-  public deserialize(data: ContractSaveData | null): void {
-    if (!data) {
-      this.activeContract = null;
-      return;
-    }
-
-    this.activeContract = {
-      id: data.id,
-
-      tasks: data.tasks.map(
-        (task): ContractTask => ({
-          id: task.id,
-          targetLevel: task.targetLevel,
-          requiredCount: task.requiredCount,
-
-          // Будет пересчитан после restore.
-          currentCount: 0,
-
-          isCompleted: task.isCompleted,
-
-          // Будет пересчитан после restore.
-          isLocked: false,
-        }),
-      ),
-
-      isCompleted: data.isCompleted,
+      id: this.contract.id,
+      targetLevel: this.contract.targetLevel,
+      requiredCount: this.contract.requiredCount,
+      currentCount: this.contract.currentCount,
+      status: this.contract.status,
     };
   }
 
   // ===========================================================================
-  // UTILS
+  // HELPERS
   // ===========================================================================
 
-  private clearContract(): void {
-    if (!this.activeContract) {
-      return;
-    }
-
-    this.activeContract = null;
-
-    this.emitContractUpdated();
+  private isUnlocked(): boolean {
+    return this.gameState.level >= this.UNLOCK_LEVEL;
   }
 
-  private emitContractUpdated(): void {
+  private generateContractId(): string {
+    return `contract_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+  }
+
+  private getContractSnapshot(): Contract | null {
+    if (!this.contract) {
+      return null;
+    }
+
+    return {
+      ...this.contract,
+    };
+  }
+
+  private emitChanged(): void {
     EventBus.emit(GameEvents.CONTRACT_UPDATED, {
-      contract: this.activeContract,
-      activeTargetLevel: this.getActiveTargetLevel(),
-    } as ContractUpdateData);
+      contract: this.getContractSnapshot(),
+    } as ContractChangedEvent);
   }
 
   // ===========================================================================
@@ -366,16 +329,6 @@ export class ContractService {
   // ===========================================================================
 
   public destroy(): void {
-    EventBus.off(GameEvents.LEVEL_CHANGED, this.handleLevelChanged, this);
-
-    EventBus.off(GameEvents.GRID_ITEM_MERGED, this.checkTasks, this);
-
-    EventBus.off(GameEvents.GRID_ITEM_ADDED, this.checkTasks, this);
-
-    EventBus.off(GameEvents.GRID_ITEM_REMOVED, this.checkTasks, this);
-
-    EventBus.off(GameEvents.GRID_FILLED, this.checkTasks, this);
-
-    EventBus.off(GameEvents.GRID_RESTORED, this.checkTasks, this);
+    EventBus.off(GameEvents.GRID_ITEM_CHANGED, this.checkProgress, this);
   }
 }

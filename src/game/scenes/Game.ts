@@ -67,10 +67,6 @@ export class Game extends Phaser.Scene {
 
     this.gridRenderer = new GridRenderer(this, this.grid);
 
-    this.scene.launch("UIScene", { economy: this.economy, contractService: this.contractService });
-    this.scene.get("UIScene") as UIScene;
-    this.scene.launch("AdNotificationScene");
-
     this.setupEventListeners();
 
     const bg = this.add.image(this.scale.width / 2, this.scale.height / 2, "bg_main").setDepth(-10);
@@ -105,10 +101,13 @@ export class Game extends Phaser.Scene {
       EventBus.emit(GameEvents.GAME_RESUME_REQUEST);
     });
 
-    const loaded = await this.saveManager.loadIntoSession();
-    if (!loaded) {
-      this.contractService.initialize();
-    }
+    await this.saveManager.loadIntoSession();
+
+    this.contractService.initialize();
+
+    this.scene.launch("UIScene", { economy: this.economy, contractService: this.contractService });
+    this.scene.launch("AdNotificationScene");
+
     EventBus.emit(GameEvents.GAME_READY);
   }
 

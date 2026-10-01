@@ -41,6 +41,7 @@ export const GameEvents = {
   CONTRACT_CREATED: "contract_created",
   CONTRACT_UPDATED: "contract_updated",
   CONTRACT_COMPLETED: "contract_completed",
+  CONTRACT_REWARD_CLAIMED: "contract_reward_claimed",
 
   SPINS_CHANGED: "spins_changed",
   RARE_SQUISH_RANK_CHANGED: "rare_squish_rank_changed",

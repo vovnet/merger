@@ -25,18 +25,9 @@ export class GameSession {
   }
 
   public restoreSaveData(data: SaveData): void {
-    this.contract.beginRestore();
-
-    try {
-      this.gameState.deserialize(data.game);
-
-      this.grid.restoreSnapshot(data.grid);
-
-      this.audio.setSettings(data.audio);
-
-      this.contract.deserialize(data.contract);
-    } finally {
-      this.contract.endRestore();
-    }
+    this.gameState.deserialize(data.game);
+    this.grid.restoreSnapshot(data.grid);
+    this.audio.setSettings(data.audio);
+    this.contract.deserialize(data.contract);
   }
 }

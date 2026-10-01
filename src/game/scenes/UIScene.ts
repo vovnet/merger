@@ -2,16 +2,16 @@ import * as Phaser from "phaser";
 import { HUD } from "../ui/HUD";
 import { ActionButtons } from "../ui/ActionButtons";
 import { Economy } from "../core/Economy";
-import { ContractPanel } from "../ui/ContractPanel";
 import { ContractService } from "../core/ContractService";
 import { ModalManager } from "../ui/modals/ModalManager";
+import { ContractView } from "../ui/ContractView";
 
 export class UIScene extends Phaser.Scene {
   private hud: HUD;
   private actionButtons: ActionButtons;
   private economy: Economy;
   private contractService: ContractService;
-  private contractPanel: ContractPanel;
+  private contractview: ContractView;
   private modalManager: ModalManager;
 
   constructor() {
@@ -23,7 +23,7 @@ export class UIScene extends Phaser.Scene {
     this.contractService = data.contractService;
     this.hud = new HUD(this);
     this.actionButtons = new ActionButtons(this, this.economy);
-    this.contractPanel = new ContractPanel(this, this.contractService);
+    this.contractview = new ContractView(this, this.contractService);
 
     this.modalManager = new ModalManager(this);
     // this.modalManager.register("SETTINGS", SettingsModal);
