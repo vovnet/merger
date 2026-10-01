@@ -136,6 +136,20 @@ export class AudioService {
     });
   }
 
+  public playNotificationSound_1(): void {
+    this.play("notification_1", {
+      volume: 0.8,
+      rate: 0.8,
+    });
+  }
+
+  public playNotificationSound_2(): void {
+    this.play("notification_2", {
+      volume: 0.8,
+      rate: 0.8,
+    });
+  }
+
   // ============================================================
   // INTERNAL
   // ============================================================

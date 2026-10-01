@@ -3,16 +3,19 @@ import { EventBus } from "../core/EventBus";
 import { Contract, ContractService } from "../core/ContractService";
 import { GameEvents } from "../types/GameEvents";
 import { ItemRegistry } from "../core/ItemRegistry";
+import { AudioService } from "../core/AudioService";
 
 export class ContractView {
   private readonly scene: Phaser.Scene;
   private readonly contractService: ContractService;
 
   private readonly container: Phaser.GameObjects.Container;
-
   private readonly background: Phaser.GameObjects.Graphics;
 
+  private audioService: AudioService;
+
   private itemSprite: Phaser.GameObjects.Image | null = null;
+  private rewardPlaceholder: Phaser.GameObjects.Container | null = null;
 
   private progressText: Phaser.GameObjects.BitmapText | null = null;
   private titleText: Phaser.GameObjects.BitmapText | null = null;
@@ -21,16 +24,29 @@ export class ContractView {
   private claimButtonBackground: Phaser.GameObjects.Image | null = null;
   private claimButtonText: Phaser.GameObjects.BitmapText | null = null;
 
+  /**
+   * ID контракта, который сейчас отображается.
+   */
   private visibleContractId: string | null = null;
+
+  /**
+   * Во время этой анимации View игнорирует
+   * CONTRACT_CREATED / CONTRACT_UPDATED.
+   *
+   * Это нужно потому, что ContractService создаёт
+   * новый контракт сразу после claimReward().
+   */
+  private isClaimAnimating = false;
 
   private readonly WIDTH = 180;
   private readonly HEIGHT = 250;
 
-  constructor(scene: Phaser.Scene, contractService: ContractService) {
+  constructor(scene: Phaser.Scene, contractService: ContractService, audioService: AudioService) {
     this.scene = scene;
     this.contractService = contractService;
+    this.audioService = audioService;
 
-    this.container = scene.add.container(80, 150).setDepth(150).setVisible(false);
+    this.container = scene.add.container(150, 150).setDepth(150).setVisible(false);
 
     this.background = scene.add.graphics();
 
@@ -40,12 +56,9 @@ export class ContractView {
     this.bindEvents();
 
     /**
-     * Очень важно:
+     * View может быть создан после ContractService.
      *
-     * View может быть создан после того,
-     * как ContractService уже создал контракт.
-     *
-     * Поэтому не рассчитываем только на EventBus.
+     * Поэтому сразу проверяем текущее состояние.
      */
     const contract = this.contractService.getContract();
 
@@ -97,18 +110,36 @@ export class ContractView {
     EventBus.on(GameEvents.CONTRACT_UPDATED, this.handleContractUpdated, this);
 
     EventBus.on(GameEvents.CONTRACT_COMPLETED, this.handleContractCompleted, this);
+
+    EventBus.on(GameEvents.CONTRACT_REWARD_CLAIMED, this.handleRewardClaimed, this);
   }
 
   private handleContractCreated(data: { contract: Contract | null }): void {
+    /**
+     * Во время анимации claim старый UI
+     * должен спокойно исчезнуть.
+     *
+     * Новый контракт показываем только
+     * после завершения анимации.
+     */
+    if (this.isClaimAnimating) {
+      return;
+    }
+
     if (!data.contract) {
       this.hide();
       return;
     }
 
+    this.audioService.playNotificationSound_1();
     this.render(data.contract, true);
   }
 
   private handleContractUpdated(data: { contract: Contract | null }): void {
+    if (this.isClaimAnimating) {
+      return;
+    }
+
     if (!data.contract) {
       this.hide();
       return;
@@ -118,6 +149,10 @@ export class ContractView {
   }
 
   private handleContractCompleted(data: { contract: Contract | null }): void {
+    if (this.isClaimAnimating) {
+      return;
+    }
+
     if (!data.contract) {
       return;
     }
@@ -127,6 +162,34 @@ export class ContractView {
     this.playCompletedAnimation();
   }
 
+  /**
+   * Вызывается после успешной выдачи награды сервисом.
+   *
+   * Сам сервис уже создал новый контракт.
+   * Мы пока его не показываем, а сначала красиво
+   * убираем старый.
+   */
+  private handleRewardClaimed(): void {
+    if (this.isClaimAnimating) {
+      return;
+    }
+
+    this.isClaimAnimating = true;
+
+    this.playClaimAnimation(() => {
+      this.isClaimAnimating = false;
+
+      const contract = this.contractService.getContract();
+
+      if (!contract) {
+        this.hide();
+        return;
+      }
+
+      this.render(contract, true);
+    });
+  }
+
   // ===========================================================================
   // RENDER
   // ===========================================================================
@@ -134,12 +197,6 @@ export class ContractView {
   private render(contract: Contract, animate = false): void {
     this.container.setVisible(true);
 
-    /**
-     * Если контракт действительно новый —
-     * полностью перестраиваем содержимое.
-     *
-     * Если тот же контракт — просто обновляем прогресс.
-     */
     const isNewContract = this.visibleContractId !== contract.id;
 
     if (isNewContract) {
@@ -147,23 +204,45 @@ export class ContractView {
 
       this.clearContractContent();
 
-      this.createItem(contract);
+      if (contract.status === "completed") {
+        this.createRewardPlaceholder();
+      } else {
+        this.createItem(contract);
+      }
+
       this.createProgress(contract);
 
       if (contract.status === "completed") {
         this.createClaimButton();
       }
     } else {
-      this.updateItem(contract);
-      this.updateProgress(contract);
-
+      /**
+       * Текущий контракт изменился,
+       * но сам контракт тот же.
+       */
       if (contract.status === "completed") {
+        this.removeItem();
+
+        if (!this.rewardPlaceholder) {
+          this.createRewardPlaceholder();
+        }
+
         if (!this.claimButton) {
           this.createClaimButton();
         }
       } else {
+        this.removeRewardPlaceholder();
+
+        if (!this.itemSprite) {
+          this.createItem(contract);
+        }
+
         this.removeClaimButton();
+
+        this.updateItem(contract);
       }
+
+      this.updateProgress(contract);
     }
 
     if (animate) {
@@ -176,6 +255,10 @@ export class ContractView {
   // ===========================================================================
 
   private createItem(contract: Contract): void {
+    if (this.itemSprite) {
+      return;
+    }
+
     const frameName = ItemRegistry.getFrameName(contract.targetLevel);
 
     this.itemSprite = this.scene.add.image(0, -30, "squishes", frameName);
@@ -190,6 +273,10 @@ export class ContractView {
   }
 
   private updateItem(contract: Contract): void {
+    if (contract.status === "completed") {
+      return;
+    }
+
     if (!this.itemSprite) {
       this.createItem(contract);
       return;
@@ -198,6 +285,79 @@ export class ContractView {
     const frameName = ItemRegistry.getFrameName(contract.targetLevel);
 
     this.itemSprite.setFrame(frameName);
+  }
+
+  private removeItem(): void {
+    if (!this.itemSprite) {
+      return;
+    }
+
+    this.itemSprite.destroy();
+    this.itemSprite = null;
+  }
+
+  // ===========================================================================
+  // REWARD
+  // ===========================================================================
+
+  /**
+   * Заглушка награды.
+   *
+   * Пока вместо настоящей иконки монет
+   * рисуем золотую монету.
+   */
+  private createRewardPlaceholder(): void {
+    if (this.rewardPlaceholder) {
+      return;
+    }
+
+    this.rewardPlaceholder = this.scene.add.container(0, -30);
+
+    const glow = this.scene.add.graphics();
+
+    glow.fillStyle(0xffc107, 0.15);
+    glow.fillCircle(0, 0, 48);
+
+    glow.lineStyle(2, 0xffd54f, 0.8);
+    glow.strokeCircle(0, 0, 48);
+
+    const coin = this.scene.add.graphics();
+
+    coin.fillStyle(0xffc107, 1);
+    coin.fillCircle(0, 0, 32);
+
+    coin.lineStyle(3, 0xfff3a0, 1);
+    coin.strokeCircle(0, 0, 32);
+
+    const coinText = this.scene.add
+      .bitmapText(0, 0, "russo", "¢", 28)
+      .setOrigin(0.5)
+      .setTint(0xffffff);
+
+    this.rewardPlaceholder.add([glow, coin, coinText]);
+
+    this.container.add(this.rewardPlaceholder);
+
+    this.rewardPlaceholder.setScale(0);
+
+    this.scene.tweens.add({
+      targets: this.rewardPlaceholder,
+      scale: 1,
+      duration: 250,
+      ease: "Back.easeOut",
+    });
+  }
+
+  private removeRewardPlaceholder(): void {
+    if (!this.rewardPlaceholder) {
+      return;
+    }
+
+    this.scene.tweens.killTweensOf(this.rewardPlaceholder);
+
+    this.rewardPlaceholder.destroy();
+
+    this.rewardPlaceholder = null;
   }
 
   // ===========================================================================
@@ -218,7 +378,7 @@ export class ContractView {
     }
 
     if (contract.status === "completed") {
-      this.progressText.setText("ГОТОВО").setTint(0x4caf50);
+      this.progressText.setText("+100").setTint(0xffd54f);
 
       return;
     }
@@ -242,7 +402,9 @@ export class ContractView {
     this.claimButtonBackground = this.scene.add
       .image(0, 0, "ui", "settings_btn")
       .setScale(0.8)
-      .setInteractive({ useHandCursor: true });
+      .setInteractive({
+        useHandCursor: true,
+      });
 
     this.claimButtonText = this.scene.add
       .bitmapText(0, 0, "russo", "ЗАБРАТЬ", 18)
@@ -270,23 +432,33 @@ export class ContractView {
   }
 
   private handleClaimClick(): void {
+    if (this.isClaimAnimating) {
+      return;
+    }
+
     /**
-     * Повторная проверка на стороне сервиса.
-     *
-     * Даже если UI каким-то образом устарел,
-     * сервис не выдаст награду незавершённому контракту.
+     * Дополнительная защита от повторного клика.
      */
+    if (!this.contractService.canClaimReward()) {
+      return;
+    }
+
     const reward = this.contractService.claimReward();
 
     if (!reward) {
       return;
     }
 
-    this.playClaimAnimation();
+    this.audioService.playNotificationSound_2();
+
+    /**
+     * Саму анимацию запускаем через
+     * CONTRACT_REWARD_CLAIMED.
+     */
   }
 
   private handleClaimHover(): void {
-    if (!this.claimButton) {
+    if (!this.claimButton || this.isClaimAnimating) {
       return;
     }
 
@@ -299,7 +471,7 @@ export class ContractView {
   }
 
   private handleClaimOut(): void {
-    if (!this.claimButton) {
+    if (!this.claimButton || this.isClaimAnimating) {
       return;
     }
 
@@ -318,6 +490,14 @@ export class ContractView {
 
     this.scene.tweens.killTweensOf(this.claimButton);
 
+    if (this.claimButtonBackground) {
+      this.claimButtonBackground.off(Phaser.Input.Events.POINTER_DOWN, this.handleClaimClick, this);
+
+      this.claimButtonBackground.off(Phaser.Input.Events.POINTER_OVER, this.handleClaimHover, this);
+
+      this.claimButtonBackground.off(Phaser.Input.Events.POINTER_OUT, this.handleClaimOut, this);
+    }
+
     this.claimButton.destroy();
 
     this.claimButton = null;
@@ -330,10 +510,8 @@ export class ContractView {
   // ===========================================================================
 
   private clearContractContent(): void {
-    if (this.itemSprite) {
-      this.itemSprite.destroy();
-      this.itemSprite = null;
-    }
+    this.removeItem();
+    this.removeRewardPlaceholder();
 
     if (this.progressText) {
       this.progressText.destroy();
@@ -350,6 +528,7 @@ export class ContractView {
   private playAppearAnimation(): void {
     this.scene.tweens.killTweensOf(this.container);
 
+    this.container.setAlpha(1);
     this.container.setScale(0);
 
     this.scene.tweens.add({
@@ -374,17 +553,29 @@ export class ContractView {
     });
   }
 
-  private playClaimAnimation(): void {
+  /**
+   * Анимация получения награды.
+   *
+   * Старый контракт плавно исчезает.
+   * После этого callback получает уже новый контракт.
+   */
+  private playClaimAnimation(onComplete: () => void): void {
+    this.scene.tweens.killTweensOf(this.container);
+
     this.scene.tweens.add({
       targets: this.container,
-      scale: {
-        from: 1,
-        to: 1.12,
+      alpha: 0,
+      scale: 0.85,
+      duration: 300,
+      ease: "Cubic.easeIn",
+      onComplete: () => {
+        this.container.setAlpha(1);
+        this.container.setScale(1);
+
+        this.clearContractContent();
+
+        onComplete();
       },
-      duration: 120,
-      yoyo: true,
-      repeat: 1,
-      ease: "Sine.easeOut",
     });
   }
 
@@ -396,6 +587,8 @@ export class ContractView {
     this.scene.tweens.killTweensOf(this.container);
 
     this.container.setVisible(false);
+    this.container.setAlpha(1);
+    this.container.setScale(1);
 
     this.visibleContractId = null;
 
@@ -408,20 +601,13 @@ export class ContractView {
 
   public destroy(): void {
     EventBus.off(GameEvents.CONTRACT_CREATED, this.handleContractCreated, this);
-
     EventBus.off(GameEvents.CONTRACT_UPDATED, this.handleContractUpdated, this);
-
     EventBus.off(GameEvents.CONTRACT_COMPLETED, this.handleContractCompleted, this);
-
-    if (this.claimButtonBackground) {
-      this.claimButtonBackground.off(Phaser.Input.Events.POINTER_DOWN, this.handleClaimClick, this);
-
-      this.claimButtonBackground.off(Phaser.Input.Events.POINTER_OVER, this.handleClaimHover, this);
-
-      this.claimButtonBackground.off(Phaser.Input.Events.POINTER_OUT, this.handleClaimOut, this);
-    }
+    EventBus.off(GameEvents.CONTRACT_REWARD_CLAIMED, this.handleRewardClaimed, this);
 
     this.scene.tweens.killTweensOf(this.container);
+
+    this.removeClaimButton();
 
     this.container.destroy();
 
@@ -430,9 +616,14 @@ export class ContractView {
 
   private taskCleanup(): void {
     this.itemSprite = null;
+    this.rewardPlaceholder = null;
     this.progressText = null;
+    this.titleText = null;
     this.claimButton = null;
     this.claimButtonBackground = null;
     this.claimButtonText = null;
+
+    this.visibleContractId = null;
+    this.isClaimAnimating = false;
   }
 }

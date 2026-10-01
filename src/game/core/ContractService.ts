@@ -39,7 +39,7 @@ export class ContractService {
    * Максимальное количество предметов
    * в требовании.
    */
-  private readonly MIN_REQUIRED_COUNT = 2;
+  private readonly MIN_REQUIRED_COUNT = 3;
   private readonly MAX_REQUIRED_COUNT = 6;
   private readonly MERGES_BEFORE_NEW_CONTRACT = 10;
 
