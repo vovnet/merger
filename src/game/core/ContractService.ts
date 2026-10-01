@@ -41,6 +41,9 @@ export class ContractService {
    */
   private readonly MIN_REQUIRED_COUNT = 2;
   private readonly MAX_REQUIRED_COUNT = 6;
+  private readonly MERGES_BEFORE_NEW_CONTRACT = 10;
+
+  private mergeCount = 0;
 
   /**
    * Награда.
@@ -61,6 +64,7 @@ export class ContractService {
 
     EventBus.on(GameEvents.GRID_ITEM_CHANGED, this.checkProgress, this);
     EventBus.on(GameEvents.LEVEL_CHANGED, this.handleLevelChanged, this);
+    EventBus.on(GameEvents.GRID_ITEM_MERGED, this.handleMerge, this);
   }
 
   // ===========================================================================
@@ -75,17 +79,9 @@ export class ContractService {
    * которая решает: должен ли существовать контракт.
    */
   public initialize(): void {
-    if (!this.isUnlocked()) {
+    if (!this.isUnlocked() || !this.contract) {
       this.contract = null;
       this.emitChanged();
-      return;
-    }
-
-    /**
-     * Контракта нет — создаём.
-     */
-    if (!this.contract) {
-      this.generateContract();
       return;
     }
 
@@ -180,7 +176,10 @@ export class ContractService {
       reward,
     });
 
-    this.generateContract();
+    this.contract = null;
+    this.mergeCount = 0;
+
+    this.emitChanged();
 
     return reward;
   }
@@ -209,26 +208,34 @@ export class ContractService {
   public handleLevelChanged(): void {
     if (!this.isUnlocked()) {
       this.contract = null;
+      this.mergeCount = 0;
       this.emitChanged();
       return;
     }
 
     /**
-     * Выполненный контракт не трогаем вообще.
+     * Выполненный контракт никогда не трогаем.
      */
-    if (this.contract && this.contract.status === "completed") {
+    if (this.contract?.status === "completed") {
       return;
     }
 
     /**
-     * Если текущий контракт устарел —
-     * удаляем и создаём новый.
+     * Если активный контракт ещё валиден —
+     * ничего не делаем.
      */
-    if (this.isContractOutdated()) {
-      this.contract = null;
-      this.emitChanged();
-      this.generateContract();
+    if (this.contract && !this.isContractOutdated()) {
+      return;
     }
+
+    /**
+     * Контракт устарел.
+     * Удаляем его и начинаем считать следующие мерджи.
+     */
+    this.contract = null;
+    this.mergeCount = 0;
+
+    this.emitChanged();
   }
 
   // ===========================================================================
@@ -275,6 +282,28 @@ export class ContractService {
       targetLevel,
       requiredCount,
     };
+  }
+
+  private handleMerge(): void {
+    if (!this.isUnlocked()) {
+      return;
+    }
+
+    /**
+     * Пока контракт существует, мержи нас не интересуют.
+     */
+    if (this.contract) {
+      return;
+    }
+
+    this.mergeCount++;
+
+    if (this.mergeCount < this.MERGES_BEFORE_NEW_CONTRACT) {
+      return;
+    }
+
+    this.mergeCount = 0;
+    this.generateContract();
   }
 
   // ===========================================================================
@@ -395,5 +424,6 @@ export class ContractService {
   public destroy(): void {
     EventBus.off(GameEvents.GRID_ITEM_CHANGED, this.checkProgress, this);
     EventBus.off(GameEvents.LEVEL_CHANGED, this.handleLevelChanged, this);
+    EventBus.on(GameEvents.GRID_ITEM_MERGED, this.handleMerge, this);
   }
 }
