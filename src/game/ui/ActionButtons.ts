@@ -137,8 +137,7 @@ export class ActionButtons {
       on: { texture: "ui", frame: "sound_off_btn" },
       off: { texture: "ui", frame: "sound_on_btn" },
       value: audio.isMuted(),
-      onChange: (value) => {
-        console.log("switch: ", value);
+      onChange: () => {
         audio.toggleMute();
       },
     });
