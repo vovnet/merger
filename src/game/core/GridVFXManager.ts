@@ -1,11 +1,15 @@
 import * as Phaser from "phaser";
+import { AudioService } from "./AudioService";
 
 export class GridVFXManager {
   private activeContractLevel: number | null = null;
   // Храним ссылки на все созданные эммитеры для безопасной очистки
   private activeEmitters: Phaser.GameObjects.Particles.ParticleEmitter[] = [];
+  private audioService: AudioService;
 
-  constructor(private scene: Phaser.Scene) {}
+  constructor(private scene: Phaser.Scene) {
+    this.audioService = this.scene.registry.get("audioService") as AudioService;
+  }
 
   public setContractLevel(level: number | null): void {
     this.activeContractLevel = level;
@@ -140,9 +144,7 @@ export class GridVFXManager {
    * Анимация немного дольше и заметнее, чем у обычного текста.
    */
   public spawnResourcePopup(px: number, py: number, amount: number, iconKey: string): void {
-    // 🎵 ЗВУК: Вставь сюда вызов своего звукового сервиса
-    // this.audioService.playRewardSound();
-    // или this.scene.sound.play('coin_collect');
+    this.audioService.playShineSound();
 
     const randomXOffset = Phaser.Math.Between(-30, 30);
     const randomAngle = Phaser.Math.FloatBetween(-15, 15);

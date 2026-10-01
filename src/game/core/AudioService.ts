@@ -149,6 +149,12 @@ export class AudioService {
       rate: 0.8,
     });
   }
+  public playShineSound(): void {
+    this.play("shine", {
+      volume: 0.6,
+      rate: 0.8,
+    });
+  }
 
   // ============================================================
   // INTERNAL

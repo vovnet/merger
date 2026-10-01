@@ -20,9 +20,8 @@ export class ContractView {
   private progressText: Phaser.GameObjects.BitmapText | null = null;
   private titleText: Phaser.GameObjects.BitmapText | null = null;
 
-  private claimButton: Phaser.GameObjects.Container | null = null;
-  private claimButtonBackground: Phaser.GameObjects.Image | null = null;
-  private claimButtonText: Phaser.GameObjects.BitmapText | null = null;
+  private claimHitArea: Phaser.GameObjects.Zone | null = null;
+  private claimText: Phaser.GameObjects.BitmapText | null = null;
 
   /**
    * ID контракта, который сейчас отображается.
@@ -213,13 +212,9 @@ export class ContractView {
       this.createProgress(contract);
 
       if (contract.status === "completed") {
-        this.createClaimButton();
+        this.createClaimInteraction();
       }
     } else {
-      /**
-       * Текущий контракт изменился,
-       * но сам контракт тот же.
-       */
       if (contract.status === "completed") {
         this.removeItem();
 
@@ -227,17 +222,16 @@ export class ContractView {
           this.createRewardPlaceholder();
         }
 
-        if (!this.claimButton) {
-          this.createClaimButton();
+        if (!this.claimHitArea) {
+          this.createClaimInteraction();
         }
       } else {
         this.removeRewardPlaceholder();
+        this.removeClaimInteraction();
 
         if (!this.itemSprite) {
           this.createItem(contract);
         }
-
-        this.removeClaimButton();
 
         this.updateItem(contract);
       }
@@ -392,42 +386,56 @@ export class ContractView {
   // CLAIM
   // ===========================================================================
 
-  private createClaimButton(): void {
-    if (this.claimButton) {
+  private createClaimInteraction(): void {
+    if (this.claimHitArea) {
       return;
     }
 
-    this.claimButton = this.scene.add.container(0, 90);
-
-    this.claimButtonBackground = this.scene.add
-      .image(0, 0, "ui", "settings_btn")
-      .setScale(0.8)
+    /**
+     * Прозрачная область размером со всей карточкой.
+     *
+     * Она находится внутри container, поэтому
+     * кликабельным становится весь контракт.
+     */
+    this.claimHitArea = this.scene.add
+      .zone(0, 0, this.WIDTH, this.HEIGHT)
+      .setOrigin(0.5)
       .setInteractive({
         useHandCursor: true,
       });
 
-    this.claimButtonText = this.scene.add
-      .bitmapText(0, 0, "russo", "ЗАБРАТЬ", 18)
+    this.container.add(this.claimHitArea);
+
+    this.claimHitArea.on(Phaser.Input.Events.POINTER_DOWN, this.handleClaimClick, this);
+
+    this.claimHitArea.on(Phaser.Input.Events.POINTER_OVER, this.handleClaimHover, this);
+
+    this.claimHitArea.on(Phaser.Input.Events.POINTER_OUT, this.handleClaimOut, this);
+
+    /**
+     * Текст остаётся поверх reward placeholder/progress.
+     */
+    this.claimText = this.scene.add
+      .bitmapText(0, 90, "russo", "ЗАБРАТЬ", 18)
       .setOrigin(0.5)
       .setTint(0xffffff);
 
-    this.claimButton.add([this.claimButtonBackground, this.claimButtonText]);
+    this.container.add(this.claimText);
 
-    this.container.add(this.claimButton);
-
-    this.claimButtonBackground.on(Phaser.Input.Events.POINTER_DOWN, this.handleClaimClick, this);
-
-    this.claimButtonBackground.on(Phaser.Input.Events.POINTER_OVER, this.handleClaimHover, this);
-
-    this.claimButtonBackground.on(Phaser.Input.Events.POINTER_OUT, this.handleClaimOut, this);
-
-    this.claimButton.setScale(0);
+    /**
+     * Hit area добавляем последним, но делаем его
+     * прозрачным. Чтобы текст/графика не мешали клику,
+     * Zone будет принимать input.
+     */
 
     this.scene.tweens.add({
-      targets: this.claimButton,
-      scale: 1,
-      duration: 250,
-      ease: "Back.easeOut",
+      targets: [this.claimText],
+      alpha: {
+        from: 0,
+        to: 1,
+      },
+      duration: 200,
+      ease: "Sine.easeOut",
     });
   }
 
@@ -436,9 +444,6 @@ export class ContractView {
       return;
     }
 
-    /**
-     * Дополнительная защита от повторного клика.
-     */
     if (!this.contractService.canClaimReward()) {
       return;
     }
@@ -450,59 +455,64 @@ export class ContractView {
     }
 
     this.audioService.playNotificationSound_2();
-
-    /**
-     * Саму анимацию запускаем через
-     * CONTRACT_REWARD_CLAIMED.
-     */
   }
 
   private handleClaimHover(): void {
-    if (!this.claimButton || this.isClaimAnimating) {
+    if (this.isClaimAnimating) {
       return;
     }
 
     this.scene.tweens.add({
-      targets: this.claimButton,
-      scale: 1.05,
-      duration: 100,
+      targets: this.background,
+      alpha: 0.85,
+      duration: 120,
       ease: "Sine.easeOut",
     });
+
+    if (this.claimText) {
+      this.claimText.setTint(0xffd54f);
+    }
   }
 
   private handleClaimOut(): void {
-    if (!this.claimButton || this.isClaimAnimating) {
+    if (this.isClaimAnimating) {
       return;
     }
 
     this.scene.tweens.add({
-      targets: this.claimButton,
-      scale: 1,
-      duration: 100,
+      targets: this.background,
+      alpha: 1,
+      duration: 120,
       ease: "Sine.easeOut",
     });
+
+    if (this.claimText) {
+      this.claimText.setTint(0xffffff);
+    }
   }
 
-  private removeClaimButton(): void {
-    if (!this.claimButton) {
-      return;
+  private removeClaimInteraction(): void {
+    if (this.claimHitArea) {
+      this.scene.tweens.killTweensOf(this.claimHitArea);
+
+      this.claimHitArea.off(Phaser.Input.Events.POINTER_DOWN, this.handleClaimClick, this);
+
+      this.claimHitArea.off(Phaser.Input.Events.POINTER_OVER, this.handleClaimHover, this);
+
+      this.claimHitArea.off(Phaser.Input.Events.POINTER_OUT, this.handleClaimOut, this);
+
+      this.claimHitArea.destroy();
+
+      this.claimHitArea = null;
     }
 
-    this.scene.tweens.killTweensOf(this.claimButton);
-
-    if (this.claimButtonBackground) {
-      this.claimButtonBackground.off(Phaser.Input.Events.POINTER_DOWN, this.handleClaimClick, this);
-
-      this.claimButtonBackground.off(Phaser.Input.Events.POINTER_OVER, this.handleClaimHover, this);
-
-      this.claimButtonBackground.off(Phaser.Input.Events.POINTER_OUT, this.handleClaimOut, this);
+    if (this.claimText) {
+      this.scene.tweens.killTweensOf(this.claimText);
+      this.claimText.destroy();
+      this.claimText = null;
     }
 
-    this.claimButton.destroy();
-
-    this.claimButton = null;
-    this.claimButtonBackground = null;
-    this.claimButtonText = null;
+    this.background.setAlpha(1);
   }
 
   // ===========================================================================
@@ -518,7 +528,7 @@ export class ContractView {
       this.progressText = null;
     }
 
-    this.removeClaimButton();
+    this.removeClaimInteraction();
   }
 
   // ===========================================================================
@@ -607,7 +617,7 @@ export class ContractView {
 
     this.scene.tweens.killTweensOf(this.container);
 
-    this.removeClaimButton();
+    this.removeClaimInteraction();
 
     this.container.destroy();
 
@@ -619,9 +629,9 @@ export class ContractView {
     this.rewardPlaceholder = null;
     this.progressText = null;
     this.titleText = null;
-    this.claimButton = null;
-    this.claimButtonBackground = null;
-    this.claimButtonText = null;
+
+    this.claimText = null;
+    this.claimHitArea = null;
 
     this.visibleContractId = null;
     this.isClaimAnimating = false;
