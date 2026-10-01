@@ -51,7 +51,7 @@ export class ContractService {
    * Пока оставил простой вариант.
    * Потом сюда можно вынести RewardService.
    */
-  private readonly REWARD_COINS = 100;
+  private readonly REWARD_COINS = 1;
 
   private readonly grid: Grid;
   private readonly gameState: GameState;
@@ -169,7 +169,7 @@ export class ContractService {
 
     const completedContract = this.getContractSnapshot();
 
-    this.gameState.addCoins(reward.coins);
+    this.gameState.addSpins(reward.coins);
 
     EventBus.emit(GameEvents.CONTRACT_REWARD_CLAIMED, {
       contract: completedContract,

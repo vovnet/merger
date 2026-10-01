@@ -38,7 +38,7 @@ export class ContractView {
   private isClaimAnimating = false;
 
   private readonly WIDTH = 180;
-  private readonly HEIGHT = 250;
+  private readonly HEIGHT = 210;
 
   constructor(scene: Phaser.Scene, contractService: ContractService, audioService: AudioService) {
     this.scene = scene;
@@ -74,7 +74,7 @@ export class ContractView {
     this.drawBackground();
 
     this.titleText = this.scene.add
-      .bitmapText(0, -95, "russo", "КОНТРАКТ", 22)
+      .bitmapText(0, -80, "russo", "КОНТРАКТ", 22)
       .setOrigin(0.5)
       .setTint(0xffffff);
 
@@ -83,11 +83,8 @@ export class ContractView {
 
   private drawBackground(): void {
     this.background.clear();
-
     this.background.fillStyle(0x0060b9, 0.75);
-
     this.background.fillRoundedRect(-this.WIDTH / 2, -this.HEIGHT / 2, this.WIDTH, this.HEIGHT, 20);
-
     this.background.lineStyle(2, 0xffffff, 0.8);
 
     this.background.strokeRoundedRect(
@@ -105,11 +102,8 @@ export class ContractView {
 
   private bindEvents(): void {
     EventBus.on(GameEvents.CONTRACT_CREATED, this.handleContractCreated, this);
-
     EventBus.on(GameEvents.CONTRACT_UPDATED, this.handleContractUpdated, this);
-
     EventBus.on(GameEvents.CONTRACT_COMPLETED, this.handleContractCompleted, this);
-
     EventBus.on(GameEvents.CONTRACT_REWARD_CLAIMED, this.handleRewardClaimed, this);
   }
 
@@ -255,7 +249,7 @@ export class ContractView {
 
     const frameName = ItemRegistry.getFrameName(contract.targetLevel);
 
-    this.itemSprite = this.scene.add.image(0, -30, "squishes", frameName);
+    this.itemSprite = this.scene.add.image(0, -10, "squishes", frameName);
 
     const maxDimension = Math.max(this.itemSprite.width, this.itemSprite.height);
 
@@ -307,28 +301,14 @@ export class ContractView {
 
     this.rewardPlaceholder = this.scene.add.container(0, -30);
 
-    const glow = this.scene.add.graphics();
-
-    glow.fillStyle(0xffc107, 0.15);
-    glow.fillCircle(0, 0, 48);
-
-    glow.lineStyle(2, 0xffd54f, 0.8);
-    glow.strokeCircle(0, 0, 48);
-
-    const coin = this.scene.add.graphics();
-
-    coin.fillStyle(0xffc107, 1);
-    coin.fillCircle(0, 0, 32);
-
-    coin.lineStyle(3, 0xfff3a0, 1);
-    coin.strokeCircle(0, 0, 32);
+    const ticket = this.scene.add.image(0, 20, "ui", "ticket");
 
     const coinText = this.scene.add
-      .bitmapText(0, 0, "russo", "¢", 28)
+      .bitmapText(0, 68, "russo", "+1", 38)
       .setOrigin(0.5)
-      .setTint(0xffffff);
+      .setTint(0xfffc5e);
 
-    this.rewardPlaceholder.add([glow, coin, coinText]);
+    this.rewardPlaceholder.add([ticket, coinText]);
 
     this.container.add(this.rewardPlaceholder);
 
@@ -359,7 +339,7 @@ export class ContractView {
   // ===========================================================================
 
   private createProgress(contract: Contract): void {
-    this.progressText = this.scene.add.bitmapText(0, 45, "russo", "", 24).setOrigin(0.5);
+    this.progressText = this.scene.add.bitmapText(0, 60, "russo", "", 32).setOrigin(0.5);
 
     this.container.add(this.progressText);
 
@@ -372,14 +352,16 @@ export class ContractView {
     }
 
     if (contract.status === "completed") {
-      this.progressText.setText("+100").setTint(0xffd54f);
+      this.progressText.setVisible(false);
+      this.progressText.setText("+1").setTint(0xffd54f);
 
       return;
     }
 
     this.progressText
       .setText(`${contract.currentCount} / ${contract.requiredCount}`)
-      .setTint(0xffffff);
+      .setTint(0xffffff)
+      .setVisible(true);
   }
 
   // ===========================================================================
@@ -416,7 +398,7 @@ export class ContractView {
      * Текст остаётся поверх reward placeholder/progress.
      */
     this.claimText = this.scene.add
-      .bitmapText(0, 90, "russo", "ЗАБРАТЬ", 18)
+      .bitmapText(0, 80, "russo", "ЗАБРАТЬ", 18)
       .setOrigin(0.5)
       .setTint(0xffffff);
 
