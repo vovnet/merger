@@ -265,13 +265,11 @@ export class ContractService {
   } {
     const playerLevel = this.gameState.level;
 
-    const minLevel = Math.max(1, playerLevel - 6);
+    const minLevel = Math.max(1, playerLevel - 4);
     const maxLevel = playerLevel;
 
     const targetLevel = Phaser.Math.Between(minLevel, maxLevel);
-    const minRequired = Math.max(this.MIN_REQUIRED_COUNT, this.MAX_REQUIRED_COUNT);
-    const maxRequired = Math.max(minRequired, this.MAX_REQUIRED_COUNT);
-    const requiredCount = Phaser.Math.Between(minRequired, maxRequired);
+    const requiredCount = Phaser.Math.Between(this.MIN_REQUIRED_COUNT, this.MAX_REQUIRED_COUNT);
 
     return {
       targetLevel,
