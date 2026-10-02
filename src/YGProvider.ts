@@ -4,7 +4,7 @@ import { GameEvents } from "./game/types/GameEvents";
 import { SaveData } from "./game/types/SaveData";
 import { LeaderboardData, LeaderboardEntry } from "./game/types/Leaderboard";
 
-const LEADERBOARD_NAME = "score";
+const LEADERBOARD_NAME = "scores";
 
 class YGProvider {
   private sdk: SDK | null = null;
@@ -42,6 +42,8 @@ class YGProvider {
     EventBus.on(GameEvents.GAME_RESUME_REQUEST, () => this.sdk?.features.GameplayAPI.start());
 
     EventBus.on(GameEvents.SHOW_FULLSCREEN_ADV, () => this.showFullscreenAdv());
+
+    EventBus.on(GameEvents.SCORE_CHANGED, () => this.submitScore);
   }
 
   // ===========================================================================
