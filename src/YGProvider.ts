@@ -43,7 +43,7 @@ class YGProvider {
 
     EventBus.on(GameEvents.SHOW_FULLSCREEN_ADV, () => this.showFullscreenAdv());
 
-    EventBus.on(GameEvents.SCORE_CHANGED, () => this.submitScore);
+    EventBus.on(GameEvents.SCORE_CHANGED, (score: number) => this.submitScore(score));
   }
 
   // ===========================================================================
