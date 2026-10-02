@@ -2,7 +2,7 @@ import { SDK, Player } from "ysdk";
 import { EventBus } from "./game/core/EventBus";
 import { GameEvents } from "./game/types/GameEvents";
 import { SaveData } from "./game/types/SaveData";
-import { LeaderboardEntry, PlayerLeaderboardEntry } from "./game/types/Leaderboard";
+import { LeaderboardData, LeaderboardEntry } from "./game/types/Leaderboard";
 
 const LEADERBOARD_NAME = "score";
 
@@ -126,39 +126,165 @@ class YGProvider {
   /**
    * Получает TOP игроков.
    */
-  public async getLeaderboard(quantityTop = 10): Promise<LeaderboardEntry[]> {
-    if (!this.sdk) {
-      throw new Error("Yandex SDK is not initialized");
-    }
+  // public async getLeaderboard(quantityTop = 10, quantityAround = 2): Promise<LeaderboardData> {
+  //   if (!this.sdk) {
+  //     throw new Error("Yandex SDK is not initialized");
+  //   }
 
-    const available = await this.isLeaderboardAvailable("leaderboards.getEntries");
+  //   const available = await this.isLeaderboardAvailable("leaderboards.getEntries");
 
-    if (!available) {
-      return [];
-    }
+  //   if (!available) {
+  //     return {
+  //       entries: [],
+  //       userRank: null,
+  //     };
+  //   }
 
-    try {
-      const result = await this.sdk.leaderboards.getEntries(LEADERBOARD_NAME, {
-        quantityTop,
-      });
+  //   try {
+  //     const result = await this.sdk.leaderboards.getEntries(LEADERBOARD_NAME, {
+  //       quantityTop,
+  //       quantityAround,
+  //       includeUser: true,
+  //     });
 
-      return result.entries.map((entry) => ({
-        rank: entry.rank,
-        score: entry.score,
-        name: entry.player.publicName,
-        avatarUrl: entry.player.getAvatarSrc("medium"),
-      }));
-    } catch (error) {
-      console.error("[YGProvider] Failed to get leaderboard:", error);
+  //     return {
+  //       entries: result.entries.map((entry) => ({
+  //         rank: entry.rank,
+  //         score: entry.score,
+  //         name: entry.player.publicName || "Player",
+  //         uniqueId: entry.player.uniqueID,
+  //         avatarUrl: entry.player.getAvatarSrc("small"),
+  //       })),
 
-      return [];
-    }
+  //       userRank: result.userRank > 0 ? result.userRank : null,
+  //     };
+  //   } catch (error) {
+  //     console.error("[YGProvider] Failed to get leaderboard:", error);
+
+  //     throw error;
+  //   }
+  // }
+
+  public async getLeaderboard(quantityTop = 10, quantityAround = 2): Promise<LeaderboardData> {
+    return {
+      userRank: 37,
+
+      entries: [
+        {
+          rank: 1,
+          score: 15200,
+          name: "PlayerOne",
+          uniqueId: "1",
+          avatarUrl: "",
+        },
+        {
+          rank: 2,
+          score: 14800,
+          name: "Shadow",
+          uniqueId: "2",
+          avatarUrl: "",
+        },
+        {
+          rank: 3,
+          score: 13900,
+          name: "Dragon",
+          uniqueId: "3",
+          avatarUrl: "",
+        },
+        {
+          rank: 4,
+          score: 12700,
+          name: "PlayerX",
+          uniqueId: "4",
+          avatarUrl: "",
+        },
+        {
+          rank: 5,
+          score: 12100,
+          name: "Knight",
+          uniqueId: "5",
+          avatarUrl: "",
+        },
+        {
+          rank: 6,
+          score: 11500,
+          name: "Fox",
+          uniqueId: "6",
+          avatarUrl: "",
+        },
+        {
+          rank: 7,
+          score: 10900,
+          name: "Wizard",
+          uniqueId: "7",
+          avatarUrl: "",
+        },
+        {
+          rank: 8,
+          score: 10300,
+          name: "Ninja",
+          uniqueId: "8",
+          avatarUrl: "",
+        },
+        {
+          rank: 9,
+          score: 9800,
+          name: "Hunter",
+          uniqueId: "9",
+          avatarUrl: "",
+        },
+        {
+          rank: 10,
+          score: 9200,
+          name: "Robot",
+          uniqueId: "10",
+          avatarUrl: "",
+        },
+
+        // Имитация соседей текущего игрока
+        {
+          rank: 35,
+          score: 6100,
+          name: "Tiger",
+          uniqueId: "35",
+          avatarUrl: "",
+        },
+        {
+          rank: 36,
+          score: 5900,
+          name: "Bear",
+          uniqueId: "36",
+          avatarUrl: "",
+        },
+        {
+          rank: 37,
+          score: 5700,
+          name: "MyPlayer",
+          uniqueId: "current-player",
+          avatarUrl: "",
+        },
+        {
+          rank: 38,
+          score: 5500,
+          name: "Wolf",
+          uniqueId: "38",
+          avatarUrl: "",
+        },
+        {
+          rank: 39,
+          score: 5200,
+          name: "FoxTwo",
+          uniqueId: "39",
+          avatarUrl: "",
+        },
+      ],
+    };
   }
 
   /**
    * Получает позицию текущего игрока.
    */
-  public async getPlayerLeaderboardEntry(): Promise<PlayerLeaderboardEntry | null> {
+  public async getPlayerLeaderboardEntry(): Promise<LeaderboardEntry | null> {
     if (!this.sdk) {
       throw new Error("Yandex SDK is not initialized");
     }
@@ -177,6 +303,7 @@ class YGProvider {
         score: entry.score,
         name: entry.player.publicName,
         avatarUrl: entry.player.getAvatarSrc("medium"),
+        uniqueId: entry.player.uniqueID,
       };
     } catch (error) {
       console.error("[YGProvider] Failed to get player leaderboard entry:", error);

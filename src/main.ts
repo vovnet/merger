@@ -1,5 +1,4 @@
 import StartGame from "./game/main";
-import type { SDK } from "ysdk";
 import { ygProvider } from "./YGProvider";
 
 document.addEventListener("DOMContentLoaded", async () => {

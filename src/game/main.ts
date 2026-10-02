@@ -7,6 +7,7 @@ import { RewardScene } from "./scenes/RewardScene";
 import { AdNotificationScene } from "./scenes/AdNotificationScene";
 import { BootScene } from "./scenes/BootScene";
 import { PreloaderScene } from "./scenes/PreloadScene";
+import { LeaderboardScene } from "./scenes/LeaderboardScene";
 
 // Find out more information about the Game Config at:
 // https://docs.phaser.io/api-documentation/typedef/types-core#gameconfig
@@ -30,6 +31,7 @@ const config: Types.Core.GameConfig = {
     CollectionScene,
     RouletteScene,
     AdNotificationScene,
+    LeaderboardScene,
   ],
   banner: { hidePhaser: true },
 };

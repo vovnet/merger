@@ -94,7 +94,7 @@ export class ActionButtons {
       textureKey: "ui",
       frameKey: "leaderboard_btn",
       onClick: () => {
-        console.log("open leaderboard");
+        this.scene.scene.launch("LeaderboardScene");
       },
     });
 
