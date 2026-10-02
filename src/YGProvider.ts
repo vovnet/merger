@@ -133,15 +133,6 @@ class YGProvider {
       throw new Error("Yandex SDK is not initialized");
     }
 
-    const available = await this.isLeaderboardAvailable("leaderboards.getEntries");
-
-    if (!available) {
-      return {
-        entries: [],
-        userRank: null,
-      };
-    }
-
     try {
       const result = await this.sdk.leaderboards.getEntries(LEADERBOARD_NAME, {
         quantityTop,
