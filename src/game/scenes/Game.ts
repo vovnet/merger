@@ -128,8 +128,14 @@ export class Game extends Phaser.Scene {
   }
 
   private setupEventListeners(): void {
-    EventBus.on(GameEvents.GAME_PAUSE_REQUEST, () => this.game.pause());
-    EventBus.on(GameEvents.GAME_RESUME_REQUEST, () => this.game.resume());
+    EventBus.on(GameEvents.GAME_PAUSE_REQUEST, () => {
+      this.game.pause();
+      this.sound.pauseAll();
+    });
+    EventBus.on(GameEvents.GAME_RESUME_REQUEST, () => {
+      this.game.resume();
+      this.sound.resumeAll();
+    });
 
     EventBus.on(GameEvents.GRID_ITEM_MERGED, (data: { newLevel: number; from: any; to: any }) => {
       const reward = this.economy.getMergeReward(data.newLevel);
