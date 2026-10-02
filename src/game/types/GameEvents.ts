@@ -49,6 +49,8 @@ export const GameEvents = {
   GAME_SAVE_LOADED: "game_save_loaded",
   GAME_SAVED: "game_saved",
   PRESTIGE_OCCURRED: "prestige_occurred",
+
+  NON_GAME_ACTION: "non_game_action",
 } as const;
 
 // События, которые UIScene эмитит, а GameScene слушает

@@ -17,6 +17,7 @@ import { SaveManager } from "../../storage/SaveManager";
 import { SaveProvider } from "../types/SaveProvider";
 import { LocalSaveProvider } from "../../storage/LocalSaveProvider";
 import { CloudSaveProvider } from "../../storage/CloudSaveProvider";
+import { adsService } from "../../AdsService";
 
 export class Game extends Phaser.Scene {
   private gameState: GameState;
@@ -103,6 +104,7 @@ export class Game extends Phaser.Scene {
     await this.saveManager.loadIntoSession();
 
     this.contractService.initialize();
+    adsService.init(this.time);
 
     this.scene.launch("UIScene", { economy: this.economy, contractService: this.contractService });
     this.scene.launch("AdNotificationScene");

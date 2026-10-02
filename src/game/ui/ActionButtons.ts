@@ -5,13 +5,13 @@ import { Economy } from "../core/Economy";
 import { GameState } from "../core/GameState";
 import { Grid } from "../core/Grid";
 import { AddCoinButton } from "./AddCoinButton";
-import { FillButton } from "./FillButton"; // 🎯 Новый импорт
+import { FillButton } from "./FillButton";
 import { AlertButton } from "./AlertButton";
 import { RewardData } from "../types/Rewards";
-import { ygProvider } from "../../YGProvider";
 import { AdvButton } from "../components/adv-button/AdvButton";
 import { Switch } from "./Switch";
 import { AudioService } from "../core/AudioService";
+import { adsService } from "../../AdsService";
 
 export class ActionButtons {
   private scene: Phaser.Scene;
@@ -117,7 +117,7 @@ export class ActionButtons {
       frameKey: "ad_btn",
       contentContainer: buttonContent,
       onClick: () => {
-        ygProvider.showRewardedVideo({
+        adsService.showRewardedVideo({
           onRewarded: () =>
             this.scene.scene.launch("RewardScene", {
               reward: { type: "COINS", amount: 30 } as RewardData,

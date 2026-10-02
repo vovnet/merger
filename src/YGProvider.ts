@@ -4,6 +4,10 @@ import { GameEvents } from "./game/types/GameEvents";
 import { SaveData } from "./game/types/SaveData";
 import { LeaderboardData, LeaderboardEntry } from "./game/types/Leaderboard";
 
+export type RewardedVideoEvents = {
+  onRewarded: () => void;
+};
+
 const LEADERBOARD_NAME = "scores";
 
 class YGProvider {
@@ -38,11 +42,7 @@ class YGProvider {
     });
 
     EventBus.on(GameEvents.GAME_PAUSE_REQUEST, () => this.sdk?.features.GameplayAPI.stop());
-
     EventBus.on(GameEvents.GAME_RESUME_REQUEST, () => this.sdk?.features.GameplayAPI.start());
-
-    EventBus.on(GameEvents.SHOW_FULLSCREEN_ADV, () => this.showFullscreenAdv());
-
     EventBus.on(GameEvents.SCORE_CHANGED, (score: number) => this.submitScore(score));
   }
 
@@ -201,7 +201,7 @@ class YGProvider {
     EventBus.emit(GameEvents.GAME_RESUME_REQUEST);
   }
 
-  public async showRewardedVideo(events: { onRewarded: () => void }): Promise<void> {
+  public async showRewardedVideo(events: RewardedVideoEvents): Promise<void> {
     this.sdk?.adv.showRewardedVideo({
       callbacks: {
         onRewarded: () => {
