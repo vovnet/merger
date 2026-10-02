@@ -93,7 +93,7 @@ export class RouletteScene extends Phaser.Scene {
 
     const ticketSprite = this.add.image(-30, 0, "ui", "ticket").setOrigin(0.5).setScale(1.2);
 
-    this.spinText = this.add.bitmapText(40, 0, "russo", "", 46).setOrigin(0.5).setTint(0xe1ff3a);
+    this.spinText = this.add.bitmapText(40, 0, "russo", "", 46).setOrigin(0, 0.5).setTint(0xe1ff3a);
 
     const ticketContainer = this.add.container(screenWidth / 2, screenHeight - 220, [
       ticketSprite,
