@@ -9,11 +9,14 @@ export class AdsService {
   // ===========================================================================
 
   private static readonly AUTO_AD_INTERVAL = 3 * 60 * 1000;
+  private static readonly NON_GAME_ACTION_COOLDOWN = 1 * 60 * 1000;
 
   // ===========================================================================
 
   private clock!: Phaser.Time.Clock;
   private autoAdTimer?: Phaser.Time.TimerEvent;
+
+  private lastAdTime = 0;
 
   private isShowingAd = false;
   private initialized = false;
@@ -29,6 +32,8 @@ export class AdsService {
 
     this.initialized = true;
     this.clock = clock;
+
+    this.lastAdTime = Date.now();
 
     this.startAutoAdTimer();
 
@@ -82,6 +87,18 @@ export class AdsService {
       return;
     }
 
+    const timeSinceLastAd = Date.now() - this.lastAdTime;
+
+    if (timeSinceLastAd < AdsService.NON_GAME_ACTION_COOLDOWN) {
+      return;
+    }
+
+    // Считаем моментом показа момент, когда решили запустить рекламу.
+    this.lastAdTime = Date.now();
+
+    // Сбрасываем автоматический таймер.
+    this.startAutoAdTimer();
+
     void this.showAd();
   };
 
@@ -97,6 +114,7 @@ export class AdsService {
     this.isShowingAd = true;
 
     // Сбрасываем таймер сразу перед показом рекламы.
+    this.lastAdTime = Date.now();
     this.startAutoAdTimer();
 
     try {
@@ -110,6 +128,7 @@ export class AdsService {
 
   public showRewardedVideo(events: RewardedVideoEvents): void {
     // После rewarded тоже начинаем новый интервал.
+    this.lastAdTime = Date.now();
     this.startAutoAdTimer();
 
     void ygProvider.showRewardedVideo(events);

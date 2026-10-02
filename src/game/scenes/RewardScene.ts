@@ -1,11 +1,11 @@
-// scenes/RewardScene.ts
 import * as Phaser from "phaser";
 import { IRewardComponent } from "../components/rewards/IRewardComponent";
 import { RankSquishComponent } from "../components/rewards/RankSquishComponent";
-import { RewardVFX } from "../utils/RewardVFX";
 import { RewardData } from "../types/Rewards";
 import { CoinRewardComponent } from "../components/rewards/CoinRewardComponent";
 import { RareRewardComponent } from "../components/rewards/RareRewardComponent";
+import { EventBus } from "../core/EventBus";
+import { GameEvents } from "../types/GameEvents";
 
 export class RewardScene extends Phaser.Scene {
   private rewardData!: RewardData;
@@ -48,6 +48,7 @@ export class RewardScene extends Phaser.Scene {
         this.scene.stop();
         this.onComplete?.();
       });
+      EventBus.emit(GameEvents.NON_GAME_ACTION);
     };
 
     overlay.on("pointerdown", closeScene);
