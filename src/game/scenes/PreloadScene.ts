@@ -42,7 +42,7 @@ export class PreloaderScene extends Phaser.Scene {
     const percentText = this.add.text(width / 2, barY + 45, "0%", {
       fontFamily: "Arial",
       fontSize: "18px",
-      color: "#ffffff",
+      color: "#333138",
     });
 
     percentText.setOrigin(0.5);
