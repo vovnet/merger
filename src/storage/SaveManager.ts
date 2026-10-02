@@ -5,15 +5,12 @@ import { SaveProvider } from "../game/types/SaveProvider";
 import { GameSession } from "./GameSession";
 
 export class SaveManager {
-  private readonly AUTOSAVE_DELAY = 1500;
-  private readonly CLOUD_SAVE_INTERVAL = 20_000;
+  private readonly AUTOSAVE_DELAY = 4000;
 
   private dirty = false;
   private saving = false;
 
   private saveTimer: ReturnType<typeof setTimeout> | null = null;
-
-  private lastCloudSaveAt = 0;
 
   constructor(
     private readonly session: GameSession,
@@ -169,16 +166,8 @@ export class SaveManager {
       return;
     }
 
-    const now = Date.now();
-
-    if (now - this.lastCloudSaveAt < this.CLOUD_SAVE_INTERVAL) {
-      return;
-    }
-
     try {
       await this.cloudProvider.save(data);
-
-      this.lastCloudSaveAt = Date.now();
     } catch (error) {
       console.warn("Cloud save failed. Local save is available.", error);
     }
