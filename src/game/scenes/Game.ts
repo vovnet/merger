@@ -4,7 +4,6 @@ import { GridRenderer } from "../core/GridRenderer";
 import { Economy } from "../core/Economy";
 import { EventBus } from "../core/EventBus";
 import { ComboData, GameEvents, UIEvents } from "../types/GameEvents";
-import { UIScene } from "./UIScene";
 import { ContractService } from "../core/ContractService";
 import { ContractUpdateData } from "../types/Contract";
 import { AudioService } from "../core/AudioService";
@@ -202,12 +201,6 @@ export class Game extends Phaser.Scene {
 
     EventBus.on(GameEvents.CONTRACT_CREATED, (data: ContractUpdateData) => {
       console.log("contract: ", data.contract);
-    });
-
-    EventBus.on(GameEvents.CONTRACT_COMPLETED, (data: ContractUpdateData) => {
-      // Здесь можно запустить красивую анимацию монет в UI
-      console.log(`💰 Начислена награда за контракт!`);
-      this.gameState.addSpins(5);
     });
 
     EventBus.on(
