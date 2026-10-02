@@ -11,6 +11,11 @@ export class PreloaderScene extends Phaser.Scene {
     // Фон
     this.cameras.main.setBackgroundColor("#111827");
 
+    this.add
+      .image(0, 0, "boot_bg")
+      .setOrigin(0, 0)
+      .setDisplaySize(this.scale.width, this.scale.height);
+
     // Логотип
     const logo = this.add.image(width / 2, height / 2 - 100, "logo");
 
