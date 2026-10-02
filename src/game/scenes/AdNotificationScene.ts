@@ -46,6 +46,9 @@ export class AdNotificationScene extends Phaser.Scene {
       return;
     }
 
+    this.scene.pause("GameScene");
+    this.scene.pause("UiScene");
+
     this.overlay.setVisible(true);
     this.messageText.setVisible(true);
 
@@ -79,6 +82,9 @@ export class AdNotificationScene extends Phaser.Scene {
     this.timerEvent = undefined;
 
     this.hideNotification();
+
+    this.scene.resume("GameScene");
+    this.scene.resume("UiScene");
 
     adsService.showAd();
   }

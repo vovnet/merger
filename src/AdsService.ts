@@ -8,7 +8,7 @@ export class AdsService {
   // CONFIG
   // ===========================================================================
 
-  private static readonly AUTO_AD_INTERVAL = 0.3 * 60 * 1000;
+  private static readonly AUTO_AD_INTERVAL = 3 * 60 * 1000;
 
   // ===========================================================================
 
