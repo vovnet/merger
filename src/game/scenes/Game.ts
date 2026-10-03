@@ -118,6 +118,7 @@ export class Game extends Phaser.Scene {
     this.scene.launch("AdNotificationScene");
 
     EventBus.once(GameEvents.TUTORIAL_SCENE_READY, () => tutorialManager.checkAndStart());
+
     onceWhen(
       GameEvents.GRID_ITEM_MERGED,
       () => this.gameState.totalMerges === 6,
@@ -131,6 +132,13 @@ export class Game extends Phaser.Scene {
         tutorialManager.checkAndStart();
       },
     );
+    EventBus.once(GameEvents.CONTRACT_CREATED, () => tutorialManager.checkAndStart());
+    onceWhen(
+      GameEvents.CONTRACT_COMPLETED,
+      () => this.contractService.canClaimReward(),
+      () => tutorialManager.checkAndStart(),
+    );
+
     EventBus.emit(GameEvents.GAME_READY);
   }
 
