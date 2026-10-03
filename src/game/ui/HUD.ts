@@ -127,7 +127,7 @@ export class HUD {
   }
 
   private playPrestigeAnimation(newRound: number): void {
-    this.roundText.setText(`🔄 Раунд ${newRound}`);
+    this.roundText.setText(newRound.toString());
 
     this.scene.tweens.add({
       targets: this.roundText,
