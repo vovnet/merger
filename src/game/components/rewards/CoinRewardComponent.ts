@@ -45,7 +45,7 @@ export class CoinRewardComponent implements IRewardComponent {
       .setDepth(10);
 
     if (isHight) {
-      const fx = this.coinIcon.filters?.external.addGlow(0xfbff09, 2, 0, 1, false, 10, 32);
+      const fx = this.coinIcon.filters?.external.addGlow(0xfbff09, 2, 0, 1, false, 8, 24);
 
       this.scene.tweens.add({
         targets: fx,
@@ -55,7 +55,7 @@ export class CoinRewardComponent implements IRewardComponent {
         ease: "sine.inout",
       });
     } else {
-      this.coinIcon.filters?.external.addGlow(0xffffff, 1, 0, 1, false, 10, 32);
+      this.coinIcon.filters?.external.addGlow(0xffffff, 1, 0, 1, false, 8, 24);
     }
 
     this.container.add(this.coinIcon);
@@ -65,6 +65,7 @@ export class CoinRewardComponent implements IRewardComponent {
       .setOrigin(0.5)
       .setAlpha(0)
       .setScale(0.5)
+      .setTint(0xff6b09)
       .setDepth(10);
 
     this.container.add(this.amountText);

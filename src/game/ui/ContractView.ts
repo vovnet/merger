@@ -76,7 +76,7 @@ export class ContractView {
     this.titleText = this.scene.add
       .bitmapText(0, -80, "russo", "КОНТРАКТ", 22)
       .setOrigin(0.5)
-      .setTint(0xffffff);
+      .setTint(0x90cdff);
 
     this.container.add(this.titleText);
   }
@@ -339,7 +339,10 @@ export class ContractView {
   // ===========================================================================
 
   private createProgress(contract: Contract): void {
-    this.progressText = this.scene.add.bitmapText(0, 60, "russo", "", 32).setOrigin(0.5);
+    this.progressText = this.scene.add
+      .bitmapText(0, 60, "russo", "", 32)
+      .setOrigin(0.5)
+      .setTint(0xfff171);
 
     this.container.add(this.progressText);
 
@@ -353,14 +356,11 @@ export class ContractView {
 
     if (contract.status === "completed") {
       this.progressText.setVisible(false);
-      this.progressText.setText("+1").setTint(0xffd54f);
-
       return;
     }
 
     this.progressText
       .setText(`${contract.currentCount} / ${contract.requiredCount}`)
-      .setTint(0xffffff)
       .setVisible(true);
   }
 

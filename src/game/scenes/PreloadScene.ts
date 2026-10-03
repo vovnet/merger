@@ -92,7 +92,7 @@ export class PreloaderScene extends Phaser.Scene {
     this.load.audio("notification_2", "assets/sound/notification_2.mp3");
     this.load.audio("shine", "assets/sound/shine.mp3");
 
-    this.load.bitmapFont("russo", "assets/fonts/days.png", "assets/fonts/days.xml");
+    this.load.bitmapFont("russo", "assets/fonts/days5.png", "assets/fonts/days5.xml");
 
     // 1. Создаем временный Graphics объект
     const graphics = this.add.graphics({ x: 0, y: 0 });

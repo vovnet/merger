@@ -18,8 +18,8 @@ export class FillButton {
   private audioService: AudioService;
 
   private isDisabled: boolean = false;
-  private readonly ACTIVE_TEXT_TINT = 0xffffff;
-  private readonly DISABLED_TINT = 0x888888;
+  private readonly ACTIVE_TEXT_TINT = 0xffa700;
+  private readonly DISABLED_TINT = 0xffcf73;
 
   constructor(scene: Phaser.Scene, x: number, y: number, gameState: GameState, grid: Grid) {
     this.scene = scene;
@@ -107,7 +107,7 @@ export class FillButton {
       this.item.setAlpha(0.7);
 
       this.text.setAlpha(0.8);
-      this.text.setTint(0xffffff);
+      this.text.setTint(this.DISABLED_TINT);
     } else {
       this.bg.setInteractive({ useHandCursor: true });
 

@@ -105,7 +105,7 @@ export class ActionButtons {
     const labelText = this.scene.add
       .bitmapText(10, 0, "russo", "x30", 64)
       .setOrigin(0, 0.5)
-      .setTint(0x40c00d);
+      .setTint(0xf03c79);
 
     buttonContent.add([coinIcon, labelText]);
 
