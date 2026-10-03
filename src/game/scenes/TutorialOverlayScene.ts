@@ -205,18 +205,15 @@ export class TutorialOverlayScene extends Phaser.Scene {
 
     const bg = this.add
       .rectangle(boxX, boxY, 600, 100, 0x2a2a3e, 0.95)
-      .setStrokeStyle(2, 0xffd700)
+      .setStrokeStyle(2, 0x866fd7)
       .setOrigin(0.5);
 
     const textObj = this.add
-      .text(boxX, boxY, text, {
-        fontSize: "24px",
-        color: "#ffffff",
-        fontFamily: "Arial",
-        align: "center",
-        wordWrap: { width: 560 },
-      })
-      .setOrigin(0.5);
+      .bitmapText(boxX, boxY, "russo", text, 24)
+      .setTint(0xffea74)
+      .setOrigin(0.5)
+      .setMaxWidth(550)
+      .setCenterAlign();
 
     this.overlay.add([bg, textObj]);
   }
