@@ -20,6 +20,7 @@ import { CloudSaveProvider } from "../../storage/CloudSaveProvider";
 import { adsService } from "../../AdsService";
 import { TutorialManager } from "../core/tutorial/TutorialManager";
 import { createTutorialStages } from "../core/tutorial/createTutorialStages";
+import { onceWhen } from "../utils/EventUtils";
 
 export class Game extends Phaser.Scene {
   private gameState: GameState;
@@ -117,7 +118,19 @@ export class Game extends Phaser.Scene {
     this.scene.launch("AdNotificationScene");
 
     EventBus.once(GameEvents.TUTORIAL_SCENE_READY, () => tutorialManager.checkAndStart());
-
+    onceWhen(
+      GameEvents.GRID_ITEM_MERGED,
+      () => this.gameState.totalMerges === 6,
+      () => tutorialManager.checkAndStart(),
+    );
+    onceWhen(
+      GameEvents.RANK_SQUISH_CLOSED,
+      () => this.gameState.level >= 6,
+      () => {
+        this.gameState.addSpins(1);
+        tutorialManager.checkAndStart();
+      },
+    );
     EventBus.emit(GameEvents.GAME_READY);
   }
 
@@ -158,6 +171,7 @@ export class Game extends Phaser.Scene {
         this.handleLevelUp();
         this.scene.launch("RewardScene", {
           reward: { type: "RANK_SQUISH", level: data.newLevel, rank: this.gameState.round },
+          onComplete: () => EventBus.emit(GameEvents.RANK_SQUISH_CLOSED),
         });
       }
     });

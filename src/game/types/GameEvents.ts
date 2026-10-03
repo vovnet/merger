@@ -6,11 +6,14 @@ export const GameEvents = {
   SHOW_AD_NOTIFICATION: "showAdNotivication",
   SHOW_FULLSCREEN_ADV: "showFullscreenAdv",
   AUDIO_SETTINGS_CHANGED: "audioSettingsChanged",
+
   // UI действия
   SHOW_TOAST: "showToast",
   SHOW_LEVEL_UP: "showLevelUp",
   SHOW_CLEANUP: "showCleanup",
   COMBO_ACHIEVED: "comboAchieved",
+  ADDED_COIN_CLICK: "added_coin_click",
+  RANK_SQUISH_CLOSED: "rank_squish_closed",
 
   // Состояние игры
   COINS_CHANGED: "coinsChanged",
@@ -52,6 +55,7 @@ export const GameEvents = {
   ROULETTE_OPENED: "roulette_opened",
   SPINS_CHANGED: "spins_changed",
   RARE_SQUISH_RANK_CHANGED: "rare_squish_rank_changed",
+  ROULETTE_RUN: "roulette_run",
 
   GAME_SAVE_LOADED: "game_save_loaded",
   GAME_SAVED: "game_saved",

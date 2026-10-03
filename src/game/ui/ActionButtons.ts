@@ -60,6 +60,7 @@ export class ActionButtons {
       textureKey: "ui",
       onClick: () => {
         this.scene.scene.launch("RouletteScene");
+        EventBus.emit(GameEvents.ROULETTE_OPENED);
       },
       alert: this.gameState.spins > 0,
     });

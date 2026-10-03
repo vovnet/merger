@@ -4,6 +4,8 @@ import { RouletteLogic, RouletteState, RouletteWinData } from "../core/RouleteLo
 import { AlertButton } from "../ui/AlertButton";
 import { RewardData } from "../types/Rewards";
 import { t } from "../../locales";
+import { EventBus } from "../core/EventBus";
+import { GameEvents } from "../types/GameEvents";
 
 export class RouletteScene extends Phaser.Scene {
   private gameState: GameState;
@@ -117,6 +119,7 @@ export class RouletteScene extends Phaser.Scene {
   private handleSpinClick(): void {
     if (this.rouletteLogic.currentState !== RouletteState.IDLE) return;
     if (this.gameState.spins <= 0) return;
+    EventBus.emit(GameEvents.ROULETTE_RUN);
 
     this.gameState.spendSpin();
     this.rouletteLogic.startSpin((winData) => this.onSpinComplete(winData));

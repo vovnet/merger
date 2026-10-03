@@ -10,6 +10,7 @@ export interface TutorialStep {
   waitForEvent?: string;
   waitForClick?: boolean;
   duration?: number;
+  textPosition?: { x: number; y: number };
 }
 
 export interface TutorialStage {

@@ -7,7 +7,7 @@ export class TutorialOverlayScene extends Phaser.Scene {
   private overlay!: Phaser.GameObjects.Container;
   private dimmer!: Phaser.GameObjects.Rectangle;
   private skipButton!: Phaser.GameObjects.Text;
-  private currentHighlightMask?: Phaser.Display.Masks.GeometryMask;
+  private highlightGraphics?: Phaser.GameObjects.Graphics;
 
   constructor() {
     super({ key: "TutorialOverlayScene" });
@@ -17,7 +17,7 @@ export class TutorialOverlayScene extends Phaser.Scene {
     const screenWidth = this.scale.width;
     const screenHeight = this.scale.height;
 
-    // 1. Затемнение всего экрана. 🎯 ДОБАВЛЕНО: .setVisible(false) по умолчанию
+    // 1. Полноэкранное затемнение
     this.dimmer = this.add
       .rectangle(0, 0, screenWidth, screenHeight, 0x000000, 0.75)
       .setOrigin(0)
@@ -40,24 +40,26 @@ export class TutorialOverlayScene extends Phaser.Scene {
     this.overlay.removeAll(true);
     this.clearHighlight();
 
-    // 🎯 ПОКАЗЫВАЕМ и оверлей, и затемнение
     this.overlay.setVisible(true);
-    this.dimmer.setVisible(true);
 
-    // Управление кликами
-    if (step.waitForClick) {
-      this.dimmer.setInteractive({ useHandCursor: false });
-      this.dimmer.on("pointerdown", this.handleOverlayClick, this);
-    } else {
-      this.dimmer.disableInteractive();
-      this.dimmer.off("pointerdown", this.handleOverlayClick, this);
-    }
-
+    // 🎯 Если есть зона подсветки, рисуем "дырку"
     if (step.highlightArea) {
-      this.createHighlight(step.highlightArea);
+      this.dimmer.setVisible(false);
+      // 🎯 ПЕРЕДАЕМ флаг waitForClick в метод создания подсветки
+      this.createHighlight(step.highlightArea, step.waitForClick || false);
+    } else {
+      this.dimmer.setVisible(true);
+      // Управление кликами для сплошного затемнения
+      if (step.waitForClick) {
+        this.dimmer.setInteractive({ useHandCursor: false });
+        this.dimmer.on("pointerdown", this.handleOverlayClick, this);
+      } else {
+        this.dimmer.disableInteractive();
+        this.dimmer.off("pointerdown", this.handleOverlayClick, this);
+      }
     }
 
-    this.createTextBox(step.text);
+    this.createTextBox(step.text, step.textPosition);
 
     // Анимация появления
     this.overlay.setAlpha(0);
@@ -73,16 +75,47 @@ export class TutorialOverlayScene extends Phaser.Scene {
     EventBus.emit(GameEvents.TUTORIAL_STEP_CLICKED);
   }
 
-  // 🎯 Создание подсветки
-  private createHighlight(area: { x: number; y: number; width: number; height: number }): void {
-    const maskGraphics = this.add.graphics();
-    maskGraphics.fillStyle(0xffffff);
-    maskGraphics.fillRect(area.x, area.y, area.width, area.height);
-    maskGraphics.setVisible(false);
+  // 🎯 Создание подсветки с "дыркой"
+  private createHighlight(
+    area: { x: number; y: number; width: number; height: number },
+    isInteractive: boolean, // 🎯 НОВЫЙ ПАРАМЕТР
+  ): void {
+    const screenWidth = this.scale.width;
+    const screenHeight = this.scale.height;
 
-    this.currentHighlightMask = maskGraphics.createGeometryMask();
-    this.dimmer.setMask(this.currentHighlightMask);
+    this.highlightGraphics = this.add.graphics().setDepth(9000);
+    this.highlightGraphics.fillStyle(0x000000, 0.75);
 
+    // 1. Верхняя часть
+    this.highlightGraphics.fillRect(0, 0, screenWidth, area.y);
+    // 2. Нижняя часть
+    this.highlightGraphics.fillRect(
+      0,
+      area.y + area.height,
+      screenWidth,
+      screenHeight - (area.y + area.height),
+    );
+    // 3. Левая часть
+    this.highlightGraphics.fillRect(0, area.y, area.x, area.height);
+    // 4. Правая часть
+    this.highlightGraphics.fillRect(
+      area.x + area.width,
+      area.y,
+      screenWidth - (area.x + area.width),
+      area.height,
+    );
+
+    // 🎯 ГЛАВНОЕ ИСПРАВЛЕНИЕ: Делаем графику интерактивной, если нужно ждать клик
+    if (isInteractive) {
+      // Задаем область нажатия во весь экран, чтобы клик в "дырку" тоже продвигал туториал
+      this.highlightGraphics.setInteractive(
+        new Phaser.Geom.Rectangle(0, 0, screenWidth, screenHeight),
+        Phaser.Geom.Rectangle.Contains,
+      );
+      this.highlightGraphics.on("pointerdown", this.handleOverlayClick, this);
+    }
+
+    // Пульсирующая рамка
     const border = this.add
       .rectangle(area.x + area.width / 2, area.y + area.height / 2, area.width + 8, area.height + 8)
       .setStrokeStyle(3, 0xffd700)
@@ -99,25 +132,29 @@ export class TutorialOverlayScene extends Phaser.Scene {
     this.overlay.add(border);
   }
 
+  // 🎯 Очистка подсветки
   private clearHighlight(): void {
-    if (this.currentHighlightMask) {
-      this.dimmer.clearMask();
-      this.currentHighlightMask.destroy();
-      this.currentHighlightMask = undefined;
+    if (this.highlightGraphics) {
+      // 🎯 Обязательно отписываемся от событий перед уничтожением
+      this.highlightGraphics.off("pointerdown", this.handleOverlayClick, this);
+      this.highlightGraphics.destroy();
+      this.highlightGraphics = undefined;
     }
   }
 
-  private createTextBox(text: string): void {
+  // 🎯 Создание текстового блока
+  private createTextBox(text: string, textPosition?: { x: number; y: number }): void {
     const screenWidth = this.scale.width;
     const screenHeight = this.scale.height;
 
-    const boxX = screenWidth / 2;
-    const boxY = screenHeight - 120;
+    // 🎯 Используем переданные координаты или стандартные (внизу по центру)
+    const boxX = textPosition?.x ?? screenWidth / 2;
+    const boxY = textPosition?.y ?? screenHeight - 120;
 
     const bg = this.add
       .rectangle(boxX, boxY, 600, 100, 0x2a2a3e, 0.95)
       .setStrokeStyle(2, 0xffd700)
-      .setOrigin(0.5);
+      .setOrigin(0.5); // Центр прямоугольника будет в точке (boxX, boxY)
 
     const textObj = this.add
       .text(boxX, boxY, text, {
@@ -127,7 +164,7 @@ export class TutorialOverlayScene extends Phaser.Scene {
         align: "center",
         wordWrap: { width: 560 },
       })
-      .setOrigin(0.5);
+      .setOrigin(0.5); // Центр текста совпадает с центром фона
 
     this.overlay.add([bg, textObj]);
   }
@@ -136,7 +173,6 @@ export class TutorialOverlayScene extends Phaser.Scene {
   private hideStep(): void {
     this.clearHighlight();
 
-    // 🎯 СКРЫВАЕМ и оверлей, и затемнение
     this.overlay.setVisible(false);
     this.dimmer.setVisible(false);
 
@@ -149,7 +185,7 @@ export class TutorialOverlayScene extends Phaser.Scene {
   shutdown(): void {
     this.clearHighlight();
     this.overlay.setVisible(false);
-    this.dimmer.setVisible(false); // 🎯 Гарантируем скрытие при выходе
+    this.dimmer.setVisible(false);
     this.dimmer.disableInteractive();
     this.dimmer.off("pointerdown", this.handleOverlayClick, this);
     EventBus.off(GameEvents.SHOW_TUTORIAL_STEP, this.showStep, this);

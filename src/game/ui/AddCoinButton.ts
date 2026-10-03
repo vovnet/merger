@@ -1,6 +1,8 @@
 import * as Phaser from "phaser";
 import { GameState } from "../core/GameState";
 import { AudioService } from "../core/AudioService";
+import { EventBus } from "../core/EventBus";
+import { GameEvents } from "../types/GameEvents";
 
 export enum ButtonState {
   IDLE = "IDLE",
@@ -78,6 +80,7 @@ export class AddCoinButton {
 
   private handleClick(): void {
     if (this.currentState !== ButtonState.IDLE) return;
+    EventBus.emit(GameEvents.ADDED_COIN_CLICK);
 
     this.setState(ButtonState.COOLDOWN);
 
