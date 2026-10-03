@@ -214,6 +214,71 @@ export class GridVFXManager {
     });
   }
 
+  public spawnSquishWithPackEffect(x: number, y: number): void {
+    const packLeft = this.scene.add.sprite(0, 0, "ui", "coin_left_side").setOrigin(1, 0.5);
+
+    const packRight = this.scene.add.sprite(0, 0, "ui", "coin_right_side").setOrigin(0, 0.5);
+
+    const pack = this.scene.add.container(x, y, [packLeft, packRight]).setDepth(100);
+
+    // 🎲 Свой random для каждого эффекта
+    const leftDistance = Phaser.Math.Between(60, 100);
+    const rightDistance = Phaser.Math.Between(60, 100);
+
+    const leftY = Phaser.Math.Between(-50, -15);
+    const rightY = Phaser.Math.Between(-50, -15);
+
+    const leftAngle = Phaser.Math.Between(-90, -30);
+    const rightAngle = Phaser.Math.Between(30, 90);
+
+    const leftDuration = Phaser.Math.Between(350, 500);
+    const rightDuration = Phaser.Math.Between(350, 500);
+
+    // 🎲 Разная задержка для каждой половинки
+    const leftDelay = Phaser.Math.Between(0, 60);
+    const rightDelay = Phaser.Math.Between(0, 60);
+
+    // 🎲 Немного разный стартовый поворот
+    packLeft.angle = Phaser.Math.Between(-8, 8);
+    packRight.angle = Phaser.Math.Between(-8, 8);
+
+    // Левая половина
+    this.scene.tweens.add({
+      targets: packLeft,
+
+      x: -leftDistance,
+      y: leftY,
+
+      angle: leftAngle,
+      alpha: 0,
+
+      duration: leftDuration,
+      delay: leftDelay,
+
+      ease: "Quad.easeOut",
+    });
+
+    // Правая половина
+    this.scene.tweens.add({
+      targets: packRight,
+
+      x: rightDistance,
+      y: rightY,
+
+      angle: rightAngle,
+      alpha: 0,
+
+      duration: rightDuration,
+      delay: rightDelay,
+
+      ease: "Quad.easeOut",
+
+      onComplete: () => {
+        pack.destroy();
+      },
+    });
+  }
+
   // 🎯 НОВЫЙ МЕТОД: Для безопасной очистки всех частиц при уничтожении менеджера/сцены
   public destroy(): void {
     this.activeEmitters.forEach((emitter) => {

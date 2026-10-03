@@ -1,5 +1,5 @@
 import * as Phaser from "phaser";
-import { Cell, GridConfig, GridPosition, ItemData } from "../types/Item";
+import { Cell, GridConfig, GridItemSpawnedData, GridPosition, ItemData } from "../types/Item";
 import { ItemRegistry } from "./ItemRegistry";
 import { EventBus } from "./EventBus";
 import { GameEvents } from "../types/GameEvents";
@@ -231,6 +231,7 @@ export class Grid extends Phaser.Events.EventEmitter {
     // Создаем копию массива доступных ячеек.
     // (getEmptyCells и так возвращает новый массив, но [...emptyCells] делает намерение явным)
     const availableCells = [...emptyCells];
+    const spawnedItems: GridItemSpawnedData[] = [];
 
     for (let i = 0; i < itemsToSpawn; i++) {
       // 🎯 Выбираем случайный индекс из оставшихся доступных ячеек
@@ -243,9 +244,15 @@ export class Grid extends Phaser.Events.EventEmitter {
       const item = this.createItem(level);
       this.setItem(cell, item);
       filledCount++;
+
+      spawnedItems.push({
+        position: cell, // Предполагаем, что cell это { col, row }
+        level: item.level,
+        itemId: item.id,
+      });
     }
 
-    EventBus.emit(GameEvents.GRID_FILLED, { count: filledCount });
+    EventBus.emit(GameEvents.GRID_FILLED, { count: filledCount, items: spawnedItems });
     EventBus.emit(GameEvents.GRID_ITEM_CHANGED);
 
     return filledCount;

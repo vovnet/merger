@@ -18,3 +18,9 @@ export interface GridConfig {
   cols: number; // 4
   rows: number; // 5
 }
+
+export interface GridItemSpawnedData {
+  position: GridPosition; // { col: number, row: number }
+  level: number;
+  itemId: string; // Уникальный ID предмета, если он есть
+}

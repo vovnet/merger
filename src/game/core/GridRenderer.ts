@@ -1,6 +1,6 @@
 import * as Phaser from "phaser";
 import { Grid, GridSnapshot } from "./Grid";
-import { GridPosition, ItemData } from "../types/Item";
+import { GridItemSpawnedData, GridPosition, ItemData } from "../types/Item";
 import { ItemRegistry } from "./ItemRegistry";
 import { EventBus } from "./EventBus";
 import { GameEvents } from "../types/GameEvents";
@@ -8,7 +8,6 @@ import { ContractUpdateData } from "../types/Contract";
 import { IDLE_ANIMATIONS } from "../config/ItemAnimations";
 import { GridDragController } from "./GridDragController";
 import { GridVFXManager } from "./GridVFXManager";
-import { Economy } from "./Economy";
 import { TapDestroyController } from "./TapDestroyController";
 import { GameState } from "./GameState";
 
@@ -70,9 +69,17 @@ export class GridRenderer {
   private bindGridEvents(): void {
     EventBus.on(
       GameEvents.GRID_ITEM_ADDED,
-      ({ position, item }: { position: GridPosition; item: ItemData }) =>
-        this.createItemSprite(position, item),
+      ({ position, item }: { position: GridPosition; item: ItemData }) => {
+        this.createItemSprite(position, item);
+      },
     );
+    EventBus.on(GameEvents.GRID_FILLED, (data: { items: GridItemSpawnedData[] }) => {
+      data.items.forEach((item) => {
+        const { px, py } = this.gridToPixel({ ...item.position });
+        this.vfxManager.spawnSquishWithPackEffect(px, py);
+      });
+      console.log("spawn: ", data.items);
+    });
     EventBus.on(GameEvents.GRID_ITEM_REMOVED, ({ position }: { position: GridPosition }) =>
       this.removeItemSprite(position),
     );
