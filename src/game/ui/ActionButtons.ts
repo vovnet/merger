@@ -72,6 +72,7 @@ export class ActionButtons {
       textureKey: "ui",
       frameKey: "collection_btn",
       onClick: () => {
+        this.collectionButton.setAlert(false);
         this.scene.scene.launch("CollectionScene");
       },
     });
@@ -148,6 +149,7 @@ export class ActionButtons {
     EventBus.on(GameEvents.SPINS_CHANGED, () => {
       this.rouletteButton.setAlert(this.gameState.spins > 0);
     });
+    EventBus.on(GameEvents.LEVEL_CHANGED, () => this.collectionButton.setAlert(true));
   }
 
   destroy(): void {
