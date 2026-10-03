@@ -126,7 +126,7 @@ export class Game extends Phaser.Scene {
     );
     onceWhen(
       GameEvents.RANK_SQUISH_CLOSED,
-      () => this.gameState.level >= 6,
+      () => this.gameState.level === 6,
       () => {
         this.gameState.addSpins(1);
         tutorialManager.checkAndStart();

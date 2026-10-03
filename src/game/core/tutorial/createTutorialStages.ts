@@ -48,7 +48,7 @@ export function createTutorialStages(gameState: GameState): TutorialStage[] {
     },
     {
       id: "first_roulette",
-      trigger: () => gameState.level >= 6,
+      trigger: () => gameState.level === 6,
       steps: [
         {
           id: "roulette_intro",
