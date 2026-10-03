@@ -221,56 +221,64 @@ export class GridVFXManager {
 
     const pack = this.scene.add.container(x, y, [packLeft, packRight]).setDepth(100);
 
-    // 🎲 Свой random для каждого эффекта
-    const leftDistance = Phaser.Math.Between(60, 100);
-    const rightDistance = Phaser.Math.Between(60, 100);
+    // 🎲 Случайный характер разрыва
+    const spread = Phaser.Math.Between(60, 100);
 
-    const leftY = Phaser.Math.Between(-50, -15);
-    const rightY = Phaser.Math.Between(-50, -15);
+    // Иногда разрыв сильнее вверх, иногда почти горизонтальный
+    const leftY = Phaser.Math.Between(-55, 5);
+    const rightY = Phaser.Math.Between(-55, 5);
 
-    const leftAngle = Phaser.Math.Between(-90, -30);
-    const rightAngle = Phaser.Math.Between(30, 90);
+    // Иногда одна часть улетает дальше другой
+    const leftDistance = Phaser.Math.Between(Math.max(40, spread - 20), spread + 20);
 
-    const leftDuration = Phaser.Math.Between(350, 500);
-    const rightDuration = Phaser.Math.Between(350, 500);
+    const rightDistance = Phaser.Math.Between(Math.max(40, spread - 20), spread + 20);
 
-    // 🎲 Разная задержка для каждой половинки
-    const leftDelay = Phaser.Math.Between(0, 60);
-    const rightDelay = Phaser.Math.Between(0, 60);
+    // 🎲 Случайное вращение
+    const leftAngle = Phaser.Math.Between(-120, -25);
+    const rightAngle = Phaser.Math.Between(25, 120);
 
-    // 🎲 Немного разный стартовый поворот
-    packLeft.angle = Phaser.Math.Between(-8, 8);
-    packRight.angle = Phaser.Math.Between(-8, 8);
+    // 🎲 Иногда одна половинка вращается сильнее другой
+    const leftDuration = Phaser.Math.Between(300, 500);
+    const rightDuration = Phaser.Math.Between(300, 500);
+
+    // 🎲 Разный стартовый угол
+    packLeft.angle = Phaser.Math.Between(-15, 15);
+    packRight.angle = Phaser.Math.Between(-15, 15);
+
+    // 🎲 Разный масштаб
+    const leftScale = Phaser.Math.FloatBetween(0.85, 1.05);
+    const rightScale = Phaser.Math.FloatBetween(0.85, 1.05);
+
+    packLeft.setScale(leftScale);
+    packRight.setScale(rightScale);
+
+    // 🎲 Небольшая разница старта
+    const leftDelay = Phaser.Math.Between(0, 50);
+    const rightDelay = Phaser.Math.Between(0, 50);
 
     // Левая половина
     this.scene.tweens.add({
       targets: packLeft,
-
       x: -leftDistance,
       y: leftY,
-
       angle: leftAngle,
+      scale: leftScale * Phaser.Math.FloatBetween(0.7, 0.9),
       alpha: 0,
-
       duration: leftDuration,
       delay: leftDelay,
-
       ease: "Quad.easeOut",
     });
 
     // Правая половина
     this.scene.tweens.add({
       targets: packRight,
-
       x: rightDistance,
       y: rightY,
-
       angle: rightAngle,
+      scale: rightScale * Phaser.Math.FloatBetween(0.7, 0.9),
       alpha: 0,
-
       duration: rightDuration,
       delay: rightDelay,
-
       ease: "Quad.easeOut",
 
       onComplete: () => {
