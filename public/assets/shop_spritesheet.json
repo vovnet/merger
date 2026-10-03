@@ -1,0 +1,140 @@
+{
+  "frames": [
+    {
+      "filename": "shop_pack_2",
+      "frame": {
+        "x": 2,
+        "y": 2,
+        "w": 240,
+        "h": 333
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 240,
+        "h": 333
+      },
+      "sourceSize": {
+        "w": 240,
+        "h": 333
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      }
+    },
+    {
+      "filename": "shop_pack_3",
+      "frame": {
+        "x": 246,
+        "y": 2,
+        "w": 300,
+        "h": 319
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 300,
+        "h": 319
+      },
+      "sourceSize": {
+        "w": 300,
+        "h": 319
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      }
+    },
+    {
+      "filename": "buy_btn",
+      "frame": {
+        "x": 550,
+        "y": 2,
+        "w": 256,
+        "h": 86
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 256,
+        "h": 86
+      },
+      "sourceSize": {
+        "w": 256,
+        "h": 86
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      }
+    },
+    {
+      "filename": "shop_ads",
+      "frame": {
+        "x": 550,
+        "y": 92,
+        "w": 256,
+        "h": 213
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 256,
+        "h": 213
+      },
+      "sourceSize": {
+        "w": 256,
+        "h": 213
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      }
+    },
+    {
+      "filename": "shop_pack_1",
+      "frame": {
+        "x": 810,
+        "y": 2,
+        "w": 200,
+        "h": 227
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 200,
+        "h": 227
+      },
+      "sourceSize": {
+        "w": 200,
+        "h": 227
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      }
+    }
+  ],
+  "meta": {
+    "app": "https://free-tex-packer.org",
+    "version": "0.6.7",
+    "image": "shop_spritesheet.png",
+    "format": "RGBA8888",
+    "size": {
+      "w": 1012,
+      "h": 337
+    },
+    "scale": 1
+  }
+}

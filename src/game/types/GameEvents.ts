@@ -30,7 +30,6 @@ export const GameEvents = {
   GRID_RESTORED: "gridRestored",
   HISTORY_CHECKPOINT: "historyCheckpoint",
   GRID_PRESTIGE_MERGED: "grid_prestige_merged",
-
   ITEM_TAP_DESTROYED: "item_tap_setroyed",
 
   // События ComboService
@@ -43,6 +42,14 @@ export const GameEvents = {
   CONTRACT_COMPLETED: "contract_completed",
   CONTRACT_REWARD_CLAIMED: "contract_reward_claimed",
 
+  // Tutorial
+  SHOW_TUTORIAL_STEP: "show_tutorial_step",
+  TUTORIAL_STEP_CLICKED: "tutorial_step_clicked",
+  HIDE_TUTORIAL_STEP: "hide_tutorial_step",
+  TUTORIAL_SKIPPED: "tutorial_skipped",
+  TUTORIAL_SCENE_READY: "tutorial_scene_ready",
+
+  ROULETTE_OPENED: "roulette_opened",
   SPINS_CHANGED: "spins_changed",
   RARE_SQUISH_RANK_CHANGED: "rare_squish_rank_changed",
 

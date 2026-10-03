@@ -2,6 +2,7 @@ import { AudioService } from "../game/core/AudioService";
 import { ContractService } from "../game/core/ContractService";
 import { GameState } from "../game/core/GameState";
 import { Grid } from "../game/core/Grid";
+import { TutorialManager } from "../game/core/tutorial/TutorialManager";
 import { SaveData } from "../game/types/SaveData";
 
 export class GameSession {
@@ -10,6 +11,7 @@ export class GameSession {
     public readonly grid: Grid,
     public readonly audio: AudioService,
     public readonly contract: ContractService,
+    public readonly tutorial: TutorialManager,
   ) {}
 
   public createSaveData(): SaveData {
@@ -21,6 +23,7 @@ export class GameSession {
       grid: this.grid.getSnapshot(),
       audio: this.audio.getSettings(),
       contract: this.contract.serialize(),
+      tutorial: this.tutorial.serialize(),
     };
   }
 
@@ -29,5 +32,6 @@ export class GameSession {
     this.grid.restoreSnapshot(data.grid);
     this.audio.setSettings(data.audio);
     this.contract.deserialize(data.contract);
+    this.tutorial.deserialize(data.tutorial);
   }
 }

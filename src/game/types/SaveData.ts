@@ -2,6 +2,7 @@ import { AudioSettings } from "../core/AudioService";
 import { ContractSaveData } from "../core/ContractService";
 import { GameStateData } from "../core/GameState";
 import { GridSnapshot } from "../core/Grid";
+import { TutorialSaveData } from "./Tutorial";
 
 export interface SaveData {
   /**
@@ -33,4 +34,6 @@ export interface SaveData {
   audio: AudioSettings;
 
   contract: ContractSaveData | null;
+
+  tutorial: TutorialSaveData;
 }

@@ -18,6 +18,8 @@ import { SaveProvider } from "../types/SaveProvider";
 import { LocalSaveProvider } from "../../storage/LocalSaveProvider";
 import { CloudSaveProvider } from "../../storage/CloudSaveProvider";
 import { adsService } from "../../AdsService";
+import { TutorialManager } from "../core/tutorial/TutorialManager";
+import { createTutorialStages } from "../core/tutorial/createTutorialStages";
 
 export class Game extends Phaser.Scene {
   private gameState: GameState;
@@ -52,6 +54,9 @@ export class Game extends Phaser.Scene {
 
     this.contractService = new ContractService(this.grid, this.gameState);
 
+    const tutorialManager = new TutorialManager(createTutorialStages(this.gameState));
+    this.registry.set("tutorialManager", tutorialManager);
+
     this.localProvider = new LocalSaveProvider();
     this.cloudProvider = new CloudSaveProvider();
     this.gameSession = new GameSession(
@@ -59,6 +64,7 @@ export class Game extends Phaser.Scene {
       this.grid,
       this.audioService,
       this.contractService,
+      tutorialManager,
     );
     this.saveManager = new SaveManager(this.gameSession, this.localProvider, this.cloudProvider);
 
@@ -107,7 +113,10 @@ export class Game extends Phaser.Scene {
     adsService.init(this.time);
 
     this.scene.launch("UIScene", { economy: this.economy, contractService: this.contractService });
+    this.scene.launch("TutorialOverlayScene");
     this.scene.launch("AdNotificationScene");
+
+    EventBus.once(GameEvents.TUTORIAL_SCENE_READY, () => tutorialManager.checkAndStart());
 
     EventBus.emit(GameEvents.GAME_READY);
   }
