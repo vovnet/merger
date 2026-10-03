@@ -53,9 +53,9 @@ export class ActionButtons {
     this.addCoinButton = new AddCoinButton(this.scene, debugBtnX, debugBtnY, this.gameState);
 
     this.rouletteButton = new AlertButton(this.scene, {
-      x: 350,
-      y: 660,
-      scale: 0.6,
+      x: 150,
+      y: 520,
+      scale: 0.9,
       frameKey: "roulette_btn",
       textureKey: "ui",
       onClick: () => {
@@ -80,7 +80,7 @@ export class ActionButtons {
       y: 660,
       scale: 0.6,
       textureKey: "ui",
-      frameKey: "achivements_btn",
+      frameKey: "shop_btn",
       disabled: true,
       onClick: () => {
         console.log("open achivements");
@@ -131,7 +131,7 @@ export class ActionButtons {
 
     this.soundButton = new Switch({
       scene: this.scene,
-      x: 240,
+      x: 80,
       y: this.scene.scale.height - 58,
       scale: 0.7,
       on: { texture: "ui", frame: "sound_off_btn" },
