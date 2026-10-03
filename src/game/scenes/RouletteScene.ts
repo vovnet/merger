@@ -3,6 +3,7 @@ import { GameState } from "../core/GameState";
 import { RouletteLogic, RouletteState, RouletteWinData } from "../core/RouleteLogic";
 import { AlertButton } from "../ui/AlertButton";
 import { RewardData } from "../types/Rewards";
+import { t } from "../../locales";
 
 export class RouletteScene extends Phaser.Scene {
   private gameState: GameState;
@@ -53,7 +54,7 @@ export class RouletteScene extends Phaser.Scene {
 
     this.rouletteView.add(
       this.add
-        .bitmapText(screenWidth / 2, 80, "russo", "СКВИШ-ВЕРТУШКА", 74)
+        .bitmapText(screenWidth / 2, 80, "russo", t("ROULETTE_TITLE"), 74)
         .setOrigin(0.5)
         .setTint(0xca43ff),
     );

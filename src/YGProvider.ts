@@ -3,6 +3,7 @@ import { EventBus } from "./game/core/EventBus";
 import { GameEvents } from "./game/types/GameEvents";
 import { SaveData } from "./game/types/SaveData";
 import { LeaderboardData, LeaderboardEntry } from "./game/types/Leaderboard";
+import { setLanguage } from "./locales";
 
 export type RewardedVideoEvents = {
   onRewarded: () => void;
@@ -22,10 +23,16 @@ class YGProvider {
     this.sdk = await YaGames.init();
 
     const lang = this.sdk.environment.i18n.lang;
+    setLanguage(lang);
 
     this.player = await this.sdk.getPlayer();
 
     this.initListeners();
+  }
+
+  // для тестирования языка через параметры урл
+  private testingLang() {
+    return new URLSearchParams(window.location.search).get("lang") || "ru";
   }
 
   private initListeners(): void {

@@ -1,3 +1,4 @@
+import { t } from "../../../locales";
 import { AudioService } from "../../core/AudioService";
 import { RewardVFX } from "../../utils/RewardVFX";
 import { IRewardComponent } from "./IRewardComponent";
@@ -77,27 +78,19 @@ export class RareRewardComponent implements IRewardComponent {
 
     // 🎯 Иконка ранга
     const rankIcon = this.scene.add
-      .image(this.x, this.y - 160, "ranks", `rank${Math.min(this.rank, 37)}`)
+      .image(this.x, this.y - 220, "ranks", `rank${Math.min(this.rank, 37)}`)
       .setAlpha(0)
       .setScale(0)
       .setDepth(101);
 
     // 🎯 Текст ранга
     const rankText = this.scene.add
-      .text(this.x, this.y - 95, `РАНГ ${this.rank}`, {
-        fontSize: "28px",
-        color: "#ffd700",
-        fontFamily: "Arial",
-        fontStyle: "bold",
-        stroke: "#000000",
-        strokeThickness: 4,
-      })
+      .bitmapText(this.x, this.y - 140, "russo", t("RANK_LABEL", { rank: this.rank }), 42)
+      .setTint(0xffd700)
       .setOrigin(0.5)
       .setAlpha(0)
       .setScale(0)
       .setDepth(101);
-
-    // --- 🎬 НОВАЯ ЦЕПОЧКА АНИМАЦИИ ---
 
     // ШАГ 0: Плавное появление упаковки (создаём ожидание)
     this.scene.tweens.add({

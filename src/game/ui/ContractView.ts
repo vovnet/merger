@@ -4,6 +4,7 @@ import { Contract, ContractService } from "../core/ContractService";
 import { GameEvents } from "../types/GameEvents";
 import { ItemRegistry } from "../core/ItemRegistry";
 import { AudioService } from "../core/AudioService";
+import { t } from "../../locales";
 
 export class ContractView {
   private readonly scene: Phaser.Scene;
@@ -74,7 +75,7 @@ export class ContractView {
     this.drawBackground();
 
     this.titleText = this.scene.add
-      .bitmapText(0, -80, "russo", "КОНТРАКТ", 22)
+      .bitmapText(0, -80, "russo", t("CONTRACT"), 22)
       .setOrigin(0.5)
       .setTint(0x90cdff);
 
@@ -398,7 +399,7 @@ export class ContractView {
      * Текст остаётся поверх reward placeholder/progress.
      */
     this.claimText = this.scene.add
-      .bitmapText(0, 80, "russo", "ЗАБРАТЬ", 18)
+      .bitmapText(0, 80, "russo", t("REWARD_RECEIVE"), 18)
       .setOrigin(0.5)
       .setTint(0xffffff);
 

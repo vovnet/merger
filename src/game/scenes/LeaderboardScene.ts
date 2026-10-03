@@ -2,6 +2,7 @@ import * as Phaser from "phaser";
 import { ygProvider } from "../../YGProvider";
 import { LeaderboardData, LeaderboardEntry } from "../types/Leaderboard";
 import { AlertButton } from "../ui/AlertButton";
+import { t } from "../../locales";
 
 export class LeaderboardScene extends Phaser.Scene {
   private contentContainer!: Phaser.GameObjects.Container;
@@ -179,7 +180,7 @@ export class LeaderboardScene extends Phaser.Scene {
     // NAME
     // -------------------------------------------------------------------------
 
-    const displayName = isCurrentUser ? `YOU — ${entry.name}` : entry.name;
+    const displayName = isCurrentUser ? t("YOU", { name: entry.name }) : entry.name;
 
     const nameText = this.add
       .bitmapText(centerX - rowWidth / 2 + 80, y, "russo", displayName, 25)
@@ -217,7 +218,7 @@ export class LeaderboardScene extends Phaser.Scene {
     this.contentContainer.removeAll(true);
 
     const text = this.add
-      .bitmapText(this.scale.width / 2, this.headerHeight + 80, "russo", "ЗАГРУЗКА...", 30)
+      .bitmapText(this.scale.width / 2, this.headerHeight + 80, "russo", t("LOADING"), 30)
       .setOrigin(0.5)
       .setTint(0xa8e6ff);
 
@@ -231,7 +232,7 @@ export class LeaderboardScene extends Phaser.Scene {
     this.contentContainer.removeAll(true);
 
     const text = this.add
-      .bitmapText(this.scale.width / 2, this.headerHeight + 80, "russo", "ЛИДЕРБОРД ПОКА ПУСТ", 28)
+      .bitmapText(this.scale.width / 2, this.headerHeight + 80, "russo", t("LEADERBOARD_EMPTY"), 28)
       .setOrigin(0.5)
       .setTint(0xa8e6ff);
 
@@ -249,7 +250,7 @@ export class LeaderboardScene extends Phaser.Scene {
         this.scale.width / 2,
         this.headerHeight + 80,
         "russo",
-        "НЕ УДАЛОСЬ ЗАГРУЗИТЬ ЛИДЕРБОРД",
+        t("LEADERBOARD_FAIL_LOAD"),
         24,
       )
       .setOrigin(0.5)
@@ -357,7 +358,7 @@ export class LeaderboardScene extends Phaser.Scene {
     // -------------------------------------------------------------------------
 
     this.add
-      .bitmapText(screenWidth / 2, 45, "russo", "ЛИДЕРБОРД", 56)
+      .bitmapText(screenWidth / 2, 45, "russo", t("LEADERBOARD_TITLE"), 56)
       .setOrigin(0.5)
       .setTint(0xffd700)
       .setDepth(6);

@@ -6,6 +6,7 @@ import { CoinRewardComponent } from "../components/rewards/CoinRewardComponent";
 import { RareRewardComponent } from "../components/rewards/RareRewardComponent";
 import { EventBus } from "../core/EventBus";
 import { GameEvents } from "../types/GameEvents";
+import { t } from "../../locales";
 
 export class RewardScene extends Phaser.Scene {
   private rewardData!: RewardData;
@@ -60,11 +61,7 @@ export class RewardScene extends Phaser.Scene {
 
     // 5. Подсказка и разрешение на закрытие
     const hintText = this.add
-      .text(centerX, centerY + 220, "Нажмите, чтобы продолжить", {
-        fontSize: "24px",
-        color: "#ffffff",
-        fontFamily: "Arial",
-      })
+      .bitmapText(centerX, centerY + 260, "russo", t("TAP_TO_CONTINUE"), 24)
       .setOrigin(0.5)
       .setAlpha(0);
 

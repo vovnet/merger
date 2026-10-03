@@ -2,6 +2,7 @@ import * as Phaser from "phaser";
 import { ItemRegistry } from "../core/ItemRegistry";
 import { GameState } from "../core/GameState";
 import { AlertButton } from "../ui/AlertButton";
+import { t } from "../../locales";
 
 export class CollectionScene extends Phaser.Scene {
   private gameState!: GameState;
@@ -143,8 +144,13 @@ export class CollectionScene extends Phaser.Scene {
     this.gridContainer.add(rareBg);
 
     // Заголовки колонок
-    this.renderColumnHeader(leftCenterX, contentTopY, "📦 ОБЫЧНЫЕ", this.getNormalSubtitle());
-    this.renderColumnHeader(rightCenterX, contentTopY, "✨ РЕДКИЕ", this.getRareSubtitle());
+    this.renderColumnHeader(
+      leftCenterX,
+      contentTopY,
+      t("NORMAL_SQUISHES"),
+      this.getNormalSubtitle(),
+    );
+    this.renderColumnHeader(rightCenterX, contentTopY, t("RARE_SQUISHES"), this.getRareSubtitle());
 
     // Вертикальная разделительная линия
     const separatorLine = this.add.rectangle(
@@ -204,12 +210,12 @@ export class CollectionScene extends Phaser.Scene {
     const maxLevel = ItemRegistry.getMaxLevel();
     const isRound1 = this.gameState.round === 1;
     const discovered = isRound1 ? this.gameState.level : maxLevel;
-    return `Открыто: ${discovered} / ${maxLevel}`;
+    return t("DISCOVERED", { current: discovered, total: maxLevel });
   }
 
   private getRareSubtitle(): string {
     const discovered = this.gameState.getDiscoveredRareSquishCount();
-    return `Открыто: ${discovered} / ${this.RARE_SQUISH_COUNT}`;
+    return t("DISCOVERED", { current: discovered, total: this.RARE_SQUISH_COUNT });
   }
 
   private getRareSquishFrames(): string[] {
@@ -269,7 +275,7 @@ export class CollectionScene extends Phaser.Scene {
       this.gridContainer.add(icon);
 
       const rankText = this.add
-        .bitmapText(x, y - 25, "russo", `РАНГ ${rank}`, 18)
+        .bitmapText(x, y - 25, "russo", t("RANK_LABEL", { rank }), 18)
         .setOrigin(0.5)
         .setTint(0xffd700);
       this.gridContainer.add(rankText);
@@ -282,12 +288,8 @@ export class CollectionScene extends Phaser.Scene {
       this.gridContainer.add(squish);
     } else {
       const placeholder = this.add
-        .text(x, y - 5, "?", {
-          fontSize: "64px",
-          color: "#3d3d5c",
-          fontFamily: "Arial",
-          fontStyle: "bold",
-        })
+        .bitmapText(x, y - 5, "russo", "?", 64)
+        .setTint(0x3d3d5c)
         .setOrigin(0.5);
       this.gridContainer.add(placeholder);
     }
@@ -312,7 +314,7 @@ export class CollectionScene extends Phaser.Scene {
       this.gridContainer.add(icon);
 
       const rankText = this.add
-        .bitmapText(x, y - 25, "russo", `РАНГ ${rank}`, 18)
+        .bitmapText(x, y - 25, "russo", t("RANK_LABEL", { rank }), 18)
         .setOrigin(0.5)
         .setTint(0xff9edb);
 
@@ -326,12 +328,8 @@ export class CollectionScene extends Phaser.Scene {
       this.gridContainer.add(squish);
     } else {
       const placeholder = this.add
-        .text(x, y - 5, "?", {
-          fontSize: "64px",
-          color: "#6a4a8a",
-          fontFamily: "Arial",
-          fontStyle: "bold",
-        })
+        .bitmapText(x, y - 5, "russo", "?", 64)
+        .setTint(0x6a4a8a)
         .setOrigin(0.5);
       this.gridContainer.add(placeholder);
     }
@@ -398,7 +396,7 @@ export class CollectionScene extends Phaser.Scene {
     });
 
     this.add
-      .bitmapText(screenWidth / 2, 45, "russo", "МОЯ КОЛЛЕКЦИЯ", 56)
+      .bitmapText(screenWidth / 2, 45, "russo", t("COLLECTION_TITLE"), 50)
       .setOrigin(0.5)
       .setTint(0xffd700)
       .setDepth(6);
@@ -415,7 +413,7 @@ export class CollectionScene extends Phaser.Scene {
         screenWidth / 2,
         85,
         "russo",
-        `Всего открыто: ${totalDiscovered} / ${totalItems}`,
+        t("TOTAL_DISCOVERED", { current: totalDiscovered, total: totalItems }),
         32,
       )
       .setOrigin(0.5)

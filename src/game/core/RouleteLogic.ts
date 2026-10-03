@@ -2,6 +2,7 @@ import * as Phaser from "phaser";
 import { AudioService } from "./AudioService";
 import { COIN_REWARDS } from "../config/CoinRewards";
 import { inRange } from "../utils/math";
+import { t } from "../../locales";
 
 export enum RouletteState {
   IDLE = "IDLE",
@@ -141,7 +142,7 @@ export class RouletteLogic {
         value = 0;
         displayText = "RARE";
         displayColor = 0xff9edb;
-        subtitle = "РЕДКИЙ!";
+        subtitle = t("RARE_SQUISH");
         break;
     }
 

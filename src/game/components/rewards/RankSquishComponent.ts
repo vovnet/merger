@@ -4,6 +4,7 @@ import { IRewardComponent } from "./IRewardComponent";
 import { ItemRegistry } from "../../core/ItemRegistry";
 import { AudioService } from "../../core/AudioService";
 import { RewardVFX } from "../../utils/RewardVFX";
+import { t } from "../../../locales";
 
 export class RankSquishComponent implements IRewardComponent {
   private scene: Phaser.Scene;
@@ -15,7 +16,7 @@ export class RankSquishComponent implements IRewardComponent {
   private y: number;
 
   private rankIcon!: Phaser.GameObjects.Image;
-  private rankText!: Phaser.GameObjects.Text;
+  private rankText!: Phaser.GameObjects.BitmapText;
   private squish!: Phaser.GameObjects.Image;
   private readonly MAX_RANK_ICONS = 37;
 
@@ -36,14 +37,8 @@ export class RankSquishComponent implements IRewardComponent {
     this.rankIcon.setScale(0); // Начальное состояние для анимации
 
     this.rankText = this.scene.add
-      .text(centerX, centerY - 165, `РАНГ ${this.rank}`, {
-        fontSize: "42px",
-        color: "#ffd700",
-        fontFamily: "Arial",
-        fontStyle: "bold",
-        stroke: "#000000",
-        strokeThickness: 6,
-      })
+      .bitmapText(centerX, centerY - 165, "russo", t("RANK_LABEL", { rank: this.rank }), 32)
+      .setTint(0xffd700)
       .setOrigin(0.5)
       .setAlpha(0);
 
