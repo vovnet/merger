@@ -97,13 +97,19 @@ export class Game extends Phaser.Scene {
 
     this.grassWind.setDepth(-9);
 
-    this.game.events.on("hidden", () => {
-      console.log("🔴 Вкладка скрыта - игра на паузе");
+    this.game.events.on(Phaser.Core.Events.HIDDEN, () => {
       EventBus.emit(GameEvents.GAME_PAUSE_REQUEST);
     });
 
-    this.game.events.on("visible", () => {
-      console.log("🟢 Вкладка снова видна");
+    this.game.events.on(Phaser.Core.Events.VISIBLE, () => {
+      EventBus.emit(GameEvents.GAME_RESUME_REQUEST);
+    });
+
+    this.game.events.on(Phaser.Core.Events.BLUR, () => {
+      EventBus.emit(GameEvents.GAME_PAUSE_REQUEST);
+    });
+
+    this.game.events.on(Phaser.Core.Events.FOCUS, () => {
       EventBus.emit(GameEvents.GAME_RESUME_REQUEST);
     });
 
@@ -158,10 +164,12 @@ export class Game extends Phaser.Scene {
 
   private setupEventListeners(): void {
     EventBus.on(GameEvents.GAME_PAUSE_REQUEST, () => {
+      console.log("🔴 Игра на паузе");
       this.game.pause();
       this.sound.pauseAll();
     });
     EventBus.on(GameEvents.GAME_RESUME_REQUEST, () => {
+      console.log("🟢 Игра возобновлена");
       this.game.resume();
       this.sound.resumeAll();
     });
