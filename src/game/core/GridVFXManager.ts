@@ -25,45 +25,16 @@ export class GridVFXManager {
       const isTarget = this.activeContractLevel !== null && level === this.activeContractLevel;
 
       if (isTarget) {
-        mainSprite.setTint(0x61faff);
-
         // Создаем или получаем glow-эффект
-        let glow = container.getData("glowEffect") as Phaser.GameObjects.Container;
+        let glow = container.getData("glowEffect") as Phaser.Filters.Glow;
 
         if (!glow) {
-          glow = this.scene.add.container(0, 0);
-
-          // Мягкий внешний ореол
-          const outerGlow = this.scene.add.graphics();
-          outerGlow.fillStyle(0xffd700, 0.1);
-          outerGlow.fillCircle(0, 0, 55);
-          glow.add(outerGlow);
-
-          // Более яркий внутренний ореол
-          const innerGlow = this.scene.add.graphics();
-          innerGlow.fillStyle(0xffff00, 0.3);
-          innerGlow.fillCircle(0, 0, 45);
-          glow.add(innerGlow);
-
-          // Вставляем glow ПОД основной спрайт
-          container.addAt(glow, 0);
-          container.setData("glowEffect", glow);
-
-          // 🎯 Анимация пульсации
-          this.scene.tweens.add({
-            targets: glow,
-            alpha: { from: 0.6, to: 1 },
-            scale: { from: 0.95, to: 1.05 },
-            duration: 1200,
-            ease: "Sine.easeInOut",
-            yoyo: true,
-            repeat: -1,
-          });
+          mainSprite.enableFilters();
+          const newGlow = mainSprite.filters?.external.addGlow(0x118cff, 0, 6, 6, false, 12, 1);
+          container.setData("glowEffect", newGlow);
         }
       } else {
-        mainSprite.clearTint();
-
-        const glow = container.getData("glowEffect") as Phaser.GameObjects.Container;
+        const glow = container.getData("glowEffect") as Phaser.Filters.Glow;
         if (glow) {
           glow.destroy();
           container.setData("glowEffect", null);
