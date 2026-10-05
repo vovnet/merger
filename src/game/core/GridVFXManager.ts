@@ -30,7 +30,7 @@ export class GridVFXManager {
 
         if (!glow) {
           mainSprite.enableFilters();
-          const newGlow = mainSprite.filters?.external.addGlow(0x118cff, 0, 6, 6, false, 12, 1);
+          const newGlow = mainSprite.filters?.external.addGlow(0x118cff, 0, 14, 2, false, 10, 1);
           container.setData("glowEffect", newGlow);
         }
       } else {
