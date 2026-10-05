@@ -25,7 +25,7 @@ export class HUD {
 
   private create(): void {
     this.coinsSprite = this.scene.add
-      .sprite(18, 6, "ui", "coin")
+      .sprite(0, 6, "ui", "coin")
       .setScale(0.8)
       .setOrigin(0.5)
       .setAngle(-20);
@@ -80,14 +80,12 @@ export class HUD {
     });
 
     EventBus.on(GameEvents.LEVEL_CHANGED, () => this.syncUI());
-
-    EventBus.on(GameEvents.PRESTIGE_OCCURRED, (data: { newRound: number }) => {
-      this.playPrestigeAnimation(data.newRound);
-    });
+    EventBus.on(GameEvents.PRESTIGE_OCCURRED, () => this.syncUI());
   }
 
   private syncUI(): void {
-    this.coinsText.setText(`💰 ${this.gameState.coins}`);
+    this.coinsText.setText(`${this.gameState.coins}`);
+    this.roundText.setText(this.gameState.round.toString());
   }
 
   // 🎯 НОВАЯ МЕТОД: Анимация "прилета" монеты
@@ -123,46 +121,6 @@ export class HUD {
       onComplete: () => {
         this.coinsSprite.setAngle(-20);
       },
-    });
-  }
-
-  private playPrestigeAnimation(newRound: number): void {
-    this.roundText.setText(newRound.toString());
-
-    this.scene.tweens.add({
-      targets: this.roundText,
-      scale: { from: 1, to: 1.8 },
-      duration: 400,
-      yoyo: true,
-      ease: "Back.easeOut",
-    });
-
-    const flash = this.scene.add
-      .circle(
-        this.roundText.x + this.roundText.width / 2,
-        this.roundText.y + this.roundText.height / 2,
-        10,
-        0xffffff,
-        0.8,
-      )
-      .setDepth(99);
-
-    this.scene.tweens.add({
-      targets: flash,
-      scale: { from: 1, to: 8 },
-      alpha: { from: 0.8, to: 0 },
-      duration: 600,
-      ease: "Cubic.easeOut",
-      onComplete: () => flash.destroy(),
-    });
-
-    this.scene.tweens.add({
-      targets: this.coinsText,
-      x: { from: this.coinsText.x, to: this.coinsText.x + 3 },
-      duration: 50,
-      yoyo: true,
-      repeat: 3,
-      ease: "Sine.easeInOut",
     });
   }
 

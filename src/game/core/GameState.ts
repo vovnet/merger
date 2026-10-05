@@ -8,7 +8,6 @@ export interface GameStateData {
   spins: number;
   round: number; // 🎯 НОВОЕ: текущий раунд
   totalMerges: number; // 🎯 НОВОЕ: общее количество слияний (для статистики)
-  highestLevel: number; // 🎯 НОВОЕ: максимальный достигнутый уровень за всё время
   rareSquishRanks: number[];
 }
 
@@ -26,7 +25,6 @@ export class GameState {
       spins: 0,
       round: 1,
       totalMerges: 0,
-      highestLevel: 1,
       rareSquishRanks: new Array(this.RARE_SQUISH_COUNT).fill(0),
     };
   }
@@ -46,9 +44,6 @@ export class GameState {
   }
   public get totalMerges(): number {
     return this.data.totalMerges;
-  }
-  public get highestLevel(): number {
-    return this.data.highestLevel;
   }
   public get score(): number {
     return this.data.totalMerges;
@@ -71,11 +66,6 @@ export class GameState {
     if (this.data.level !== value) {
       const previous = this.data.level;
       this.data.level = value;
-
-      // Обновляем highestLevel
-      if (value > this.data.highestLevel) {
-        this.data.highestLevel = value;
-      }
 
       EventBus.emit(GameEvents.LEVEL_CHANGED, { value, previousValue: previous });
     }
@@ -121,23 +111,15 @@ export class GameState {
   }
 
   public prestige(): void {
-    const previousRound = this.data.round;
-    const bonus = 100 * this.data.round;
-
     this.setLevel(1);
+    this.setRound(this.data.round + 1);
 
-    this.data.round++;
-    this.data.coins += bonus;
-    this.data.spins += 10;
+    EventBus.emit(GameEvents.PRESTIGE_OCCURRED);
+  }
 
-    console.log(`🔄 ПРЕСТИЖ! Раунд ${previousRound} → ${this.data.round}`);
-    console.log(`💰 Бонус: +${bonus} монет, +10 спинов`);
-
-    EventBus.emit(GameEvents.PRESTIGE_OCCURRED, {
-      newRound: this.data.round,
-      previousRound: previousRound,
-      bonusCoins: bonus,
-    });
+  private setRound(round: number) {
+    this.data.round = round;
+    EventBus.emit(GameEvents.ROUND_CHANGED);
   }
 
   public setRareSquishRank(index: number, rank: number): void {

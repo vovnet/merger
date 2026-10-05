@@ -21,6 +21,7 @@ export const GameEvents = {
   EMPTY_CELLS_CHANGED: "emptyCellsChanged",
   HISTORY_CHANGED: "historyChanged",
   SCORE_CHANGED: "scoreChanged",
+  ROUND_CHANGED: "round_changed",
 
   GRID_ITEM_ADDED: "itemAdded",
   GRID_ITEM_REMOVED: "itemRemoved",

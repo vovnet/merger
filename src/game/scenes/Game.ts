@@ -3,11 +3,10 @@ import { Grid } from "../core/Grid";
 import { GridRenderer } from "../core/GridRenderer";
 import { Economy } from "../core/Economy";
 import { EventBus } from "../core/EventBus";
-import { ComboData, GameEvents, UIEvents } from "../types/GameEvents";
+import { GameEvents, UIEvents } from "../types/GameEvents";
 import { ContractService } from "../core/ContractService";
 import { AudioService } from "../core/AudioService";
 import { GameState } from "../core/GameState";
-import { ItemRegistry } from "../core/ItemRegistry";
 import { GridPosition } from "../types/Item";
 import { GrassWind } from "../core/GrassWind";
 import { ParallaxController } from "../core/ParallaxController";
@@ -192,26 +191,7 @@ export class Game extends Phaser.Scene {
     });
 
     // 🎯 Престиж-слияния (два предмета максимального уровня)
-    EventBus.on(
-      GameEvents.GRID_PRESTIGE_MERGED,
-      (data: { newLevel: number; itemFrom: any; itemTo: any }) => {
-        console.log(`🌟 ПРЕСТИЖ-СЛИЯНИЕ! Два предмета максимального уровня слились`);
-
-        // 1. Устанавливаем уровень на максимум перед престижем (для статистики/UI)
-        const maxLevel = ItemRegistry.getMaxLevel();
-        if (this.gameState.level < maxLevel) {
-          this.gameState.setLevel(maxLevel);
-        }
-
-        // 2. Начисляем специальную награду за престиж (не за 1-й уровень)
-        const prestigeReward = this.economy.getPrestigeReward(this.gameState.round);
-        this.gameState.addCoins(prestigeReward);
-        this.gameState.incrementMerges();
-
-        // 3. Запускаем престиж (сброс уровня, новый раунд, бонусы)
-        this.handlePrestige();
-      },
-    );
+    EventBus.on(GameEvents.GRID_PRESTIGE_MERGED, () => this.handlePrestige());
 
     EventBus.on(UIEvents.SPAWN_REQUESTED, () => {
       this.spawnRandomItem();
@@ -227,22 +207,6 @@ export class Game extends Phaser.Scene {
 
     EventBus.on(UIEvents.DEBUG_ADD_COINS, () => {
       this.economy.addSpawnRefund(this.gameState.level);
-    });
-
-    EventBus.on(GameEvents.COMBO_UPDATED, (data: ComboData) => {
-      console.log(`🔥 КОМБО x${data.multiplier}!`);
-
-      // Здесь можно запустить анимацию текста "x2!", "x3!" на экране
-      // Или начислить бонусные монеты прямо сейчас:
-      if (data.multiplier > 1) {
-        const bonus = data.multiplier * 10; // Пример формулы
-        this.gameState.addCoins(bonus);
-      }
-    });
-
-    EventBus.on(GameEvents.COMBO_RESET, () => {
-      console.log("💔 Цепочка комбо разорвана");
-      // Здесь можно убрать текст комбо с экрана
     });
 
     EventBus.on(
@@ -270,13 +234,14 @@ export class Game extends Phaser.Scene {
   private handlePrestige(): void {
     console.log("🌟 Достигнут максимальный уровень! Готовимся к престижу...");
 
-    // 1. Показываем красивый экран престижа (опционально)
-    // this.showPrestigeScreen();
-    // 2. Очищаем поле от всех предметов
-    this.grid.clear();
-    // 3. Выполняем престиж (сброс уровня, увеличение раунда, бонусы)
     this.gameState.prestige();
-    // 4. Заполняем поле новыми предметами 1-го уровня
+
+    this.scene.launch("RewardScene", {
+      reward: { type: "RANK_SQUISH", level: 1, rank: this.gameState.round },
+      onComplete: () => EventBus.emit(GameEvents.RANK_SQUISH_CLOSED),
+    });
+
+    this.grid.clear();
     this.fillAllEmptyCells();
   }
 
@@ -288,13 +253,7 @@ export class Game extends Phaser.Scene {
 
   private handleLevelUp(): void {
     const spawnLevel = this.getSpawnLevel();
-    const removedItems = this.grid.removeItemsBelowLevel(spawnLevel);
-
-    // 💰 Компенсация: даём монеты за каждый удалённый предмет
-    if (removedItems.length > 0) {
-      const compensation = removedItems.length;
-      this.gameState.addCoins(compensation);
-    }
+    this.grid.removeItemsBelowLevel(spawnLevel);
   }
 
   private spawnRandomItem(): void {
