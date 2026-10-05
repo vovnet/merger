@@ -40,4 +40,9 @@ export const en: Record<TranslationKey, string> = {
   TUTORIAL_CONTRACT_INTRO:
     "Collect the right Squishes on the board, complete contracts, and earn prizes!",
   TUTORIAL_CONTRACT_REWARD: "Great job! Claim your reward for the completed contract!",
+
+  // 🎯 Rating Modal
+  RATING_TITLE: "Rate the game and get a reward!",
+  RATING_BUTTON: "Rate & Claim",
+  RATING_THANK_YOU: "THANK YOU!",
 };

@@ -6,6 +6,7 @@ import { ContractService } from "../core/ContractService";
 import { ModalManager } from "../ui/modals/ModalManager";
 import { ContractView } from "../ui/ContractView";
 import { AudioService } from "../core/AudioService";
+import { RatingModal } from "../ui/modals/RatingModal";
 
 export class UIScene extends Phaser.Scene {
   private hud: HUD;
@@ -28,6 +29,8 @@ export class UIScene extends Phaser.Scene {
     this.contractview = new ContractView(this, this.contractService, audio);
 
     this.modalManager = new ModalManager(this);
+    this.registry.set("modalManager", this.modalManager);
+    this.modalManager.register("RATING", RatingModal);
     // this.modalManager.register("SETTINGS", SettingsModal);
   }
 

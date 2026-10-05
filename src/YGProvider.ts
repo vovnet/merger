@@ -236,6 +236,15 @@ class YGProvider {
       },
     });
   }
+
+  public async canReview() {
+    const result = await this.sdk?.feedback.canReview();
+    return result?.value;
+  }
+
+  public async requestReview() {
+    return this.sdk?.feedback.requestReview();
+  }
 }
 
 export const ygProvider = new YGProvider();

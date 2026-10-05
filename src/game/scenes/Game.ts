@@ -19,6 +19,9 @@ import { adsService } from "../../AdsService";
 import { TutorialManager } from "../core/tutorial/TutorialManager";
 import { createTutorialStages } from "../core/tutorial/createTutorialStages";
 import { onceWhen } from "../utils/EventUtils";
+import { ModalManager } from "../ui/modals/ModalManager";
+import { ygProvider } from "../../YGProvider";
+import { canShowRatingModal, saveLastTimeOpenModal } from "../utils/canShowRatingModal";
 
 export class Game extends Phaser.Scene {
   private gameState: GameState;
@@ -146,6 +149,20 @@ export class Game extends Phaser.Scene {
     EventBus.emit(GameEvents.GAME_READY);
   }
 
+  private async rateGame() {
+    if (!canShowRatingModal()) {
+      return;
+    }
+
+    const canReview = await ygProvider.canReview();
+
+    if (canReview) {
+      const modalManager = this.registry.get("modalManager") as ModalManager;
+      modalManager.open("RATING");
+      saveLastTimeOpenModal();
+    }
+  }
+
   private fillAllEmptyCells(): void {
     const levelToSpawn = this.getSpawnLevel();
     const emptyCount = this.grid.getEmptyCells().length;
@@ -185,7 +202,12 @@ export class Game extends Phaser.Scene {
         this.handleLevelUp();
         this.scene.launch("RewardScene", {
           reward: { type: "RANK_SQUISH", level: data.newLevel, rank: this.gameState.round },
-          onComplete: () => EventBus.emit(GameEvents.RANK_SQUISH_CLOSED),
+          onComplete: () => {
+            EventBus.emit(GameEvents.RANK_SQUISH_CLOSED);
+            if (this.gameState.level >= 15 || this.gameState.round > 1) {
+              this.rateGame();
+            }
+          },
         });
       }
     });
@@ -201,10 +223,6 @@ export class Game extends Phaser.Scene {
       this.fillAllEmptyCells();
     });
 
-    // EventBus.on(UIEvents.UNDO_REQUESTED, () => {
-    //   this.historyService.undo();
-    // });
-
     EventBus.on(UIEvents.DEBUG_ADD_COINS, () => {
       this.economy.addSpawnRefund(this.gameState.level);
     });
@@ -212,12 +230,7 @@ export class Game extends Phaser.Scene {
     EventBus.on(
       GameEvents.ITEM_TAP_DESTROYED,
       (data: { itemId: string; position: GridPosition; level: number }) => {
-        EventBus.emit(GameEvents.HISTORY_CHECKPOINT); // чтобы undo работал корректно
-
-        const removed = this.grid.removeItem(data.position);
-        if (!removed) return;
-
-        // this.gridRenderer.removeSprite(data.itemId);
+        this.grid.removeItem(data.position);
       },
     );
   }

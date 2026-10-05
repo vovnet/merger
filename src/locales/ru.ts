@@ -38,6 +38,11 @@ export const ru = {
   TUTORIAL_ROULETTE_SPIN: "Давай проверим удачу! Крути вертушку и забирай награду!",
   TUTORIAL_CONTRACT_INTRO: "Собирай нужных сквишей на поле, выполняй контракты и получай призы!",
   TUTORIAL_CONTRACT_REWARD: "Отличная работа! Забирай награду за выполненный контракт!",
+
+  // Оценка игры
+  RATING_TITLE: "Оцени игру и получи награду!",
+  RATING_BUTTON: "Оценить и получить",
+  RATING_THANK_YOU: "СПАСИБО!",
 } as const;
 
 export type TranslationKey = keyof typeof ru;
