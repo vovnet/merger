@@ -16,6 +16,7 @@ export class GridVFXManager {
   }
 
   public updateHighlights(spritesMap: Map<string, Phaser.GameObjects.Container>): void {
+    console.log("update hight: ", { spritesMap, contract: this.activeContractLevel });
     spritesMap.forEach((container) => {
       const level = container.getData("level") as number;
       const mainSprite = container.getData("mainSprite") as Phaser.GameObjects.Image;

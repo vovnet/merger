@@ -4,12 +4,12 @@ import { GridItemSpawnedData, GridPosition, ItemData } from "../types/Item";
 import { ItemRegistry } from "./ItemRegistry";
 import { EventBus } from "./EventBus";
 import { GameEvents } from "../types/GameEvents";
-import { ContractUpdateData } from "../types/Contract";
 import { IDLE_ANIMATIONS } from "../config/ItemAnimations";
 import { GridDragController } from "./GridDragController";
 import { GridVFXManager } from "./GridVFXManager";
 import { TapDestroyController } from "./TapDestroyController";
 import { GameState } from "./GameState";
+import { Contract, ContractChangedEvent } from "./ContractService";
 
 export class GridRenderer {
   private sprites: Map<string, Phaser.GameObjects.Container> = new Map();
@@ -37,7 +37,6 @@ export class GridRenderer {
     this.offsetX = (scene.scale.width - totalWidth) / 2;
     this.offsetY = (scene.scale.height - totalHeight) / 2;
 
-    // 🎯 Инициализируем вынесенные модули
     this.dragController = new GridDragController(
       scene,
       grid,
@@ -78,7 +77,6 @@ export class GridRenderer {
         const { px, py } = this.gridToPixel({ ...item.position });
         this.vfxManager.spawnSquishWithPackEffect(px, py);
       });
-      console.log("spawn: ", data.items);
     });
     EventBus.on(GameEvents.GRID_ITEM_REMOVED, ({ position }: { position: GridPosition }) =>
       this.removeItemSprite(position),
@@ -92,19 +90,24 @@ export class GridRenderer {
       this.showMergeReward(data.item.pos, 1);
     });
 
-    EventBus.on(GameEvents.CONTRACT_UPDATED, (data: ContractUpdateData) => {
-      console.log("contract updated: ", data);
-      this.vfxManager.setContractLevel(data.activeTargetLevel);
-      this.vfxManager.updateHighlights(this.sprites);
-    });
+    EventBus.on(GameEvents.CONTRACT_UPDATED, (event: ContractChangedEvent) =>
+      this.handleUpdateContract(event),
+    );
 
-    EventBus.on(GameEvents.CONTRACT_CREATED, (data: ContractUpdateData) => {
-      console.log("contract created: ", data);
-      this.vfxManager.setContractLevel(data.activeTargetLevel);
-      this.vfxManager.updateHighlights(this.sprites);
-    });
+    EventBus.on(GameEvents.CONTRACT_CREATED, (event: ContractChangedEvent) =>
+      this.handleUpdateContract(event),
+    );
 
     EventBus.on(GameEvents.GRID_RESTORED, (snapshot: GridSnapshot) => this.handleRestore(snapshot));
+  }
+
+  private handleUpdateContract(event: ContractChangedEvent) {
+    if (event.contract) {
+      this.vfxManager.setContractLevel(
+        event.contract.status === "completed" ? null : event.contract.targetLevel,
+      );
+      this.vfxManager.updateHighlights(this.sprites);
+    }
   }
 
   public showMergeReward(pos: GridPosition, amount: number): void {
@@ -210,7 +213,6 @@ export class GridRenderer {
     this.sprites.clear();
   }
 
-  // 🎯 Логика отмены хода (вынесена в отдельный метод для читаемости)
   private handleRestore(snapshot: GridSnapshot): void {
     const targetItemIds = new Set<string>();
 
@@ -237,6 +239,7 @@ export class GridRenderer {
               ease: "Power2.out",
             });
           }
+          this.vfxManager.updateHighlights(this.sprites);
         } else {
           this.createItemSprite(targetPos, item);
         }
