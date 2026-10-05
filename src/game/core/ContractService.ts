@@ -51,7 +51,7 @@ export class ContractService {
    * Пока оставил простой вариант.
    * Потом сюда можно вынести RewardService.
    */
-  private readonly REWARD_COINS = 1;
+  private readonly REWARD_COINS = 3;
 
   private readonly grid: Grid;
   private readonly gameState: GameState;
@@ -65,6 +65,10 @@ export class ContractService {
     EventBus.on(GameEvents.GRID_ITEM_CHANGED, this.checkProgress, this);
     EventBus.on(GameEvents.LEVEL_CHANGED, this.handleLevelChanged, this);
     EventBus.on(GameEvents.GRID_ITEM_MERGED, this.handleMerge, this);
+  }
+
+  public getReward() {
+    return this.REWARD_COINS;
   }
 
   // ===========================================================================
@@ -164,7 +168,7 @@ export class ContractService {
     }
 
     const reward: ContractReward = {
-      coins: this.REWARD_COINS,
+      coins: this.getReward(),
     };
 
     const completedContract = this.getContractSnapshot();
