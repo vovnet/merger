@@ -5,7 +5,6 @@ import { Economy } from "../core/Economy";
 import { EventBus } from "../core/EventBus";
 import { ComboData, GameEvents, UIEvents } from "../types/GameEvents";
 import { ContractService } from "../core/ContractService";
-import { ContractUpdateData } from "../types/Contract";
 import { AudioService } from "../core/AudioService";
 import { GameState } from "../core/GameState";
 import { ItemRegistry } from "../core/ItemRegistry";
@@ -236,10 +235,6 @@ export class Game extends Phaser.Scene {
     EventBus.on(GameEvents.COMBO_RESET, () => {
       console.log("💔 Цепочка комбо разорвана");
       // Здесь можно убрать текст комбо с экрана
-    });
-
-    EventBus.on(GameEvents.CONTRACT_CREATED, (data: ContractUpdateData) => {
-      console.log("contract: ", data.contract);
     });
 
     EventBus.on(

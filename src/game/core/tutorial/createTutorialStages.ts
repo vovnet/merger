@@ -1,5 +1,6 @@
 import { t } from "../../../locales";
 import { GameEvents } from "../../types/GameEvents";
+import { TutorialStage } from "../../types/Tutorial";
 import { GameState } from "../GameState";
 
 export function createTutorialStages(gameState: GameState) {
@@ -101,5 +102,5 @@ export function createTutorialStages(gameState: GameState) {
         },
       ],
     },
-  ];
+  ] as TutorialStage[];
 }
