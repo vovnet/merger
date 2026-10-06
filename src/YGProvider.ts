@@ -6,6 +6,7 @@ import { LeaderboardData, LeaderboardEntry } from "./game/types/Leaderboard";
 import { setLanguage } from "./locales";
 import { GameState } from "./game/core/GameState";
 import { delay } from "./game/utils/delay";
+import { SaveManager } from "./storage/SaveManager";
 
 export type RewardedVideoEvents = {
   onRewarded: () => void;
@@ -18,6 +19,7 @@ class YGProvider {
   private player: Player | null = null;
   private payments: Payments;
   private gameState: GameState;
+  private saveManager: SaveManager;
 
   public isEnabledAds = true;
 
@@ -57,18 +59,45 @@ class YGProvider {
         await this.handlePurchase(purchase);
       }
     } catch (err) {
-      console.log("purchase error");
+      console.log("purchase error ", err);
     }
   }
 
-  public async processPurchases(gameState: GameState) {
+  public async processPurchases(gameState: GameState, saveManager: SaveManager): Promise<void> {
     this.gameState = gameState;
+    this.saveManager = saveManager;
 
     try {
       const purchases = await this.payments.getPurchases();
-      purchases.forEach((p) => this.handlePurchase(p));
+
+      if (!purchases || purchases.length === 0) {
+        // Если покупок нет, сразу обновляем баннер и выходим
+        this.processBanner();
+        return;
+      }
+
+      // 🎯 1. Превращаем массив покупок в массив Промисов (Promise)
+      const purchasePromises = purchases.map((p) => this.handlePurchase(p));
+
+      // 🎯 2. Ждем, пока ВСЕ промисы в массиве завершатся
+      await Promise.all(purchasePromises);
+
+      // 🎯 3. Только когда всё обработано, вызываем метод для баннера
+      this.processBanner();
     } catch (err) {
-      console.log("error purchase process");
+      console.error("❌ Ошибка при обработке покупок:", err);
+      // Даже при ошибке лучше вызвать processBanner, чтобы состояние рекламы было актуальным
+      this.processBanner();
+    }
+  }
+
+  private processBanner() {
+    if (this.isEnabledAds) {
+      this.sdk?.adv.showBannerAdv();
+      console.log("show banner");
+    } else {
+      this.sdk?.adv.hideBannerAdv();
+      console.log("hide banner");
     }
   }
 
@@ -86,7 +115,7 @@ class YGProvider {
       throw new Error(`Product with id ${purchase.productID} not found!`);
     }
 
-    await delay(4000);
+    await this.saveManager.saveNow();
     await this.sdk?.payments.consumePurchase(purchase.purchaseToken);
   }
 
@@ -286,6 +315,8 @@ class YGProvider {
   }
 
   public async showFullscreenAdv(): Promise<void> {
+    if (!this.isEnabledAds) return;
+
     this.sdk?.adv.showFullscreenAdv({
       callbacks: {
         onOpen: () => this.pause(),

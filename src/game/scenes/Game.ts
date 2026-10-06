@@ -147,7 +147,7 @@ export class Game extends Phaser.Scene {
     );
 
     EventBus.emit(GameEvents.GAME_READY);
-    ygProvider.processPurchases(this.gameState);
+    ygProvider.processPurchases(this.gameState, this.saveManager);
   }
 
   private async rateGame() {

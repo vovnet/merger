@@ -156,7 +156,7 @@ export class ShopScene extends Phaser.Scene {
 
       try {
         await ygProvider.purchase(product.id);
-        // TODO: Логика успешной покупки (начисление валюты / закрытие магазина)
+        this.closeShop();
       } catch (error) {
         console.error("❌ Ошибка покупки:", error);
       } finally {
