@@ -1,4 +1,4 @@
-import { SDK, Player } from "ysdk";
+import { SDK, Player, Payments } from "ysdk";
 import { EventBus } from "./game/core/EventBus";
 import { GameEvents } from "./game/types/GameEvents";
 import { SaveData } from "./game/types/SaveData";
@@ -14,6 +14,7 @@ const LEADERBOARD_NAME = "scores";
 class YGProvider {
   private sdk: SDK | null = null;
   private player: Player | null = null;
+  private payments: Payments;
 
   async init(): Promise<void> {
     if (this.sdk) {
@@ -27,7 +28,31 @@ class YGProvider {
 
     this.player = await this.sdk.getPlayer();
 
+    try {
+      this.payments = await this.sdk.getPayments();
+      const products = await this.payments.getCatalog();
+      console.log({ products });
+    } catch (err) {
+      console.log("покупки недоступны");
+    }
+
     this.initListeners();
+  }
+
+  public async getCatalog() {
+    try {
+      return await this.payments.getCatalog();
+    } catch (err) {
+      console.log("покупки недоступны");
+    }
+  }
+
+  public async purchase(id: string) {
+    try {
+      await this.payments.purchase({ id });
+    } catch (err) {
+      console.log("purchase error");
+    }
   }
 
   // для тестирования языка через параметры урл

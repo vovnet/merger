@@ -25,7 +25,7 @@ export class ActionButtons {
   private rouletteButton: AlertButton;
   private collectionButton: AlertButton;
   private soundButton: Switch;
-  private achivementsButton: AlertButton;
+  private shopButton: AlertButton;
   private leaderboardButton: AlertButton;
 
   private adButton: AdvButton;
@@ -77,15 +77,14 @@ export class ActionButtons {
       },
     });
 
-    this.achivementsButton = new AlertButton(this.scene, {
+    this.shopButton = new AlertButton(this.scene, {
       x: 650,
       y: 660,
       scale: 0.6,
       textureKey: "ui",
       frameKey: "shop_btn",
-      disabled: true,
       onClick: () => {
-        console.log("open achivements");
+        this.scene.scene.launch("ShopScene");
       },
     });
 

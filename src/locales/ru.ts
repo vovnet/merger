@@ -43,6 +43,8 @@ export const ru = {
   RATING_TITLE: "Оцени игру и получи награду!",
   RATING_BUTTON: "Оценить и получить",
   RATING_THANK_YOU: "СПАСИБО!",
+
+  SHOP_TITLE: "МАГАЗИН",
 } as const;
 
 export type TranslationKey = keyof typeof ru;

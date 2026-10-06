@@ -45,4 +45,6 @@ export const en: Record<TranslationKey, string> = {
   RATING_TITLE: "Rate the game and get a reward!",
   RATING_BUTTON: "Rate & Claim",
   RATING_THANK_YOU: "THANK YOU!",
+
+  SHOP_TITLE: "SHOP",
 };

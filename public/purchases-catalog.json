@@ -1,0 +1,42 @@
+[
+  {
+    "description": "Пожизненное отключение рекламы в игре",
+    "id": "ads_block",
+    "imageURI": "{path-to-image}",
+    "price": "199 RUB",
+    "priceCurrencyCode": "RUB",
+    "priceValue": "199",
+    "title": "Отключение рекламы",
+    "getPriceCurrencyImage": ""
+  },
+  {
+    "description": "250",
+    "id": "coins_1",
+    "imageURI": "{path-to-image}",
+    "price": "59 RUB",
+    "priceCurrencyCode": "RUB",
+    "priceValue": "59",
+    "title": "Маленький набор сквишей",
+    "getPriceCurrencyImage": ""
+  },
+  {
+    "description": "800",
+    "id": "coins_2",
+    "imageURI": "{path-to-image}",
+    "price": "149 RUB",
+    "priceCurrencyCode": "RUB",
+    "priceValue": "149",
+    "title": "Стандартный набор сквишей",
+    "getPriceCurrencyImage": ""
+  },
+  {
+    "description": "2000",
+    "id": "coins_3",
+    "imageURI": "{path-to-image}",
+    "price": "299 RUB",
+    "priceCurrencyCode": "RUB",
+    "priceValue": "299",
+    "title": "Огромный набор сквишей",
+    "getPriceCurrencyImage": ""
+  }
+]
