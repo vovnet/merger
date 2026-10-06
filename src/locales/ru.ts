@@ -44,6 +44,28 @@ export const ru = {
   RATING_BUTTON: "Оценить и получить",
   RATING_THANK_YOU: "СПАСИБО!",
 
+  // Достижения (Achievements)
+  ACHIEVEMENTS_TITLE: "ДОСТИЖЕНИЯ",
+  ACH_MAXED_OUT: "МАКСИМУМ!", // Вместо скучного "Выполнено"
+
+  ACH_MERGE_TITLE: "Мердж-магнат",
+  ACH_MERGE_DESC: "Склей {target} сквишей!",
+
+  ACH_CONTRACT_TITLE: "Босс заказов",
+  ACH_CONTRACT_DESC: "Закрой {target} контрактов!",
+
+  ACH_ROULETTE_SPINS_TITLE: "Фортунчик",
+  ACH_ROULETTE_SPINS_DESC: "Крутни рулетку {target} раз!",
+
+  ACH_SQUISHIES_CREATED_TITLE: "Сквиш-мейкер",
+  ACH_SQUISHIES_CREATED_DESC: "Создай {target} сквишей на фабрике!",
+
+  ACH_RARE_COLLECTED_TITLE: "Охотник за рарками", // "Рарки" — понятный и классный геймерский сленг
+  ACH_RARE_COLLECTED_DESC: "Найди {target} редких сквишей!",
+
+  ACH_RANKS_EARNED_TITLE: "Легенда сквишей",
+  ACH_RANKS_EARNED_DESC: "Покори {target} рангов!",
+
   SHOP_TITLE: "МАГАЗИН",
 } as const;
 

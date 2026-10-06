@@ -157,6 +157,7 @@ export class AddCoinButton {
       this.gameState.addCoins(1);
       this.showPlusOneAnimation();
       this.audioService.playUiPopSound();
+      EventBus.emit(GameEvents.CREATED_COIN);
     });
   }
 

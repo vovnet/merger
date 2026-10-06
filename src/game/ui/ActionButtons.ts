@@ -27,6 +27,7 @@ export class ActionButtons {
   private soundButton: Switch;
   private shopButton: AlertButton;
   private leaderboardButton: AlertButton;
+  private achievementsButton: AlertButton;
 
   private adButton: AdvButton;
 
@@ -66,7 +67,7 @@ export class ActionButtons {
     });
 
     this.collectionButton = new AlertButton(this.scene, {
-      x: 500,
+      x: 450,
       y: 660,
       scale: 0.6,
       textureKey: "ui",
@@ -78,7 +79,7 @@ export class ActionButtons {
     });
 
     this.shopButton = new AlertButton(this.scene, {
-      x: 650,
+      x: 600,
       y: 660,
       scale: 0.6,
       textureKey: "ui",
@@ -89,13 +90,24 @@ export class ActionButtons {
     });
 
     this.leaderboardButton = new AlertButton(this.scene, {
-      x: 800,
+      x: 750,
       y: 660,
       scale: 0.6,
       textureKey: "ui",
       frameKey: "leaderboard_btn",
       onClick: () => {
         this.scene.scene.launch("LeaderboardScene");
+      },
+    });
+
+    this.achievementsButton = new AlertButton(this.scene, {
+      x: 900,
+      y: 660,
+      scale: 0.6,
+      textureKey: "ui",
+      frameKey: "achivements_btn",
+      onClick: () => {
+        this.scene.scene.launch("AchievementsScene");
       },
     });
 

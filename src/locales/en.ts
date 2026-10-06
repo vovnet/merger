@@ -46,5 +46,27 @@ export const en: Record<TranslationKey, string> = {
   RATING_BUTTON: "Rate & Claim",
   RATING_THANK_YOU: "THANK YOU!",
 
+  // Achievements
+  ACHIEVEMENTS_TITLE: "ACHIVEMENTS",
+  ACH_MAXED_OUT: "MAXED OUT!",
+
+  ACH_MERGE_TITLE: "Merge Master",
+  ACH_MERGE_DESC: "Merge {target} squishies!",
+
+  ACH_CONTRACT_TITLE: "Contract Boss",
+  ACH_CONTRACT_DESC: "Complete {target} contracts!",
+
+  ACH_ROULETTE_SPINS_TITLE: "Lucky Spinner",
+  ACH_ROULETTE_SPINS_DESC: "Spin the roulette {target} times!",
+
+  ACH_SQUISHIES_CREATED_TITLE: "Squish Maker",
+  ACH_SQUISHIES_CREATED_DESC: "Create {target} squishies at the factory!",
+
+  ACH_RARE_COLLECTED_TITLE: "Rare Hunter",
+  ACH_RARE_COLLECTED_DESC: "Find {target} rare squishies!",
+
+  ACH_RANKS_EARNED_TITLE: "Squish Legend",
+  ACH_RANKS_EARNED_DESC: "Conquer {target} ranks!",
+
   SHOP_TITLE: "SHOP",
 };

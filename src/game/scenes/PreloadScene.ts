@@ -80,7 +80,7 @@ export class PreloaderScene extends Phaser.Scene {
       "assets/fireworks_spritesheet.json",
     );
     this.load.atlas("shop", "assets/shop_spritesheet.png", "assets/shop_spritesheet.json");
-    this.load.atlas("shop", "assets/ach_spritesheet.png", "assets/ach_spritesheet.json");
+    this.load.atlas("achievements", "assets/ach_spritesheet.png", "assets/ach_spritesheet.json");
     this.load.image("grass", "assets/bush.png");
 
     this.load.audio("merge_pop", "assets/sound/bubble_1.mp3");

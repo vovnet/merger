@@ -14,6 +14,7 @@ export const GameEvents = {
   COMBO_ACHIEVED: "comboAchieved",
   ADDED_COIN_CLICK: "added_coin_click",
   RANK_SQUISH_CLOSED: "rank_squish_closed",
+  CREATED_COIN: "created_coin",
 
   // Состояние игры
   COINS_CHANGED: "coinsChanged",

@@ -1,4 +1,5 @@
 import { t } from "../../../locales";
+import { TranslationKey } from "../../../locales/ru";
 import { GameEvents } from "../../types/GameEvents";
 import { EventBus } from "../EventBus";
 import { GameState } from "../GameState";
@@ -35,7 +36,10 @@ export class AchievementManager {
   private setupListeners(): void {
     EventBus.on(GameEvents.GRID_ITEM_MERGED, () => this.checkProgress("MERGE_COUNT"));
     EventBus.on(GameEvents.CONTRACT_COMPLETED, () => this.checkProgress("CONTRACT_COMPLETED"));
-    // ... другие события
+    EventBus.on(GameEvents.ROUND_CHANGED, () => this.checkProgress("RANKS_EARNED"));
+    EventBus.on(GameEvents.RARE_SQUISH_RANK_CHANGED, () => this.checkProgress("RARE_COLLECTED"));
+    EventBus.on(GameEvents.SPINS_CHANGED, () => this.checkProgress("ROULETTE_SPINS"));
+    EventBus.on(GameEvents.CREATED_COIN, () => this.checkProgress("SQUISHIES_CREATED"));
   }
 
   private checkProgress(type: AchievementType): void {
@@ -109,37 +113,37 @@ export class AchievementManager {
   }
 
   // 🎯 Метод для UI: возвращает готовые данные для отрисовки
-  // public getAchievementsForUI() {
-  //   return ACHIEVEMENTS_CONFIG.map((config) => {
-  //     const progress = this.progress.get(config.id)!;
-  //     const isMaxedOut = progress.currentTierIndex >= config.tiers.length;
+  public getAchievementsForUI() {
+    return ACHIEVEMENTS_CONFIG.map((config) => {
+      const progress = this.progress.get(config.id)!;
+      const isMaxedOut = progress.currentTierIndex >= config.tiers.length;
 
-  //     // Берем текущий активный уровень (или последний, если все пройдены)
-  //     const currentTier = isMaxedOut
-  //       ? config.tiers[config.tiers.length - 1]
-  //       : config.tiers[progress.currentTierIndex];
+      // Берем текущий активный уровень (или последний, если все пройдены)
+      const currentTier = isMaxedOut
+        ? config.tiers[config.tiers.length - 1]
+        : config.tiers[progress.currentTierIndex];
 
-  //     // Формируем красивый текст через вашу систему локализации с параметрами!
-  //     const description = isMaxedOut
-  //       ? t("ACH_MAXED_OUT") // "Максимальный уровень достигнут!"
-  //       : t(config.descKeyTemplate, {
-  //           current: progress.currentValue,
-  //           target: currentTier.targetValue,
-  //         });
+      // Формируем красивый текст через вашу систему локализации с параметрами!
+      const description = isMaxedOut
+        ? t("ACH_MAXED_OUT") // "Максимальный уровень достигнут!"
+        : t(config.descKeyTemplate as TranslationKey, {
+            current: progress.currentValue,
+            target: currentTier.targetValue,
+          });
 
-  //     return {
-  //       ...config,
-  //       progress,
-  //       currentTier,
-  //       isMaxedOut,
-  //       description, // Готовый строковый текст для UI
-  //       canClaim:
-  //         !isMaxedOut &&
-  //         progress.currentValue >= currentTier.targetValue &&
-  //         !progress.isTierClaimed,
-  //     };
-  //   });
-  // }
+      return {
+        ...config,
+        progress,
+        currentTier,
+        isMaxedOut,
+        description, // Готовый строковый текст для UI
+        canClaim:
+          !isMaxedOut &&
+          progress.currentValue >= currentTier.targetValue &&
+          !progress.isTierClaimed,
+      };
+    });
+  }
 
   // Сериализация / Десериализация (как и раньше, но для новой структуры)
   public serialize(): AchievementsSaveData {

@@ -31,7 +31,7 @@ export class Game extends Phaser.Scene {
   private economy: Economy;
 
   private contractService: ContractService;
-  private achievementsManager: AchievementManager;
+  private achievementManager: AchievementManager;
   private audioService: AudioService;
   private grassWind: GrassWind;
 
@@ -57,7 +57,8 @@ export class Game extends Phaser.Scene {
     this.registry.set("grid", this.grid);
 
     this.contractService = new ContractService(this.grid, this.gameState);
-    this.achievementsManager = new AchievementManager(this.gameState);
+    this.achievementManager = new AchievementManager(this.gameState);
+    this.registry.set("achievementManager", this.achievementManager);
 
     const tutorialManager = new TutorialManager(createTutorialStages(this.gameState));
     this.registry.set("tutorialManager", tutorialManager);
@@ -71,7 +72,7 @@ export class Game extends Phaser.Scene {
       this.audioService,
       this.contractService,
       tutorialManager,
-      this.achievementsManager,
+      this.achievementManager,
     );
     this.saveManager = new SaveManager(this.gameSession, this.localProvider, this.cloudProvider);
 
