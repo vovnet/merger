@@ -5,6 +5,7 @@ import { SaveData } from "./game/types/SaveData";
 import { LeaderboardData, LeaderboardEntry } from "./game/types/Leaderboard";
 import { setLanguage } from "./locales";
 import { GameState } from "./game/core/GameState";
+import { delay } from "./game/utils/delay";
 
 export type RewardedVideoEvents = {
   onRewarded: () => void;
@@ -80,11 +81,12 @@ class YGProvider {
       this.gameState.addCoins(5000);
     } else if (purchase.productID === "ads_block") {
       this.isEnabledAds = false;
-      return;
+      return; // сразу выходим без подтверждения постоянной покупки
     } else {
       throw new Error(`Product with id ${purchase.productID} not found!`);
     }
 
+    await delay(4000);
     await this.sdk?.payments.consumePurchase(purchase.purchaseToken);
   }
 
