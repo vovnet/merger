@@ -21,6 +21,7 @@ export interface AchievementCategory {
   icon: string; // Спрайт иконки
   type: AchievementType;
   tiers: AchievementTier[]; // Массив шагов: 100, 500, 2000...
+  startFrom?: number;
 }
 
 // Прогресс игрока по конкретной категории

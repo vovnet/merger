@@ -90,8 +90,9 @@ export const ACHIEVEMENTS_CONFIG: AchievementCategory[] = [
     descKeyTemplate: "ACH_RANKS_EARNED_DESC",
     icon: "ach_rank",
     type: "RANKS_EARNED",
+    startFrom: 1,
     tiers: [
-      { targetValue: 1, rewardCoins: 10, rewardSpins: 0 },
+      { targetValue: 2, rewardCoins: 10, rewardSpins: 0 },
       { targetValue: 3, rewardCoins: 20, rewardSpins: 0 },
       { targetValue: 5, rewardCoins: 20, rewardSpins: 0 },
       { targetValue: 10, rewardCoins: 20, rewardSpins: 0 },

@@ -26,7 +26,7 @@ export class AchievementManager {
       if (!this.progress.has(config.id)) {
         this.progress.set(config.id, {
           currentTierIndex: 0,
-          currentValue: 0,
+          currentValue: config.startFrom ?? 0,
           isTierClaimed: false,
         });
       }
@@ -59,6 +59,18 @@ export class AchievementManager {
           break;
         case "CONTRACT_COMPLETED":
           currentValue = this.gameState.contractsCompleted;
+          break;
+        case "RANKS_EARNED":
+          currentValue = this.gameState.round;
+          break;
+        case "ROULETTE_SPINS":
+          currentValue = this.gameState.spendedSpins;
+          break;
+        case "RARE_COLLECTED":
+          currentValue = this.gameState.getDiscoveredRareSquishCount();
+          break;
+        case "SQUISHIES_CREATED":
+          currentValue = this.gameState.createdSquishies;
           break;
       }
 

@@ -155,9 +155,9 @@ export class AddCoinButton {
 
     this.scene.time.delayedCall(this.COOLDOWN_MS, () => {
       this.gameState.addCoins(1);
+      this.gameState.createdSquish();
       this.showPlusOneAnimation();
       this.audioService.playUiPopSound();
-      EventBus.emit(GameEvents.CREATED_COIN);
     });
   }
 

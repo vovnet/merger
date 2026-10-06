@@ -66,7 +66,7 @@ export const en: Record<TranslationKey, string> = {
   ACH_RARE_COLLECTED_DESC: "Find {target} rare squishies!",
 
   ACH_RANKS_EARNED_TITLE: "Squish Legend",
-  ACH_RANKS_EARNED_DESC: "Conquer {target} ranks!",
+  ACH_RANKS_EARNED_DESC: "Conquer {target} rank!",
 
   SHOP_TITLE: "SHOP",
 };

@@ -64,7 +64,7 @@ export const ru = {
   ACH_RARE_COLLECTED_DESC: "Найди {target} редких сквишей!",
 
   ACH_RANKS_EARNED_TITLE: "Легенда сквишей",
-  ACH_RANKS_EARNED_DESC: "Покори {target} рангов!",
+  ACH_RANKS_EARNED_DESC: "Покори {target} ранг!",
 
   SHOP_TITLE: "МАГАЗИН",
 } as const;

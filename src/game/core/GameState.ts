@@ -10,6 +10,8 @@ export interface GameStateData {
   totalMerges: number;
   rareSquishRanks: number[];
   contractsCompleted: number;
+  spendedSpins: number;
+  createdSquishies: number;
 }
 
 export class GameState {
@@ -29,6 +31,8 @@ export class GameState {
       totalMerges: 0,
       rareSquishRanks: new Array(this.RARE_SQUISH_COUNT).fill(0),
       contractsCompleted: 0,
+      spendedSpins: 0,
+      createdSquishies: 0,
     };
   }
 
@@ -53,6 +57,12 @@ export class GameState {
   }
   public get contractsCompleted(): number {
     return this.data.contractsCompleted;
+  }
+  public get spendedSpins(): number {
+    return this.data.spendedSpins;
+  }
+  public get createdSquishies(): number {
+    return this.data.createdSquishies;
   }
 
   // --- МЕТОДЫ ИЗМЕНЕНИЯ ---
@@ -87,6 +97,7 @@ export class GameState {
   public spendSpin(): void {
     if (this.data.spins > 0) {
       this.data.spins--;
+      this.data.spendedSpins++;
       EventBus.emit(GameEvents.SPINS_CHANGED, this.data.spins);
     }
   }
@@ -101,6 +112,11 @@ export class GameState {
       return 0;
     }
     return this.data.rareSquishRanks[index];
+  }
+
+  public createdSquish() {
+    this.data.createdSquishies++;
+    EventBus.emit(GameEvents.CREATED_COIN);
   }
 
   public isRareSquishDiscovered(index: number): boolean {
