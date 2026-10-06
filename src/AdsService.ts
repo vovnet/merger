@@ -74,6 +74,9 @@ export class AdsService {
     if (this.isShowingAd) {
       return;
     }
+    if (!ygProvider.isEnabledAds) {
+      return;
+    }
 
     EventBus.emit(GameEvents.SHOW_AD_NOTIFICATION);
   }
