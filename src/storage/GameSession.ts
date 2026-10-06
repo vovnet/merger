@@ -1,3 +1,4 @@
+import { AchievementManager } from "../game/core/achivements/AchivementsManager";
 import { AudioService } from "../game/core/AudioService";
 import { ContractService } from "../game/core/ContractService";
 import { GameState } from "../game/core/GameState";
@@ -12,6 +13,7 @@ export class GameSession {
     public readonly audio: AudioService,
     public readonly contract: ContractService,
     public readonly tutorial: TutorialManager,
+    public readonly achivements: AchievementManager,
   ) {}
 
   public createSaveData(): SaveData {
@@ -24,6 +26,7 @@ export class GameSession {
       audio: this.audio.getSettings(),
       contract: this.contract.serialize(),
       tutorial: this.tutorial.serialize(),
+      achivements: this.achivements.serialize(),
     };
   }
 
@@ -33,5 +36,6 @@ export class GameSession {
     this.audio.setSettings(data.audio);
     this.contract.deserialize(data.contract);
     this.tutorial.deserialize(data.tutorial);
+    this.achivements.deserialize(data.achivements);
   }
 }

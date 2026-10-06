@@ -63,6 +63,10 @@ export const GameEvents = {
   PRESTIGE_OCCURRED: "prestige_occurred",
 
   NON_GAME_ACTION: "non_game_action",
+
+  // achivements
+  ACHIEVEMENT_UNLOCKED: "achivement_unlocked",
+  ACHIEVEMENT_CLAIMED: "achivement_claimed",
 } as const;
 
 // События, которые UIScene эмитит, а GameScene слушает

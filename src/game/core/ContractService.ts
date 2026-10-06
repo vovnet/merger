@@ -143,6 +143,7 @@ export class ContractService {
     if (currentCount >= this.contract.requiredCount) {
       this.contract.currentCount = this.contract.requiredCount;
       this.contract.status = "completed";
+      this.gameState.incContractsCompleted();
 
       EventBus.emit(GameEvents.CONTRACT_COMPLETED, {
         contract: this.getContractSnapshot(),
@@ -346,8 +347,9 @@ export class ContractService {
     if (this.contract.currentCount >= this.contract.requiredCount) {
       this.contract.currentCount = this.contract.requiredCount;
       this.contract.status = "completed";
+      this.gameState.incContractsCompleted();
 
-      EventBus.emit(GameEvents.CONTRACT_COMPLETED, {
+      this.gameState.EventBus.emit(GameEvents.CONTRACT_COMPLETED, {
         contract: this.getContractSnapshot(),
       });
     }

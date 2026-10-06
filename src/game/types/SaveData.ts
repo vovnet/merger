@@ -1,3 +1,4 @@
+import { AchievementsSaveData } from "../core/achivements/types";
 import { AudioSettings } from "../core/AudioService";
 import { ContractSaveData } from "../core/ContractService";
 import { GameStateData } from "../core/GameState";
@@ -36,4 +37,6 @@ export interface SaveData {
   contract: ContractSaveData | null;
 
   tutorial: TutorialSaveData;
+
+  achivements: AchievementsSaveData;
 }

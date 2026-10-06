@@ -6,9 +6,10 @@ export interface GameStateData {
   coins: number;
   level: number;
   spins: number;
-  round: number; // 🎯 НОВОЕ: текущий раунд
-  totalMerges: number; // 🎯 НОВОЕ: общее количество слияний (для статистики)
+  round: number;
+  totalMerges: number;
   rareSquishRanks: number[];
+  contractsCompleted: number;
 }
 
 export class GameState {
@@ -17,6 +18,7 @@ export class GameState {
   // 🎯 Константы для престижа
   private readonly MAX_LEVEL = 72; // Максимальный уровень
   private readonly RARE_SQUISH_COUNT = 64;
+  EventBus: any;
 
   constructor() {
     this.data = {
@@ -26,6 +28,7 @@ export class GameState {
       round: 1,
       totalMerges: 0,
       rareSquishRanks: new Array(this.RARE_SQUISH_COUNT).fill(0),
+      contractsCompleted: 0,
     };
   }
 
@@ -47,6 +50,9 @@ export class GameState {
   }
   public get score(): number {
     return this.data.totalMerges;
+  }
+  public get contractsCompleted(): number {
+    return this.data.contractsCompleted;
   }
 
   // --- МЕТОДЫ ИЗМЕНЕНИЯ ---
@@ -83,6 +89,10 @@ export class GameState {
       this.data.spins--;
       EventBus.emit(GameEvents.SPINS_CHANGED, this.data.spins);
     }
+  }
+
+  public incContractsCompleted() {
+    this.data.contractsCompleted += 1;
   }
 
   public getRareSquishRank(index: number): number {

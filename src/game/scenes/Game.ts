@@ -22,6 +22,7 @@ import { onceWhen } from "../utils/EventUtils";
 import { ModalManager } from "../ui/modals/ModalManager";
 import { ygProvider } from "../../YGProvider";
 import { canShowRatingModal, saveLastTimeOpenModal } from "../utils/canShowRatingModal";
+import { AchievementManager } from "../core/achivements/AchivementsManager";
 
 export class Game extends Phaser.Scene {
   private gameState: GameState;
@@ -30,6 +31,7 @@ export class Game extends Phaser.Scene {
   private economy: Economy;
 
   private contractService: ContractService;
+  private achievementsManager: AchievementManager;
   private audioService: AudioService;
   private grassWind: GrassWind;
 
@@ -55,18 +57,21 @@ export class Game extends Phaser.Scene {
     this.registry.set("grid", this.grid);
 
     this.contractService = new ContractService(this.grid, this.gameState);
+    this.achievementsManager = new AchievementManager(this.gameState);
 
     const tutorialManager = new TutorialManager(createTutorialStages(this.gameState));
     this.registry.set("tutorialManager", tutorialManager);
 
     this.localProvider = new LocalSaveProvider();
     this.cloudProvider = new CloudSaveProvider();
+
     this.gameSession = new GameSession(
       this.gameState,
       this.grid,
       this.audioService,
       this.contractService,
       tutorialManager,
+      this.achievementsManager,
     );
     this.saveManager = new SaveManager(this.gameSession, this.localProvider, this.cloudProvider);
 

@@ -1,0 +1,165 @@
+{
+  "frames": [
+    {
+      "filename": "ach_squishies",
+      "frame": {
+        "x": 2,
+        "y": 2,
+        "w": 128,
+        "h": 125
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 128,
+        "h": 125
+      },
+      "sourceSize": {
+        "w": 128,
+        "h": 125
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      }
+    },
+    {
+      "filename": "ach_contract",
+      "frame": {
+        "x": 2,
+        "y": 131,
+        "w": 128,
+        "h": 124
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 128,
+        "h": 124
+      },
+      "sourceSize": {
+        "w": 128,
+        "h": 124
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      }
+    },
+    {
+      "filename": "ach_rank",
+      "frame": {
+        "x": 2,
+        "y": 259,
+        "w": 128,
+        "h": 120
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 128,
+        "h": 120
+      },
+      "sourceSize": {
+        "w": 128,
+        "h": 120
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      }
+    },
+    {
+      "filename": "ach_rare",
+      "frame": {
+        "x": 2,
+        "y": 383,
+        "w": 128,
+        "h": 111
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 128,
+        "h": 111
+      },
+      "sourceSize": {
+        "w": 128,
+        "h": 111
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      }
+    },
+    {
+      "filename": "ach_spin",
+      "frame": {
+        "x": 2,
+        "y": 498,
+        "w": 128,
+        "h": 104
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 128,
+        "h": 104
+      },
+      "sourceSize": {
+        "w": 128,
+        "h": 104
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      }
+    },
+    {
+      "filename": "ach_merge",
+      "frame": {
+        "x": 2,
+        "y": 606,
+        "w": 128,
+        "h": 99
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 128,
+        "h": 99
+      },
+      "sourceSize": {
+        "w": 128,
+        "h": 99
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      }
+    }
+  ],
+  "meta": {
+    "app": "https://free-tex-packer.org",
+    "version": "0.6.7",
+    "image": "ach_spritesheet.png",
+    "format": "RGBA8888",
+    "size": {
+      "w": 132,
+      "h": 707
+    },
+    "scale": 1
+  }
+}
