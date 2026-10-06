@@ -52,16 +52,23 @@ export class ShopScene extends Phaser.Scene {
 
   // 🎯 Отрисовка товаров в ОДНУ ЛИНИЮ по центру
   private async renderProducts(): Promise<void> {
-    const products = await ygProvider.getCatalog();
+    let products = await ygProvider.getCatalog();
     if (!products || products.length === 0) return;
+
+    // 🎯 ФИЛЬТРАЦИЯ: Если реклама уже отключена, убираем этот товар из списка
+    if (ygProvider.isEnabledAds === false) {
+      products = products.filter((product) => product.id !== "ads_block");
+    }
 
     const screenWidth = this.scale.width;
     const screenHeight = this.scale.height;
 
-    const cols = 4; // 🎯 ВСЕ 4 ТОВАРА В ОДИН РЯД
-    const cardWidth = 280; // 🎯 Чуть уменьшил ширину для лучшей адаптивности
+    // 🎯 ДИНАМИЧЕСКОЕ КОЛИЧЕСТВО КОЛОНОК:
+    // Если товаров 4, будет 4 колонки. Если отфильтровали до 3, будет 3 колонки.
+    const cols = products.length;
+    const cardWidth = 280;
     const cardHeight = 460;
-    const gapX = 20; // 🎯 Компактный отступ между карточками
+    const gapX = 20;
 
     const totalGridWidth = cols * cardWidth + (cols - 1) * gapX;
 
@@ -90,7 +97,7 @@ export class ShopScene extends Phaser.Scene {
     width: number,
     height: number,
     product: ShopProduct,
-    globalScale: number, // 🎯 Новый параметр для масштабирования
+    globalScale: number,
   ): void {
     const card = this.add.container(x, y);
 
@@ -128,7 +135,7 @@ export class ShopScene extends Phaser.Scene {
       .setInteractive({ useHandCursor: true });
 
     const priceText = this.add
-      .bitmapText(0, btnY, "russo", `${product.price}`, 26)
+      .bitmapText(0, btnY - 4, "russo", `${product.price}`, 26)
       .setOrigin(0.5)
       .setTint(0xffd700);
 
@@ -149,7 +156,7 @@ export class ShopScene extends Phaser.Scene {
 
       try {
         await ygProvider.purchase(product.id);
-        // TODO: Логика успешной покупки
+        // TODO: Логика успешной покупки (начисление валюты / закрытие магазина)
       } catch (error) {
         console.error("❌ Ошибка покупки:", error);
       } finally {

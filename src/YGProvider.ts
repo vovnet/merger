@@ -1,9 +1,10 @@
-import { SDK, Player, Payments } from "ysdk";
+import { SDK, Player, Payments, Purchase } from "ysdk";
 import { EventBus } from "./game/core/EventBus";
 import { GameEvents } from "./game/types/GameEvents";
 import { SaveData } from "./game/types/SaveData";
 import { LeaderboardData, LeaderboardEntry } from "./game/types/Leaderboard";
 import { setLanguage } from "./locales";
+import { GameState } from "./game/core/GameState";
 
 export type RewardedVideoEvents = {
   onRewarded: () => void;
@@ -15,6 +16,9 @@ class YGProvider {
   private sdk: SDK | null = null;
   private player: Player | null = null;
   private payments: Payments;
+  private gameState: GameState;
+
+  public isEnabledAds = true;
 
   async init(): Promise<void> {
     if (this.sdk) {
@@ -30,8 +34,6 @@ class YGProvider {
 
     try {
       this.payments = await this.sdk.getPayments();
-      const products = await this.payments.getCatalog();
-      console.log({ products });
     } catch (err) {
       console.log("покупки недоступны");
     }
@@ -49,10 +51,41 @@ class YGProvider {
 
   public async purchase(id: string) {
     try {
-      await this.payments.purchase({ id });
+      const purchase = await this.payments.purchase({ id });
+      if (purchase) {
+        await this.handlePurchase(purchase);
+      }
     } catch (err) {
       console.log("purchase error");
     }
+  }
+
+  public async processPurchases(gameState: GameState) {
+    this.gameState = gameState;
+
+    try {
+      const purchases = await this.payments.getPurchases();
+      purchases.forEach((p) => this.handlePurchase(p));
+    } catch (err) {
+      console.log("error purchase process");
+    }
+  }
+
+  private async handlePurchase(purchase: Purchase) {
+    if (purchase.productID === "coins_1") {
+      this.gameState.addCoins(650);
+    } else if (purchase.productID === "coins_2") {
+      this.gameState.addCoins(2000);
+    } else if (purchase.productID === "coins_3") {
+      this.gameState.addCoins(5000);
+    } else if (purchase.productID === "ads_block") {
+      this.isEnabledAds = false;
+      return;
+    } else {
+      throw new Error(`Product with id ${purchase.productID} not found!`);
+    }
+
+    await this.sdk?.payments.consumePurchase(purchase.purchaseToken);
   }
 
   // для тестирования языка через параметры урл

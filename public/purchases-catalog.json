@@ -10,7 +10,7 @@
     "getPriceCurrencyImage": ""
   },
   {
-    "description": "250",
+    "description": "650",
     "id": "coins_1",
     "imageURI": "{path-to-image}",
     "price": "59 RUB",
@@ -20,23 +20,23 @@
     "getPriceCurrencyImage": ""
   },
   {
-    "description": "800",
+    "description": "2 000",
     "id": "coins_2",
     "imageURI": "{path-to-image}",
     "price": "149 RUB",
     "priceCurrencyCode": "RUB",
     "priceValue": "149",
-    "title": "Стандартный набор сквишей",
+    "title": "Стандартный набор сквишей +20%",
     "getPriceCurrencyImage": ""
   },
   {
-    "description": "2000",
+    "description": "5 000",
     "id": "coins_3",
     "imageURI": "{path-to-image}",
     "price": "299 RUB",
     "priceCurrencyCode": "RUB",
     "priceValue": "299",
-    "title": "Огромный набор сквишей",
+    "title": "Огромный набор сквишей +50%",
     "getPriceCurrencyImage": ""
   }
 ]
