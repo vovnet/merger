@@ -12,6 +12,7 @@ import { AdvButton } from "../components/adv-button/AdvButton";
 import { Switch } from "./Switch";
 import { AudioService } from "../core/AudioService";
 import { adsService } from "../../AdsService";
+import { AchievementManager } from "../core/achivements/AchivementsManager";
 
 export class ActionButtons {
   private scene: Phaser.Scene;
@@ -109,6 +110,9 @@ export class ActionButtons {
       onClick: () => {
         this.scene.scene.launch("AchievementsScene");
       },
+      alert: (
+        this.scene.registry.get("achievementManager") as AchievementManager
+      ).hasUnclaimedRewards(),
     });
 
     const buttonContent = this.scene.add.container(0, 0);
@@ -161,6 +165,12 @@ export class ActionButtons {
       this.rouletteButton.setAlert(this.gameState.spins > 0);
     });
     EventBus.on(GameEvents.LEVEL_CHANGED, () => this.collectionButton.setAlert(true));
+    EventBus.on(GameEvents.ACHIEVEMENT_UNLOCKED, () => this.achievementsButton.setAlert(true));
+    EventBus.on(GameEvents.ACHIEVEMENT_CLAIMED, () =>
+      this.achievementsButton.setAlert(
+        (this.scene.registry.get("achievementManager") as AchievementManager).hasUnclaimedRewards(),
+      ),
+    );
   }
 
   destroy(): void {

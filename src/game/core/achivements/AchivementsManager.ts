@@ -157,6 +157,28 @@ export class AchievementManager {
     });
   }
 
+  // 🎯 Проверка: есть ли хотя бы одна незaбранная награда за выполненное достижение
+  public hasUnclaimedRewards(): boolean {
+    for (const config of ACHIEVEMENTS_CONFIG) {
+      const progress = this.progress.get(config.id);
+      if (!progress) continue;
+
+      const isMaxedOut = progress.currentTierIndex >= config.tiers.length;
+
+      // Если достижение еще не пройдено до конца
+      if (!isMaxedOut) {
+        const currentTier = config.tiers[progress.currentTierIndex];
+
+        // Если текущее значение достигло цели, но награда еще не забрана
+        if (progress.currentValue >= currentTier.targetValue && !progress.isTierClaimed) {
+          return true; // Нашли хотя бы одну доступную награду!
+        }
+      }
+    }
+
+    return false; // Незабранных наград нет
+  }
+
   // Сериализация / Десериализация (как и раньше, но для новой структуры)
   public serialize(): AchievementsSaveData {
     return Object.fromEntries(this.progress);
