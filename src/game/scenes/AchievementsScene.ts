@@ -33,13 +33,7 @@ export class AchievementsScene extends Phaser.Scene {
 
     // 2. Заголовок
     this.add
-      .bitmapText(
-        screenWidth / 2,
-        30,
-        "russo",
-        t("ACHIEVEMENTS_TITLE" as TranslationKey) || "ДОСТИЖЕНИЯ",
-        42,
-      )
+      .bitmapText(screenWidth / 2, 30, "russo", t("ACHIEVEMENTS_TITLE"), 42)
       .setOrigin(0.5)
       .setTint(0xffd700)
       .setDepth(102);
@@ -185,7 +179,7 @@ export class AchievementsScene extends Phaser.Scene {
 
     if (ach.isMaxedOut) {
       const maxedText = this.add
-        .bitmapText(80, 0, "russo", t("ACH_MAXED_OUT" as TranslationKey), 18)
+        .bitmapText(80, 30, "russo", t("ACH_MAXED_OUT"), 18)
         .setOrigin(0.5)
         .setTint(0xffd700);
       card.add(maxedText);
@@ -204,7 +198,7 @@ export class AchievementsScene extends Phaser.Scene {
 
   private renderBaseCard(ach: any, card: Phaser.GameObjects.Container, w: number, h: number) {
     // 1. Фон карточки
-    const borderColor = ach.isMaxedOut ? 0xffd700 : ach.canClaim ? 0x00ff00 : 0x88e7ff;
+    const borderColor = ach.isMaxedOut ? 0xffd700 : ach.canClaim ? 0xb700ff : 0x88e7ff;
     const bg = this.add
       .rectangle(0, 0, w, h, 0x1e1e2e)
       .setStrokeStyle(3, borderColor)
@@ -217,6 +211,17 @@ export class AchievementsScene extends Phaser.Scene {
       .setScale(0.7)
       .setTint(ach.isMaxedOut ? 0xffd700 : 0xffffff);
     card.add(icon);
+
+    if (ach.canClaim) {
+      this.tweens.add({
+        targets: icon,
+        scale: { from: 0.7, to: 0.8 },
+        duration: 800,
+        yoyo: true,
+        repeat: -1,
+        ease: "Sine.easeInOut",
+      });
+    }
 
     // 3. Заголовок
     const titleText = this.add
@@ -235,18 +240,28 @@ export class AchievementsScene extends Phaser.Scene {
   }
 
   private renderClaimButton(ach: any, card: Phaser.GameObjects.Container) {
+    const claimBtnY = 50;
     const claimBtn = this.add
-      .rectangle(0, 40, 130, 40, 0x00cc00)
+      .sprite(0, claimBtnY, "shop", "buy_btn")
       .setOrigin(0.5)
+      .setScale(0.5)
       .setInteractive({ useHandCursor: true });
 
     const claimText = this.add
-      .bitmapText(0, 40, "russo", t("ACH_CLAIM"), 16)
+      .bitmapText(0, claimBtnY - 2, "russo", t("ACH_CLAIM"), 14)
       .setOrigin(0.5)
-      .setTint(0xffffff);
+      .setTint(0xffd700);
 
-    claimBtn.on("pointerover", () => claimBtn.setFillStyle(0x00ff00));
-    claimBtn.on("pointerout", () => claimBtn.setFillStyle(0x00cc00));
+    // 🎯 Hover-эффекты
+    claimBtn.on("pointerover", () => {
+      claimBtn.setScale(0.55);
+      claimText.setScale(1.1);
+    });
+    claimBtn.on("pointerout", () => {
+      claimBtn.setScale(0.5);
+      claimBtn.clearTint();
+      claimText.setScale(1);
+    });
 
     claimBtn.on("pointerdown", () => {
       claimBtn.disableInteractive();
@@ -261,7 +276,7 @@ export class AchievementsScene extends Phaser.Scene {
     const progressPct = Math.min(1, ach.progress.currentValue / ach.currentTier.targetValue);
     const barBg = this.add.rectangle(-50, 25, progressBarWidth, 12, 0x000000).setOrigin(0, 0.5);
     const barFill = this.add
-      .rectangle(-50, 25, progressBarWidth * progressPct, 12, ach.canClaim ? 0x00ff00 : 0xffd700)
+      .rectangle(-50, 25, progressBarWidth * progressPct, 12, 0xffd700)
       .setOrigin(0, 0.5);
 
     const progressLabel = this.add
