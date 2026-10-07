@@ -51,7 +51,7 @@ export class ContractService {
    * Пока оставил простой вариант.
    * Потом сюда можно вынести RewardService.
    */
-  private readonly REWARD_COINS = 3;
+  private readonly REWARD_COINS = 2;
 
   private readonly grid: Grid;
   private readonly gameState: GameState;

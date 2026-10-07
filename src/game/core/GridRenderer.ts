@@ -113,12 +113,12 @@ export class GridRenderer {
   public showMergeReward(pos: GridPosition, amount: number): void {
     const { px, py } = this.gridToPixel(pos);
     const bonusRand = Math.random();
-    if (bonusRand < 0.005) {
+    if (bonusRand < 0.002) {
       const amount = 1;
       this.gameState.addSpins(amount);
       this.vfxManager.spawnResourcePopup(px, py, amount, "ticket");
     } else if (bonusRand < 0.05) {
-      const amount = Phaser.Math.Between(1, 5);
+      const amount = Phaser.Math.Between(1, 3);
       this.vfxManager.spawnResourcePopup(px, py, amount, "coin");
       this.gameState.addCoins(amount);
     } else {
