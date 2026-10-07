@@ -49,6 +49,7 @@ export const ru = {
   ACH_REWARD: "Награда: \n{reward}",
   ACH_PROGRESS: "Прогресс: {current} / {total}",
   ACH_MAXED_OUT: "МАКСИМУМ!", // Вместо скучного "Выполнено"
+  ACH_CLAIM: "ЗАБРАТЬ",
 
   ACH_MERGE_TITLE: "Мердж-магнат",
   ACH_MERGE_DESC: "Склей {target} сквишей!",

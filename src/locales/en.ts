@@ -51,6 +51,7 @@ export const en: Record<TranslationKey, string> = {
   ACH_REWARD: "Reward: \n{reward}",
   ACH_PROGRESS: "Progress: {current} / {total}",
   ACH_MAXED_OUT: "MAXED OUT!",
+  ACH_CLAIM: "CLAIM!",
 
   ACH_MERGE_TITLE: "Merge Master",
   ACH_MERGE_DESC: "Merge {target} squishies!",

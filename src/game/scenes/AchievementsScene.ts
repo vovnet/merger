@@ -162,6 +162,47 @@ export class AchievementsScene extends Phaser.Scene {
   private createCard(x: number, y: number, w: number, h: number, ach: any): void {
     const card = this.add.container(x, y);
 
+    this.renderBaseCard(ach, card, w, h);
+
+    // 5. Прогресс-бар карточки
+    if (!ach.isMaxedOut && !ach.canClaim) {
+      this.renderCardProgressBar(ach, card);
+    }
+
+    if (!ach.isMaxedOut) {
+      const nextRewardStr = this.formatReward(
+        ach.currentTier.rewardCoins,
+        ach.currentTier.rewardSpins,
+      );
+      const lockedText = this.add
+        .bitmapText(80, -10, "russo", t("ACH_REWARD", { reward: nextRewardStr }), 12)
+        .setOrigin(0.5)
+        .setTint(0x666666)
+        .setMaxWidth(100)
+        .setCenterAlign();
+      card.add(lockedText);
+    }
+
+    if (ach.isMaxedOut) {
+      const maxedText = this.add
+        .bitmapText(80, 0, "russo", t("ACH_MAXED_OUT" as TranslationKey), 18)
+        .setOrigin(0.5)
+        .setTint(0xffd700);
+      card.add(maxedText);
+    }
+
+    if (ach.canClaim) {
+      this.renderClaimButton(ach, card);
+    } else {
+      if (!ach.isMaxedOut) {
+        this.renderTierProgress(ach, card);
+      }
+    }
+
+    this.cardsContainer.add(card);
+  }
+
+  private renderBaseCard(ach: any, card: Phaser.GameObjects.Container, w: number, h: number) {
     // 1. Фон карточки
     const borderColor = ach.isMaxedOut ? 0xffd700 : ach.canClaim ? 0x00ff00 : 0x88e7ff;
     const bg = this.add
@@ -191,78 +232,53 @@ export class AchievementsScene extends Phaser.Scene {
       .setTint(0x3796ce)
       .setMaxWidth(100);
     card.add(descText);
+  }
 
-    // 5. Прогресс-бар карточки
-    if (!ach.isMaxedOut) {
-      const progressBarWidth = 220;
-      const progressPct = Math.min(1, ach.progress.currentValue / ach.currentTier.targetValue);
-      const barBg = this.add.rectangle(-50, 25, progressBarWidth, 12, 0x000000).setOrigin(0, 0.5);
-      const barFill = this.add
-        .rectangle(-50, 25, progressBarWidth * progressPct, 12, ach.canClaim ? 0x00ff00 : 0xffd700)
-        .setOrigin(0, 0.5);
+  private renderClaimButton(ach: any, card: Phaser.GameObjects.Container) {
+    const claimBtn = this.add
+      .rectangle(0, 40, 130, 40, 0x00cc00)
+      .setOrigin(0.5)
+      .setInteractive({ useHandCursor: true });
 
-      const progressLabel = this.add
-        .bitmapText(
-          -50,
-          42,
-          "russo",
-          `${ach.progress.currentValue} / ${ach.currentTier.targetValue}`,
-          10,
-        )
-        .setOrigin(0, 0.5)
-        .setTint(0x888888);
+    const claimText = this.add
+      .bitmapText(0, 40, "russo", t("ACH_CLAIM"), 16)
+      .setOrigin(0.5)
+      .setTint(0xffffff);
 
-      card.add([barBg, barFill, progressLabel]);
-    }
+    claimBtn.on("pointerover", () => claimBtn.setFillStyle(0x00ff00));
+    claimBtn.on("pointerout", () => claimBtn.setFillStyle(0x00cc00));
 
-    // 6. Правая часть: Кнопка действия или статус
-    if (ach.isMaxedOut) {
-      const maxedText = this.add
-        .bitmapText(80, 0, "russo", t("ACH_MAXED_OUT" as TranslationKey), 18)
-        .setOrigin(0.5)
-        .setTint(0xffd700);
-      card.add(maxedText);
-    } else if (ach.canClaim) {
-      const rewardStr = this.formatReward(ach.currentTier.rewardCoins, ach.currentTier.rewardSpins);
+    claimBtn.on("pointerdown", () => {
+      claimBtn.disableInteractive();
+      this.achievementManager.claimReward(ach.id);
+    });
 
-      const claimBtn = this.add
-        .rectangle(80, 0, 130, 40, 0x00cc00)
-        .setOrigin(0.5)
-        .setInteractive({ useHandCursor: true });
+    card.add([claimBtn, claimText]);
+  }
 
-      const claimText = this.add
-        .bitmapText(80, 2, "russo", "ЗАБРАТЬ", 16)
-        .setOrigin(0.5)
-        .setTint(0xffffff);
+  private renderCardProgressBar(ach: any, card: Phaser.GameObjects.Container) {
+    const progressBarWidth = 220;
+    const progressPct = Math.min(1, ach.progress.currentValue / ach.currentTier.targetValue);
+    const barBg = this.add.rectangle(-50, 25, progressBarWidth, 12, 0x000000).setOrigin(0, 0.5);
+    const barFill = this.add
+      .rectangle(-50, 25, progressBarWidth * progressPct, 12, ach.canClaim ? 0x00ff00 : 0xffd700)
+      .setOrigin(0, 0.5);
 
-      const rewardLabel = this.add
-        .text(80, 22, rewardStr, { fontSize: "12px", color: "#ffffff" })
-        .setOrigin(0.5);
+    const progressLabel = this.add
+      .bitmapText(
+        -50,
+        42,
+        "russo",
+        `${ach.progress.currentValue} / ${ach.currentTier.targetValue}`,
+        10,
+      )
+      .setOrigin(0, 0.5)
+      .setTint(0x888888);
 
-      claimBtn.on("pointerover", () => claimBtn.setFillStyle(0x00ff00));
-      claimBtn.on("pointerout", () => claimBtn.setFillStyle(0x00cc00));
+    card.add([barBg, barFill, progressLabel]);
+  }
 
-      claimBtn.on("pointerdown", () => {
-        claimBtn.disableInteractive();
-        this.achievementManager.claimReward(ach.id);
-      });
-
-      card.add([claimBtn, claimText, rewardLabel]);
-    } else {
-      const nextRewardStr = this.formatReward(
-        ach.currentTier.rewardCoins,
-        ach.currentTier.rewardSpins,
-      );
-      const lockedText = this.add
-        .bitmapText(80, -10, "russo", `Награда:\n${nextRewardStr}`, 12)
-        .setOrigin(0.5)
-        .setTint(0x666666)
-        .setMaxWidth(100)
-        .setCenterAlign();
-      card.add(lockedText);
-    }
-
-    // 7. ИКОНКИ ПРОГРЕССА ПО ТИРАМ (Внизу карточки)
+  private renderTierProgress(ach: any, card: Phaser.GameObjects.Container) {
     const tiers = ach.tiers;
     const currentTierIndex = ach.progress.currentTierIndex;
     const totalTiers = tiers.length;
@@ -295,8 +311,6 @@ export class AchievementsScene extends Phaser.Scene {
 
       card.add(tierIcon);
     }
-
-    this.cardsContainer.add(card);
   }
 
   private formatReward(coins: number, spins: number): string {
