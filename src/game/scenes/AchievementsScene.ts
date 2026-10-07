@@ -92,6 +92,7 @@ export class AchievementsScene extends Phaser.Scene {
   }
 
   // 🎯 Создание одной карточки достижения
+  // 🎯 Создание одной карточки достижения
   private createCard(x: number, y: number, w: number, h: number, ach: any): void {
     const card = this.add.container(x, y);
 
@@ -104,20 +105,9 @@ export class AchievementsScene extends Phaser.Scene {
 
     card.add(bg);
 
-    // Анимация пульсации для доступной награды
-    if (ach.canClaim) {
-      // this.tweens.add({
-      //   targets: bg,
-      //   strokeColor: 0x55ff55,
-      //   duration: 600,
-      //   yoyo: true,
-      //   repeat: -1,
-      // });
-    }
-
-    // 2. Иконка
+    // 2. Иконка достижения
     const icon = this.add
-      .sprite(-120, 0, "achievements", ach.icon)
+      .sprite(-120, -20, "achievements", ach.icon)
       .setScale(0.7)
       .setTint(ach.isMaxedOut ? 0xffd700 : 0xffffff);
     card.add(icon);
@@ -144,7 +134,6 @@ export class AchievementsScene extends Phaser.Scene {
     const barFill = this.add
       .rectangle(-50, 25, progressBarWidth * progressPct, 12, ach.canClaim ? 0x00ff00 : 0xffd700)
       .setOrigin(0, 0.5);
-    card.add([barBg, barFill]);
 
     // Текст прогресса
     const progressLabel = this.add
@@ -157,38 +146,38 @@ export class AchievementsScene extends Phaser.Scene {
       )
       .setOrigin(0, 0.5)
       .setTint(0x888888);
-    card.add(progressLabel);
+
+    if (!ach.isMaxedOut) {
+      card.add([barBg, barFill, progressLabel]);
+    }
 
     // 6. Правая часть: Кнопка действия или статус
     if (ach.isMaxedOut) {
       const maxedText = this.add
-        .bitmapText(60, 0, "russo", t("ACH_MAXED_OUT" as TranslationKey), 22)
+        .bitmapText(80, 0, "russo", t("ACH_MAXED_OUT" as TranslationKey), 18)
         .setOrigin(0.5)
         .setTint(0xffd700);
       card.add(maxedText);
     } else if (ach.canClaim) {
       const rewardStr = this.formatReward(ach.currentTier.rewardCoins, ach.currentTier.rewardSpins);
 
-      // 🎯 Кнопка "Забрать" (используем прямоугольник для гарантированной отрисовки, если нет спрайта)
       const claimBtn = this.add
         .rectangle(80, 0, 130, 40, 0x00cc00)
         .setOrigin(0.5)
         .setInteractive({ useHandCursor: true });
 
       const claimText = this.add
-        .bitmapText(80, 2, "russo", "ЗАБРАТЬ", 18)
+        .bitmapText(80, 2, "russo", "ЗАБРАТЬ", 16)
         .setOrigin(0.5)
         .setTint(0xffffff);
 
       const rewardLabel = this.add
-        .text(80, 22, rewardStr, { fontSize: "14px", color: "#ffffff" })
+        .text(80, 22, rewardStr, { fontSize: "12px", color: "#ffffff" })
         .setOrigin(0.5);
 
-      // Hover эффекты
       claimBtn.on("pointerover", () => claimBtn.setFillStyle(0x00ff00));
       claimBtn.on("pointerout", () => claimBtn.setFillStyle(0x00cc00));
 
-      // 🎯 Клик по кнопке "Забрать"
       claimBtn.on("pointerdown", () => {
         claimBtn.disableInteractive();
         this.achievementManager.claimReward(ach.id);
@@ -196,19 +185,57 @@ export class AchievementsScene extends Phaser.Scene {
 
       card.add([claimBtn, claimText, rewardLabel]);
     } else {
-      // Заблокировано / в процессе
       const nextRewardStr = this.formatReward(
         ach.currentTier.rewardCoins,
         ach.currentTier.rewardSpins,
       );
       const lockedText = this.add
-        .bitmapText(80, -20, "russo", t("ACH_REWARD", { reward: nextRewardStr }), 12)
+        .bitmapText(80, -10, "russo", `Награда:\n${nextRewardStr}`, 12)
         .setOrigin(0.5)
         .setTint(0x666666)
-        .setMaxWidth(100);
+        .setMaxWidth(100)
+        .setCenterAlign();
       card.add(lockedText);
     }
 
+    // 🎯 7. ИКОНКИ ПРОГРЕССА ПО ТИРАМ (Внизу карточки)
+    const tiers = ach.tiers;
+    const currentTierIndex = ach.progress.currentTierIndex;
+    const totalTiers = tiers.length;
+
+    // Настройки для иконок
+    const iconSize = 24;
+    const gap = 6;
+    const totalIconsWidth = totalTiers * iconSize + (totalTiers - 1) * gap;
+    const startX = -totalIconsWidth / 2 + iconSize / 2; // Центрируем всю группу иконок
+    const yPos = 65; // Позиция по Y (под текстом прогресса, который на 42)
+
+    for (let i = 0; i < totalTiers; i++) {
+      // Если индекс тира меньше текущего, значит он уже пройден и забран
+      const isCompleted = i < currentTierIndex;
+      const iconKey = isCompleted ? "progres_icon_active" : "progres_icon_disabled";
+
+      const tierIcon = this.add
+        .sprite(startX + i * (iconSize + gap), yPos, "achievements", iconKey) // ⚠️ Убедитесь, что атлас называется "ui" (или "achievements", если добавили туда)
+        .setOrigin(0.5)
+        .setScale(1);
+
+      // 🌟 Бонус: Подсвечиваем ЦЕЛЕВОЙ тир, чтобы игрок знал, к чему идет
+      if (i === currentTierIndex && !ach.isMaxedOut) {
+        this.tweens.add({
+          targets: tierIcon,
+          scale: { from: 1, to: 1.15 },
+          duration: 800,
+          yoyo: true,
+          repeat: -1,
+          ease: "Sine.easeInOut",
+        });
+      }
+
+      card.add(tierIcon);
+    }
+
+    // Добавляем всю карточку в общий контейнер
     this.cardsContainer.add(card);
   }
 

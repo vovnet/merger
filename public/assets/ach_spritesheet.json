@@ -155,20 +155,20 @@
       "frame": {
         "x": 2,
         "y": 709,
-        "w": 48,
-        "h": 48
+        "w": 24,
+        "h": 24
       },
       "rotated": false,
       "trimmed": false,
       "spriteSourceSize": {
         "x": 0,
         "y": 0,
-        "w": 48,
-        "h": 48
+        "w": 24,
+        "h": 24
       },
       "sourceSize": {
-        "w": 48,
-        "h": 48
+        "w": 24,
+        "h": 24
       },
       "pivot": {
         "x": 0.5,
@@ -179,21 +179,21 @@
       "filename": "progres_icon_active",
       "frame": {
         "x": 2,
-        "y": 761,
-        "w": 48,
-        "h": 47
+        "y": 737,
+        "w": 24,
+        "h": 23
       },
       "rotated": false,
       "trimmed": false,
       "spriteSourceSize": {
         "x": 0,
         "y": 0,
-        "w": 48,
-        "h": 47
+        "w": 24,
+        "h": 23
       },
       "sourceSize": {
-        "w": 48,
-        "h": 47
+        "w": 24,
+        "h": 23
       },
       "pivot": {
         "x": 0.5,
@@ -208,7 +208,7 @@
     "format": "RGBA8888",
     "size": {
       "w": 132,
-      "h": 810
+      "h": 762
     },
     "scale": 1
   }
