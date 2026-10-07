@@ -190,7 +190,7 @@ export class AchievementsScene extends Phaser.Scene {
     // 1. Фон карточки
     const borderColor = ach.isMaxedOut ? 0xffd700 : ach.canClaim ? 0xb700ff : 0x88e7ff;
     const bg = this.add
-      .rectangle(0, 0, w, h, 0x2f2f47)
+      .rectangle(0, 0, w, h, ach.canClaim ? 0x402a44 : 0x2f2f47)
       .setStrokeStyle(3, borderColor)
       .setOrigin(0.5);
     card.add(bg);
