@@ -151,10 +151,35 @@
       }
     },
     {
-      "filename": "progres_icon_disabled",
+      "filename": "ach_icon",
       "frame": {
         "x": 2,
         "y": 709,
+        "w": 64,
+        "h": 61
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 64,
+        "h": 61
+      },
+      "sourceSize": {
+        "w": 64,
+        "h": 61
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      }
+    },
+    {
+      "filename": "progres_icon_disabled",
+      "frame": {
+        "x": 2,
+        "y": 774,
         "w": 24,
         "h": 24
       },
@@ -179,7 +204,7 @@
       "filename": "progres_icon_active",
       "frame": {
         "x": 2,
-        "y": 737,
+        "y": 802,
         "w": 24,
         "h": 23
       },
@@ -208,7 +233,7 @@
     "format": "RGBA8888",
     "size": {
       "w": 132,
-      "h": 762
+      "h": 827
     },
     "scale": 1
   }

@@ -34,7 +34,7 @@ export class AchievementManager {
   }
 
   private setupListeners(): void {
-    EventBus.on(GameEvents.GRID_ITEM_MERGED, () => this.checkProgress("MERGE_COUNT"));
+    EventBus.on(GameEvents.SCORE_CHANGED, () => this.checkProgress("MERGE_COUNT"));
     EventBus.on(GameEvents.CONTRACT_COMPLETED, () => this.checkProgress("CONTRACT_COMPLETED"));
     EventBus.on(GameEvents.ROUND_CHANGED, () => this.checkProgress("RANKS_EARNED"));
     EventBus.on(GameEvents.RARE_SQUISH_RANK_CHANGED, () => this.checkProgress("RARE_COLLECTED"));

@@ -11,6 +11,7 @@ import { LeaderboardScene } from "./scenes/LeaderboardScene";
 import { TutorialOverlayScene } from "./scenes/TutorialOverlayScene";
 import { ShopScene } from "./scenes/ShopScene";
 import { AchievementsScene } from "./scenes/AchievementsScene";
+import { AchievementToastScene } from "./scenes/AchievementToastScene";
 
 // Find out more information about the Game Config at:
 // https://docs.phaser.io/api-documentation/typedef/types-core#gameconfig
@@ -38,6 +39,7 @@ const config: Types.Core.GameConfig = {
     TutorialOverlayScene,
     ShopScene,
     AchievementsScene,
+    AchievementToastScene,
   ],
   banner: { hidePhaser: true },
 };
