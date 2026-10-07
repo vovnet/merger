@@ -7,7 +7,7 @@ import { GameEvents } from "../types/GameEvents";
 import { AchievementManager } from "../core/achivements/AchivementsManager";
 
 export class AchievementsScene extends Phaser.Scene {
-  private gameState!: GameState;
+  private gameState: GameState;
   private cardsContainer!: Phaser.GameObjects.Container;
   private achievementManager: AchievementManager;
 
@@ -164,17 +164,7 @@ export class AchievementsScene extends Phaser.Scene {
     }
 
     if (!ach.isMaxedOut) {
-      const nextRewardStr = this.formatReward(
-        ach.currentTier.rewardCoins,
-        ach.currentTier.rewardSpins,
-      );
-      const lockedText = this.add
-        .bitmapText(80, -10, "russo", t("ACH_REWARD", { reward: nextRewardStr }), 12)
-        .setOrigin(0.5)
-        .setTint(0x666666)
-        .setMaxWidth(100)
-        .setCenterAlign();
-      card.add(lockedText);
+      this.renderReward(ach, card);
     }
 
     if (ach.isMaxedOut) {
@@ -200,7 +190,7 @@ export class AchievementsScene extends Phaser.Scene {
     // 1. Фон карточки
     const borderColor = ach.isMaxedOut ? 0xffd700 : ach.canClaim ? 0xb700ff : 0x88e7ff;
     const bg = this.add
-      .rectangle(0, 0, w, h, 0x1e1e2e)
+      .rectangle(0, 0, w, h, 0x2f2f47)
       .setStrokeStyle(3, borderColor)
       .setOrigin(0.5);
     card.add(bg);
@@ -237,6 +227,18 @@ export class AchievementsScene extends Phaser.Scene {
       .setTint(0x3796ce)
       .setMaxWidth(100);
     card.add(descText);
+  }
+
+  private renderReward(ach: any, card: Phaser.GameObjects.Container) {
+    const rewardContainer = this.add.container(80, -10);
+    const icon = this.add.sprite(0, 0, "ui", "coin").setOrigin(0.5).setScale(0.36).setAngle(-15);
+    const text = this.add
+      .bitmapText(20, -6, "russo", `+${ach.currentTier.rewardCoins}`, 20)
+      .setOrigin(0, 0.5);
+
+    rewardContainer.add([icon, text]);
+
+    card.add(rewardContainer);
   }
 
   private renderClaimButton(ach: any, card: Phaser.GameObjects.Container) {
@@ -326,13 +328,6 @@ export class AchievementsScene extends Phaser.Scene {
 
       card.add(tierIcon);
     }
-  }
-
-  private formatReward(coins: number, spins: number): string {
-    const parts = [];
-    if (coins > 0) parts.push(`${coins}`);
-    if (spins > 0) parts.push(`${spins}`);
-    return parts.join(" + ");
   }
 
   private closeScene(): void {
