@@ -46,6 +46,7 @@ export const ru = {
 
   // Достижения (Achievements)
   ACHIEVEMENTS_TITLE: "ДОСТИЖЕНИЯ",
+  ACH_REWARD: "Награда: \n{reward}",
   ACH_MAXED_OUT: "МАКСИМУМ!", // Вместо скучного "Выполнено"
 
   ACH_MERGE_TITLE: "Мердж-магнат",

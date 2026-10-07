@@ -149,6 +149,56 @@
         "x": 0.5,
         "y": 0.5
       }
+    },
+    {
+      "filename": "progres_icon_disabled",
+      "frame": {
+        "x": 2,
+        "y": 709,
+        "w": 48,
+        "h": 48
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 48,
+        "h": 48
+      },
+      "sourceSize": {
+        "w": 48,
+        "h": 48
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      }
+    },
+    {
+      "filename": "progres_icon_active",
+      "frame": {
+        "x": 2,
+        "y": 761,
+        "w": 48,
+        "h": 47
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 48,
+        "h": 47
+      },
+      "sourceSize": {
+        "w": 48,
+        "h": 47
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      }
     }
   ],
   "meta": {
@@ -158,7 +208,7 @@
     "format": "RGBA8888",
     "size": {
       "w": 132,
-      "h": 707
+      "h": 810
     },
     "scale": 1
   }

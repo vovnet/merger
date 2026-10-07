@@ -34,7 +34,7 @@ export class AchievementsScene extends Phaser.Scene {
     this.add
       .bitmapText(
         screenWidth / 2,
-        60,
+        30,
         "russo",
         t("ACHIEVEMENTS_TITLE" as TranslationKey) || "ДОСТИЖЕНИЯ",
         42,
@@ -52,7 +52,7 @@ export class AchievementsScene extends Phaser.Scene {
       .on("pointerdown", () => this.closeScene());
 
     // 5. Контейнер для сетки карточек (центрируем по экрану)
-    this.cardsContainer = this.add.container(screenWidth / 2, screenHeight / 2 + 20).setDepth(101);
+    this.cardsContainer = this.add.container(screenWidth / 2, screenHeight / 2 + 50).setDepth(101);
 
     // 6. Рендерим сетку
     this.renderGrid();
@@ -70,10 +70,10 @@ export class AchievementsScene extends Phaser.Scene {
 
     const cols = 2;
     const rows = 3;
-    const cardW = 300;
-    const cardH = 160;
+    const cardW = 400;
+    const cardH = 180;
     const gapX = 40;
-    const gapY = 30;
+    const gapY = 20;
 
     // Вычисляем стартовые координаты для идеального центрирования внутри контейнера
     const totalW = cols * cardW + (cols - 1) * gapX;
@@ -96,7 +96,7 @@ export class AchievementsScene extends Phaser.Scene {
     const card = this.add.container(x, y);
 
     // 1. Фон карточки
-    const borderColor = ach.canClaim ? 0x00ff00 : 0xffd700;
+    const borderColor = ach.isMaxedOut ? 0xffd700 : ach.canClaim ? 0x00ff00 : 0x88e7ff;
     const bg = this.add
       .rectangle(0, 0, w, h, 0x1e1e2e)
       .setStrokeStyle(3, borderColor)
@@ -106,54 +106,57 @@ export class AchievementsScene extends Phaser.Scene {
 
     // Анимация пульсации для доступной награды
     if (ach.canClaim) {
-      this.tweens.add({
-        targets: bg,
-        strokeColor: 0x55ff55,
-        duration: 600,
-        yoyo: true,
-        repeat: -1,
-      });
+      // this.tweens.add({
+      //   targets: bg,
+      //   strokeColor: 0x55ff55,
+      //   duration: 600,
+      //   yoyo: true,
+      //   repeat: -1,
+      // });
     }
 
     // 2. Иконка
     const icon = this.add
-      .sprite(-110, 0, "achievements", ach.icon)
+      .sprite(-120, 0, "achievements", ach.icon)
       .setScale(0.7)
       .setTint(ach.isMaxedOut ? 0xffd700 : 0xffffff);
     card.add(icon);
 
     // 3. Заголовок
     const titleText = this.add
-      .bitmapText(-50, -45, "russo", t(ach.titleKey as TranslationKey), 20)
+      .bitmapText(-50, -60, "russo", t(ach.titleKey as TranslationKey), 20)
       .setOrigin(0, 0.5)
       .setTint(0xffffff);
     card.add(titleText);
 
     // 4. Описание
     const descText = this.add
-      .text(-50, -15, ach.description, {
-        fontSize: "16px",
-        color: "#a8e6ff",
-        wordWrap: { width: 180 },
-      })
-      .setOrigin(0, 0.5);
+      .bitmapText(-50, -15, "russo", ach.description, 12)
+      .setOrigin(0, 0.5)
+      .setTint(0x3796ce)
+      .setMaxWidth(100);
     card.add(descText);
 
     // 5. Прогресс-бар
+    const progressBarWidth = 220;
     const progressPct = Math.min(1, ach.progress.currentValue / ach.currentTier.targetValue);
-    const barBg = this.add.rectangle(-50, 25, 180, 12, 0x000000).setOrigin(0, 0.5);
+    const barBg = this.add.rectangle(-50, 25, progressBarWidth, 12, 0x000000).setOrigin(0, 0.5);
     const barFill = this.add
-      .rectangle(-50, 25, 180 * progressPct, 12, ach.canClaim ? 0x00ff00 : 0xffd700)
+      .rectangle(-50, 25, progressBarWidth * progressPct, 12, ach.canClaim ? 0x00ff00 : 0xffd700)
       .setOrigin(0, 0.5);
     card.add([barBg, barFill]);
 
     // Текст прогресса
     const progressLabel = this.add
-      .text(-50, 42, `${ach.progress.currentValue} / ${ach.currentTier.targetValue}`, {
-        fontSize: "14px",
-        color: "#888888",
-      })
-      .setOrigin(0, 0.5);
+      .bitmapText(
+        -50,
+        42,
+        "russo",
+        `${ach.progress.currentValue} / ${ach.currentTier.targetValue}`,
+        10,
+      )
+      .setOrigin(0, 0.5)
+      .setTint(0x888888);
     card.add(progressLabel);
 
     // 6. Правая часть: Кнопка действия или статус
@@ -189,7 +192,6 @@ export class AchievementsScene extends Phaser.Scene {
       claimBtn.on("pointerdown", () => {
         claimBtn.disableInteractive();
         this.achievementManager.claimReward(ach.id);
-        // renderGrid вызовется автоматически через EventBus.ACHIEVEMENT_CLAIMED
       });
 
       card.add([claimBtn, claimText, rewardLabel]);
@@ -200,12 +202,10 @@ export class AchievementsScene extends Phaser.Scene {
         ach.currentTier.rewardSpins,
       );
       const lockedText = this.add
-        .text(80, 0, `Награда:\n${nextRewardStr}`, {
-          fontSize: "15px",
-          color: "#666666",
-          align: "center",
-        })
-        .setOrigin(0.5);
+        .bitmapText(80, -20, "russo", t("ACH_REWARD", { reward: nextRewardStr }), 12)
+        .setOrigin(0.5)
+        .setTint(0x666666)
+        .setMaxWidth(100);
       card.add(lockedText);
     }
 
@@ -215,8 +215,8 @@ export class AchievementsScene extends Phaser.Scene {
   // 🎯 Хелпер для красивого форматирования награды
   private formatReward(coins: number, spins: number): string {
     const parts = [];
-    if (coins > 0) parts.push(`${coins} 💰`);
-    if (spins > 0) parts.push(`${spins} 🎟️`);
+    if (coins > 0) parts.push(`${coins}`);
+    if (spins > 0) parts.push(`${spins}`);
     return parts.join(" + ");
   }
 
