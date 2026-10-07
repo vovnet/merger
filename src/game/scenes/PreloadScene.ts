@@ -93,6 +93,7 @@ export class PreloaderScene extends Phaser.Scene {
     this.load.audio("notification_1", "assets/sound/notification_1.mp3");
     this.load.audio("notification_2", "assets/sound/notification_2.mp3");
     this.load.audio("shine", "assets/sound/shine.mp3");
+    this.load.audio("notification_3", "assets/sound/ach_notify.mp3");
 
     this.load.bitmapFont("russo", "assets/fonts/days5.png", "assets/fonts/days5.xml");
 

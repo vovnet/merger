@@ -101,27 +101,48 @@ export class AchievementManager {
     const config = ACHIEVEMENTS_CONFIG.find((c) => c.id === categoryId);
     const progress = this.progress.get(categoryId)!;
 
-    if (!config || progress.isTierClaimed) return;
-    if (progress.currentTierIndex >= config.tiers.length) return;
+    // Защита: если конфиг не найден или все тиры уже пройдены
+    if (!config || progress.currentTierIndex >= config.tiers.length) return;
 
-    const currentTier = config.tiers[progress.currentTierIndex];
+    let totalCoins = 0;
+    let totalSpins = 0;
+    let lastClaimedTier = null;
 
-    // 1. Выдаем награду
-    if (currentTier.rewardCoins > 0) this.gameState.addCoins(currentTier.rewardCoins);
-    if (currentTier.rewardSpins > 0) this.gameState.addSpins(currentTier.rewardSpins);
+    // 🎯 ЦИКЛ МАССОВОГО СБОРА:
+    // Проходим по всем тирам, начиная с текущего, которые УЖЕ выполнены по значению (currentValue >= targetValue)
+    while (
+      progress.currentTierIndex < config.tiers.length &&
+      progress.currentValue >= config.tiers[progress.currentTierIndex].targetValue
+    ) {
+      const tier = config.tiers[progress.currentTierIndex];
 
-    // 2. Помечаем текущий уровень как забранный
-    progress.isTierClaimed = true;
+      // Накапливаем награды
+      totalCoins += tier.rewardCoins;
+      totalSpins += tier.rewardSpins;
 
-    // 3. 🎯 ПЕРЕХОДИМ К СЛЕДУЮЩЕМУ УРОВНЮ
-    progress.currentTierIndex++;
-    progress.isTierClaimed = false; // Сбрасываем флаг для нового уровня
+      // Запоминаем последний выданный тир (для корректного обновления UI и логов)
+      lastClaimedTier = tier;
 
-    // 4. Проверяем, не выполнен ли новый уровень УЖЕ (например, игрок накопил 600 слияний,
-    // забрал награду за 500, и теперь сразу должен видеть прогресс до 2000 как 600/2000)
-    this.checkProgress(config.type);
+      // Переходим к следующему тиру
+      progress.currentTierIndex++;
+    }
 
-    EventBus.emit(GameEvents.ACHIEVEMENT_CLAIMED, { config, tier: currentTier });
+    // 🎯 Выдаем СУММАРНУЮ награду за все пропущенные/текущие тиры разом
+    if (totalCoins > 0) {
+      this.gameState.addCoins(totalCoins);
+    }
+    if (totalSpins > 0) {
+      this.gameState.addSpins(totalSpins);
+    }
+
+    // Сбрасываем флаг для нового текущего уровня (он еще не забран, так как цикл остановился на невыполненном тире)
+    progress.isTierClaimed = false;
+
+    // 🎯 Уведомляем UI об обновлении (перерисует карточки, уберет кнопку "Забрать", обновит прогресс)
+    // Тост при этом НЕ вызывается, так как мы не вызываем onTierCompleted
+    if (lastClaimedTier) {
+      EventBus.emit(GameEvents.ACHIEVEMENT_CLAIMED, { config, tier: lastClaimedTier });
+    }
   }
 
   // 🎯 Метод для UI: возвращает готовые данные для отрисовки

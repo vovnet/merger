@@ -2,6 +2,7 @@ import * as Phaser from "phaser";
 import { EventBus } from "../core/EventBus";
 import { GameEvents } from "../types/GameEvents";
 import { t } from "../../locales";
+import { AudioService } from "../core/AudioService";
 
 export class AchievementToastScene extends Phaser.Scene {
   private toastContainer!: Phaser.GameObjects.Container;
@@ -58,13 +59,16 @@ export class AchievementToastScene extends Phaser.Scene {
       this.hideTimer.remove();
     }
 
+    const audio = this.registry.get("audioService") as AudioService;
+    audio.playNotificationSound_3();
+
     // Убиваем старые анимации, чтобы избежать конфликтов
     this.tweens.killTweensOf(this.toastContainer);
 
     // 🎯 Анимация появления (вылет сверху с легким "отскоком")
     this.tweens.add({
       targets: this.toastContainer,
-      y: 80, // Отступ от верхнего края экрана
+      y: 70, // Отступ от верхнего края экрана
       duration: 600,
       ease: "Back.easeOut",
       onComplete: () => {
