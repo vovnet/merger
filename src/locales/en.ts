@@ -49,6 +49,7 @@ export const en: Record<TranslationKey, string> = {
   // Achievements
   ACHIEVEMENTS_TITLE: "ACHIVEMENTS",
   ACH_REWARD: "Reward: \n{reward}",
+  ACH_PROGRESS: "Progress: {current} / {total}",
   ACH_MAXED_OUT: "MAXED OUT!",
 
   ACH_MERGE_TITLE: "Merge Master",

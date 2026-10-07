@@ -11,26 +11,27 @@ export class AchievementsScene extends Phaser.Scene {
   private cardsContainer!: Phaser.GameObjects.Container;
   private achievementManager: AchievementManager;
 
+  // 🎯 НОВОЕ: Контейнер для общего прогресс-бара
+  private globalProgressContainer!: Phaser.GameObjects.Container;
+
   constructor() {
     super({ key: "AchievementsScene" });
   }
 
   create() {
-    // 1. Ставим игру на паузу, пока игрок смотрит достижения
     this.scene.pause("GameScene");
     this.scene.pause("UIScene");
 
     this.achievementManager = this.registry.get("achievementManager") as AchievementManager;
-
     this.gameState = this.registry.get("gameState") as GameState;
 
     const screenWidth = this.scale.width;
     const screenHeight = this.scale.height;
 
-    // 2. 🎯 НЕПРОЗРАЧНЫЙ ФОН (alpha = 1)
+    // 1. 🎯 НЕПРОЗРАЧНЫЙ ФОН (alpha = 1)
     this.add.rectangle(0, 0, screenWidth, screenHeight, 0x151520, 1).setOrigin(0).setDepth(100);
 
-    // 3. Заголовок
+    // 2. Заголовок
     this.add
       .bitmapText(
         screenWidth / 2,
@@ -43,6 +44,9 @@ export class AchievementsScene extends Phaser.Scene {
       .setTint(0xffd700)
       .setDepth(102);
 
+    // 3. 🎯 Контейнер для общего прогресс-бара (под заголовком)
+    this.globalProgressContainer = this.add.container(screenWidth / 2, 90).setDepth(102);
+
     // 4. Кнопка закрытия
     this.add
       .sprite(screenWidth - 60, 60, "ui", "close_btn")
@@ -51,19 +55,83 @@ export class AchievementsScene extends Phaser.Scene {
       .setDepth(102)
       .on("pointerdown", () => this.closeScene());
 
-    // 5. Контейнер для сетки карточек (центрируем по экрану)
+    // 5. Контейнер для сетки карточек
     this.cardsContainer = this.add.container(screenWidth / 2, screenHeight / 2 + 50).setDepth(101);
 
-    // 6. Рендерим сетку
+    // 6. Рендерим общий прогресс и сетку
+    this.renderGlobalProgress();
     this.renderGrid();
 
-    // 7. 🎯 Слушаем событие получения награды для мгновенного обновления UI без перезагрузки сцены
-    EventBus.on(GameEvents.ACHIEVEMENT_CLAIMED, this.renderGrid, this);
+    // 7. 🎯 Слушаем событие получения награды для мгновенного обновления UI
+    EventBus.on(GameEvents.ACHIEVEMENT_CLAIMED, this.onAchievementClaimed, this);
+  }
+
+  // 🎯 Отдельный метод для обновления при получении награды (чтобы не перерисовывать всю сетку зря)
+  private onAchievementClaimed(): void {
+    this.renderGlobalProgress();
+    this.renderGrid();
+  }
+
+  // 🎯 Отрисовка общего прогресс-бара
+  private renderGlobalProgress(): void {
+    this.globalProgressContainer.removeAll(true);
+
+    const achievements = this.achievementManager.getAchievementsForUI();
+
+    // 🎯 Считаем общее количество шагов и пройденных шагов
+    let totalTiers = 0;
+    let completedTiers = 0;
+
+    achievements.forEach((ach) => {
+      totalTiers += ach.tiers.length;
+      // currentTierIndex равен количеству ПОЛНОСТЬЮ пройденных и забранных шагов
+      completedTiers += ach.progress.currentTierIndex;
+    });
+
+    const screenWidth = this.scale.width;
+    const barWidth = Math.min(600, screenWidth - 80); // Адаптивная ширина, макс 600px
+    const barHeight = 16;
+
+    // 1. Текст прогресса (например, "15 / 60")
+    const progressText = this.add
+      .bitmapText(
+        0,
+        -24,
+        "russo",
+        t("ACH_PROGRESS", { current: completedTiers, total: totalTiers }),
+        18,
+      )
+      .setOrigin(0.5)
+      .setTint(0xffffff);
+
+    // 2. Фон прогресс-бара
+    const barBg = this.add
+      .rectangle(0, 0, barWidth, barHeight, 0x000000)
+      .setOrigin(0.5)
+      .setStrokeStyle(2, 0x333333);
+
+    // 3. Заполнение прогресс-бара
+    const progressPct = totalTiers > 0 ? completedTiers / totalTiers : 0;
+    const fillWidth = barWidth * progressPct;
+
+    const barFill = this.add
+      .rectangle(-barWidth / 2, 0, fillWidth, barHeight, 0xffd700)
+      .setOrigin(0, 0.5); // Растет слева направо
+
+    // 🎯 Анимация плавного заполнения при открытии/обновлении
+    barFill.width = 0;
+    this.tweens.add({
+      targets: barFill,
+      width: fillWidth,
+      duration: 600,
+      ease: "Power2.out",
+    });
+
+    this.globalProgressContainer.add([progressText, barBg, barFill]);
   }
 
   // 🎯 Отрисовка сетки 2x3
   private renderGrid(): void {
-    // Очищаем старые карточки перед перерисовкой
     this.cardsContainer.removeAll(true);
 
     const achievements = this.achievementManager.getAchievementsForUI();
@@ -75,7 +143,6 @@ export class AchievementsScene extends Phaser.Scene {
     const gapX = 40;
     const gapY = 20;
 
-    // Вычисляем стартовые координаты для идеального центрирования внутри контейнера
     const totalW = cols * cardW + (cols - 1) * gapX;
     const totalH = rows * cardH + (rows - 1) * gapY;
     const startX = -totalW / 2 + cardW / 2;
@@ -92,7 +159,6 @@ export class AchievementsScene extends Phaser.Scene {
   }
 
   // 🎯 Создание одной карточки достижения
-  // 🎯 Создание одной карточки достижения
   private createCard(x: number, y: number, w: number, h: number, ach: any): void {
     const card = this.add.container(x, y);
 
@@ -102,7 +168,6 @@ export class AchievementsScene extends Phaser.Scene {
       .rectangle(0, 0, w, h, 0x1e1e2e)
       .setStrokeStyle(3, borderColor)
       .setOrigin(0.5);
-
     card.add(bg);
 
     // 2. Иконка достижения
@@ -127,27 +192,26 @@ export class AchievementsScene extends Phaser.Scene {
       .setMaxWidth(100);
     card.add(descText);
 
-    // 5. Прогресс-бар
-    const progressBarWidth = 220;
-    const progressPct = Math.min(1, ach.progress.currentValue / ach.currentTier.targetValue);
-    const barBg = this.add.rectangle(-50, 25, progressBarWidth, 12, 0x000000).setOrigin(0, 0.5);
-    const barFill = this.add
-      .rectangle(-50, 25, progressBarWidth * progressPct, 12, ach.canClaim ? 0x00ff00 : 0xffd700)
-      .setOrigin(0, 0.5);
-
-    // Текст прогресса
-    const progressLabel = this.add
-      .bitmapText(
-        -50,
-        42,
-        "russo",
-        `${ach.progress.currentValue} / ${ach.currentTier.targetValue}`,
-        10,
-      )
-      .setOrigin(0, 0.5)
-      .setTint(0x888888);
-
+    // 5. Прогресс-бар карточки
     if (!ach.isMaxedOut) {
+      const progressBarWidth = 220;
+      const progressPct = Math.min(1, ach.progress.currentValue / ach.currentTier.targetValue);
+      const barBg = this.add.rectangle(-50, 25, progressBarWidth, 12, 0x000000).setOrigin(0, 0.5);
+      const barFill = this.add
+        .rectangle(-50, 25, progressBarWidth * progressPct, 12, ach.canClaim ? 0x00ff00 : 0xffd700)
+        .setOrigin(0, 0.5);
+
+      const progressLabel = this.add
+        .bitmapText(
+          -50,
+          42,
+          "russo",
+          `${ach.progress.currentValue} / ${ach.currentTier.targetValue}`,
+          10,
+        )
+        .setOrigin(0, 0.5)
+        .setTint(0x888888);
+
       card.add([barBg, barFill, progressLabel]);
     }
 
@@ -198,29 +262,26 @@ export class AchievementsScene extends Phaser.Scene {
       card.add(lockedText);
     }
 
-    // 🎯 7. ИКОНКИ ПРОГРЕССА ПО ТИРАМ (Внизу карточки)
+    // 7. ИКОНКИ ПРОГРЕССА ПО ТИРАМ (Внизу карточки)
     const tiers = ach.tiers;
     const currentTierIndex = ach.progress.currentTierIndex;
     const totalTiers = tiers.length;
 
-    // Настройки для иконок
     const iconSize = 24;
     const gap = 6;
     const totalIconsWidth = totalTiers * iconSize + (totalTiers - 1) * gap;
-    const startX = -totalIconsWidth / 2 + iconSize / 2; // Центрируем всю группу иконок
-    const yPos = 65; // Позиция по Y (под текстом прогресса, который на 42)
+    const startX = -totalIconsWidth / 2 + iconSize / 2;
+    const yPos = 65;
 
     for (let i = 0; i < totalTiers; i++) {
-      // Если индекс тира меньше текущего, значит он уже пройден и забран
       const isCompleted = i < currentTierIndex;
       const iconKey = isCompleted ? "progres_icon_active" : "progres_icon_disabled";
 
       const tierIcon = this.add
-        .sprite(startX + i * (iconSize + gap), yPos, "achievements", iconKey) // ⚠️ Убедитесь, что атлас называется "ui" (или "achievements", если добавили туда)
+        .sprite(startX + i * (iconSize + gap), yPos, "achievements", iconKey)
         .setOrigin(0.5)
         .setScale(1);
 
-      // 🌟 Бонус: Подсвечиваем ЦЕЛЕВОЙ тир, чтобы игрок знал, к чему идет
       if (i === currentTierIndex && !ach.isMaxedOut) {
         this.tweens.add({
           targets: tierIcon,
@@ -235,11 +296,9 @@ export class AchievementsScene extends Phaser.Scene {
       card.add(tierIcon);
     }
 
-    // Добавляем всю карточку в общий контейнер
     this.cardsContainer.add(card);
   }
 
-  // 🎯 Хелпер для красивого форматирования награды
   private formatReward(coins: number, spins: number): string {
     const parts = [];
     if (coins > 0) parts.push(`${coins}`);
@@ -247,23 +306,19 @@ export class AchievementsScene extends Phaser.Scene {
     return parts.join(" + ");
   }
 
-  // 🎯 Закрытие сцены
   private closeScene(): void {
-    // Снимаем с паузы основные сцены
     this.scene.resume("GameScene");
     this.scene.resume("UIScene");
 
-    // Плавное затемнение перед закрытием (цвет совпадает с фоном 0x151520)
     this.cameras.main.fadeOut(200, 21, 21, 32);
     this.cameras.main.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () => {
       this.scene.stop();
     });
   }
 
-  // 🎯 Очистка памяти при уничтожении сцены
   shutdown(): void {
-    // Обязательно отписываемся от EventBus, чтобы не было дублирования при повторном открытии!
-    EventBus.off(GameEvents.ACHIEVEMENT_CLAIMED, this.renderGrid, this);
+    EventBus.off(GameEvents.ACHIEVEMENT_CLAIMED, this.onAchievementClaimed, this);
     this.cardsContainer?.removeAll(true);
+    this.globalProgressContainer?.removeAll(true);
   }
 }
