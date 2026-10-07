@@ -16,6 +16,7 @@ export const ACHIEVEMENTS_CONFIG: AchievementCategory[] = [
       { targetValue: 4, rewardCoins: 5, rewardSpins: 0 },
       { targetValue: 5, rewardCoins: 5, rewardSpins: 0 },
 
+      // { targetValue: 500, rewardCoins: 10, rewardSpins: 0 },
       // { targetValue: 1500, rewardCoins: 10, rewardSpins: 0 },
       // { targetValue: 5000, rewardCoins: 15, rewardSpins: 1 },
       // { targetValue: 15000, rewardCoins: 25, rewardSpins: 1 },
@@ -25,6 +26,8 @@ export const ACHIEVEMENTS_CONFIG: AchievementCategory[] = [
       // { targetValue: 150000, rewardCoins: 180, rewardSpins: 4 },
       // { targetValue: 225000, rewardCoins: 250, rewardSpins: 5 },
       // { targetValue: 300000, rewardCoins: 320, rewardSpins: 10 },
+      // { targetValue: 500000, rewardCoins: 320, rewardSpins: 10 },
+      // { targetValue: 1000000, rewardCoins: 350, rewardSpins: 10 },
     ],
   },
 
@@ -40,6 +43,7 @@ export const ACHIEVEMENTS_CONFIG: AchievementCategory[] = [
       { targetValue: 3, rewardCoins: 5, rewardSpins: 0 },
       { targetValue: 4, rewardCoins: 5, rewardSpins: 0 },
 
+      // { targetValue: 5, rewardCoins: 10, rewardSpins: 0 },
       // { targetValue: 15, rewardCoins: 10, rewardSpins: 0 },
       // { targetValue: 35, rewardCoins: 15, rewardSpins: 0 }, // 1 час
       // { targetValue: 75, rewardCoins: 20, rewardSpins: 0 },
@@ -49,6 +53,8 @@ export const ACHIEVEMENTS_CONFIG: AchievementCategory[] = [
       // { targetValue: 1500, rewardCoins: 75, rewardSpins: 0 },
       // { targetValue: 2500, rewardCoins: 100, rewardSpins: 0 },
       // { targetValue: 3500, rewardCoins: 150, rewardSpins: 0 },
+      // { targetValue: 5000, rewardCoins: 200, rewardSpins: 0 },
+      // { targetValue: 8000, rewardCoins: 250, rewardSpins: 0 },
     ],
   },
 
@@ -69,6 +75,8 @@ export const ACHIEVEMENTS_CONFIG: AchievementCategory[] = [
       { targetValue: 700, rewardCoins: 100, rewardSpins: 0 }, // 70 часов
       { targetValue: 850, rewardCoins: 140, rewardSpins: 0 }, // 85 часов
       { targetValue: 1000, rewardCoins: 200, rewardSpins: 0 },
+      { targetValue: 1300, rewardCoins: 200, rewardSpins: 0 },
+      { targetValue: 1800, rewardCoins: 250, rewardSpins: 0 },
     ],
   },
 
@@ -85,6 +93,7 @@ export const ACHIEVEMENTS_CONFIG: AchievementCategory[] = [
       { targetValue: 4, rewardCoins: 5, rewardSpins: 0 },
       { targetValue: 5, rewardCoins: 5, rewardSpins: 0 },
 
+      // { targetValue: 20, rewardCoins: 10, rewardSpins: 0 },
       // { targetValue: 50, rewardCoins: 10, rewardSpins: 0 },
       // { targetValue: 180, rewardCoins: 15, rewardSpins: 0 }, // 1 час
       // { targetValue: 400, rewardCoins: 20, rewardSpins: 0 },
@@ -94,6 +103,8 @@ export const ACHIEVEMENTS_CONFIG: AchievementCategory[] = [
       // { targetValue: 8000, rewardCoins: 70, rewardSpins: 0 },
       // { targetValue: 12000, rewardCoins: 100, rewardSpins: 0 },
       // { targetValue: 18000, rewardCoins: 150, rewardSpins: 0 },
+      // { targetValue: 30000, rewardCoins: 250, rewardSpins: 0 },
+      // { targetValue: 50000, rewardCoins: 350, rewardSpins: 0 },
     ],
   },
 
